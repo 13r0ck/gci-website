@@ -6,18 +6,16 @@ WORKDIR /usr
 RUN apt-get update
 RUN apt-get dist-upgrade -y
 RUN apt-get install -y musl-tools
-#RUN apt-get install nodejs npm -y
 RUN curl -sL https://deb.nodesource.com/setup_14.x -o nodesource_setup.sh
 RUN bash nodesource_setup.sh
 RUN apt-get install nodejs
-# Create user and change npm location to bypass permission error when installing '-g' as root
-#RUN useradd -ms /bin/bash  node
-#USER node
-#RUN mkdir ~/.npm-global
-#RUN npm config set prefix '~/.npm-global'
-#ENV PATH=~/.npm-global/bin:$PATH
+    # Install elm
+RUN curl -L -o elm.gz https://github.com/elm/compiler/releases/download/0.19.1/binary-for-linux-64-bit.gz
+RUN gunzip elm.gz
+RUN chmod +x elm
+RUN mv elm /usr/local/bin/
+    # Install elm-spa
 RUN npm install -g elm-spa@latest
-# npm hack done. Switch back to root and finish dockerfile
 USER root
 RUN rustup override set nightly
 RUN rustup target add x86_64-unknown-linux-musl
@@ -44,14 +42,9 @@ RUN cp ./target/x86_64-unknown-linux-musl/release/elm-spa_server /compile-path/s
 
 #2: Build the elm project
 WORKDIR /usr/elm
-RUN curl -L -o elm.gz https://github.com/elm/compiler/releases/download/0.19.1/binary-for-linux-64-bit.gz
-RUN gunzip elm.gz
-RUN chmod +x elm
-RUN mv elm /usr/local/bin/
 RUN elm-spa build
 RUN cp ./public /compile-path/elm/ -r
-
-# Changing the volume from within the Dockerfile: If any build steps change the data within the volume after it has been declared, those changes will be discarded. Thus:
+    # Changing the volume from within the Dockerfile: If any build steps change the data within the volume after it has been declared, those changes will be discarded. Thus:
 VOLUME /compile-path
 
 # 3: Copy the exe and extra files ("static") to an empty Docker image
@@ -59,11 +52,9 @@ VOLUME /compile-path
 # // This docker container works with `FROM scratch` to save on image size, though using google cloud run requires that the port be $PORT
 # // as seen in `CMD ROCKET_PORT=$PORT`, but I have not figured out how to either compile rocket in a way or to add an enironment variable
 # // to a scratch image. Hopefully I will figure that out eventually
-#FROM scratch
 FROM alpine:latest
 COPY --from=builder /compile-path/server /server
 COPY --from=builder /compile-path/elm/public /server/public
 RUN ls /server
 USER 1000
 CMD ROCKET_PORT=$PORT ./server/elm-spa_server
-#CMD /server/elm-spa_server
