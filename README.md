@@ -9,7 +9,7 @@ docker run --env PORT='1234' -p 1234:1234 elm-rust-app # starts this app at http
 2. Just the front end
 > See dependecies below
 ```bash
-elm-spa server # starts this app at http:/localhost:1234
+elm-spa server # starts this app at http://localhost:1234
 ```
 3. Pushed to Google Cloud
 > This is WAY more work, but the `cloudbuild.yaml` is inciuded because I am using it. It can be ignored if using method 1 or 2. 
