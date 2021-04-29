@@ -19,5 +19,4 @@ node_modules
 
 # Misc
 public/videos/earth_old.webm
-index.html
 server/target/*
