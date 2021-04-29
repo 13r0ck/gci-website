@@ -1,0 +1,212 @@
+.blur {
+    background-color: rgba(255, 255, 255, 0.5);
+}
+
+.wipe_point {
+  clip-path: polygon(-1% 0%, 101% 0%, 101% 100%, 50% 200%, -1% 100%);
+  transition: 0.2s ease;
+}
+
+.wipe_point_active {
+  clip-path: polygon(-1% -170%, 101% -170%, 101% -70%, 50% 0%, -1% -70% );
+  transition:  0.2s ease;
+}
+
+/* Directional wipe for boxes */
+
+.point_idle {
+  clip-path: polygon( -50% -200%  , 50% -200%, 150% -200%
+                    , 150% -100% 
+                    , 150% 0% , 50% 0% , -50% 0%
+                    , -50% -100% );
+}
+
+.point_enter_down {
+  animation: pointEnterDown 0.4s forwards;
+  -webkit-animation: pointEnterDown 0.4s forwards;
+}
+
+@keyframes pointEnterDown {
+  0% {
+    clip-path: polygon( 0% -150% , 100% -150%
+                      , 100% -50%, 50% 0%, 0% -50%
+                      );
+  }
+  100% {
+    clip-path: polygon( 0% 0%, 100% 0%
+                      , 100% 100%, 50% 150%, 0% 100%
+                      );
+  }
+}
+.point_enter_down_long {
+  animation: pointEnterDown 0.8s forwards;
+  -webkit-animation: pointEnterDown 0.8s forwards;
+}
+
+@keyframes pointEnterDown {
+  0% {
+    clip-path: polygon( 0% -150% , 100% -150%
+                      , 100% -50%, 50% 0%, 0% -50%
+                      );
+  }
+  100% {
+    clip-path: polygon( 0% 0%, 100% 0%
+                      , 100% 100%, 50% 150%, 0% 100%
+                      );
+  }
+}
+
+.point_leave_down {
+  animation: pointLeaveDown 0.4s forwards;
+  -webkit-animation: pointLeaveDown 0.4s forwards;
+}
+
+@keyframes pointLeaveDown {
+  0% {
+    clip-path: polygon( 0% -50%, 50% 0%, 100% -50%
+                      , 100% 100%, 0% 100%
+                      );
+  }
+  100% {
+  clip-path: polygon( 0% 100%, 50% 150%, 100% 100%
+                    , 100% 200%, 0% 200%
+                    );
+  }
+}
+
+.point_enter_up {
+  animation: pointEnterUp 0.4s forwards;
+  -webkit-animation: pointEnterUp 0.4s forwards;
+}
+
+@keyframes pointEnterUp {
+  0% {
+    clip-path: polygon( 0% 150%, 50% 100%, 100% 150%
+                      , 100% 250%, 0% 250%
+                      );
+  }
+  100% {
+    clip-path: polygon( 0% 0%, 50% -50%, 100% 0%
+                      , 100% 100%, 0% 100%
+                      );
+  }
+}
+
+.point_leave_up {
+  animation: pointLeaveUp 0.4s forwards;
+  -webkit-animation: pointLeaveUp 0.4s forwards;
+}
+
+@keyframes pointLeaveUp {
+  0% {
+    clip-path: polygon( 0% 0%, 100% 0%
+                      , 100% 150%, 50% 100%, 0% 150%
+                      );
+  }
+  100% {
+  clip-path: polygon( 0% -150%, 100% -150%
+                    , 100% 0%, 50% -50%, 0% 0%
+                    );
+  }
+}
+
+.point_enter_right {
+  animation: pointEnterRight 0.4s forwards;
+  -webkit-animation: pointEnterRight 0.4s forwards;
+}
+
+@keyframes pointEnterRight {
+  0% {
+    clip-path: polygon( 150% 0%, 250% 0%
+                      , 250% 100%, 150% 100%, 100% 50%
+                      );
+  }
+  100% {
+    clip-path: polygon( 0% 0%, 100% 0%
+                      , 100% 100%, 0% 100%, -50% 50%
+                      );
+  }
+}
+
+.point_leave_right {
+  animation: pointLeaveRight 0.4s forwards;
+  -webkit-animation: pointLeaveRight 0.4s forwards;
+}
+
+@keyframes pointLeaveRight {
+  0% {
+    clip-path: polygon( 0% 0%, 150% 0%
+                      , 100% 50%, 150% 100%, 0% 100%
+                      );
+  }
+  100% {
+  clip-path: polygon( -150% 0%, 0% 0%
+                    , -50% 50%, 0% 100%, -150% 100%
+                    );
+  }
+}
+
+.point_enter_left {
+  animation: pointEnterLeft 0.4s forwards;
+  -webkit-animation: pointEnterLeft 0.4s forwards;
+}
+
+@keyframes pointEnterLeft {
+  0% {
+    clip-path: polygon( -150% 0%, -50% 0%
+                      , 0% 50%, -50% 100%, -150% 100%
+                      );
+  }
+  100% {
+    clip-path: polygon( 0% 0%, 100% 0%
+                      , 150% 50%, 100% 100%, 0% 100%
+                      );
+  }
+}
+
+.point_enter_left_long {
+  animation: pointEnterLeftLong 1s forwards;
+  -webkit-animation: pointEnterLeftLong 1s forwards;
+}
+
+@keyframes pointEnterLeftLong {
+  0% {
+    clip-path: polygon( -150% 0%, -30% 0%
+                      , 0% 50%, -30% 100%, -150% 100%
+                      );
+  }
+  100% {
+    clip-path: polygon( 0% 0%, 100% 0%
+                      , 120% 50%, 100% 100%, 0% 100%
+                      );
+  }
+}
+
+.point_leave_left {
+  animation: pointLeaveLeft 0.4s forwards;
+  -webkit-animation: pointLeaveLeft 0.4s forwards;
+}
+
+@keyframes pointLeaveLeft {
+  0% {
+    clip-path: polygon( -50% 0%, 100% 0%
+                      , 100% 100%, -50% 100%, 0% 50%
+                      );
+  }
+  100% {
+  clip-path: polygon( 100% 0%, 150% 0%
+                    , 150% 100%, 100% 100%, 150% 50%
+                    );
+  }
+}
+
+@font-face {
+  font-family: 'icons';
+  src: url('/fonts/icons.ttf');
+  font-weight: normal;
+  font-style: normal;
+}
+
+.backgroundGrow {
+    transition: height 0.2s linear;
+}
