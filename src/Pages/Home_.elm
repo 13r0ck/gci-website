@@ -119,6 +119,7 @@ type alias Testimonial =
     , img : String
     , quote : String
     , attribution : String
+    , job : String
     }
 
 
@@ -222,7 +223,7 @@ init =
       , animationTracker =
             Dict.fromList
                 [ ( "gciBar", AnimationState Middle False )
-                , ( "boxes", AnimationState Middle False )
+                , ( "boxes", AnimationState (PercentOfViewport 40) False )
                 , ( "grayQuote", AnimationState (PercentOfViewport 100) False )
                 , ( "testimonials", AnimationState Middle False )
                 , ( "cleanRoom", AnimationState (PercentOfViewport 40) False )
@@ -250,9 +251,9 @@ init =
             , CertificationItem "/img/ANAB-certified_white.svg" "AS9100:2016 - ISO 9001:2015 Certified"
             ]
       , testimonials =
-            [ Testimonial "Sikorsky Aircraft Corperation" "/img/sky.jpg" "Global Circuit Innovations provided a form, fit and function solution to keep out Black Hawk helicopters flying." "- Peter Kubik\n(Engineering Manager)"
-            , Testimonial "USAF" "/img/helicopter0.jpg" "GCI offers cost effective, proven obsolescence solutions to keep planes flying and save the US Air Force tens of millions of dollars." "- Jeffery Sillart\n(USAF Lead-Engineer)"
-            , Testimonial "Sikorsky Aircraft Corperation" "/img/sky.jpg" "Global Circuit Innovations provided a form, fit and function solution to keep out Black Hawk helicopters flying." "- Peter Kubik (Engineering Manager)"
+            [ Testimonial "Sikorsky Aircraft Corperation" "/img/sky.jpg" "High Tech." "" ""
+            , Testimonial "USAF" "/img/helicopter0.jpg" "GCI offers cost effective, proven obsolescence solutions to keep planes flying and save the US Air Force tens of millions of dollars." "- Jeffery Sillart" "(USAF Lead-Engineer, F-16)"
+            , Testimonial "Sikorsky Aircraft Corperation" "/img/sky.jpg" "Innovations." "" ""
             ]
       , boxes =
             [ BoxesItem "Electronic Obsolescence Solutions" "#" "/img/plane1.png" "/img/plane2.png" False "point_idle"
@@ -905,7 +906,7 @@ contactUs state address =
                 [ case state.currentPage of
                     0 ->
                         column
-                            [ width fill, height (px 200), Font.light, spacing 25, htmlAttribute <| class "backgroundGrow" ]
+                            [ width fill, height (px 250), Font.light, spacing 25, htmlAttribute <| class "backgroundGrow" ]
                             [ row [ width fill, alignTop, padding 20 ]
                                 [ el [ Font.size 35, centerX ] (text "Nice to meet you! ")
                                 , el [ Font.size 45, centerX ] (text "👋")
@@ -919,6 +920,7 @@ contactUs state address =
                                 [ rounded 100
                                 , width (px 400)
                                 , centerX
+                                , centerY
                                 , onEnter ContactDialogNext
                                 , Border.color
                                     (if state.nameError then
@@ -939,8 +941,8 @@ contactUs state address =
 
                     1 ->
                         column
-                            [ width fill, height (px 300), Font.light, spacing 25, htmlAttribute <| class "backgroundGrow" ]
-                            [ row [ width fill, alignTop, padding 20 ]
+                            [ width fill, height (px 300), padding 30, Font.light, spacing 25, htmlAttribute <| class "backgroundGrow" ]
+                            [ row [ width fill, alignTop ]
                                 [ paragraph [ Font.size 35, centerX, Font.center ]
                                     [ case String.trim (Maybe.withDefault "" state.name) of
                                         "" ->
@@ -1013,8 +1015,8 @@ contactUs state address =
 
                     2 ->
                         column
-                            [ width fill, height (px 500), Font.light, spacing 25, htmlAttribute <| class "backgroundGrow" ]
-                            [ row [ width fill, alignTop, padding 20 ]
+                            [ width fill, height (px 530), padding 30, Font.light, spacing 25, htmlAttribute <| class "backgroundGrow" ]
+                            [ row [ width fill, alignTop ]
                                 [ if state.messageError then
                                     el [ Font.size 35, centerX, Font.color warning ] (text state.messageErrorMessage)
 
@@ -1054,8 +1056,8 @@ contactUs state address =
 
                     3 ->
                         column
-                            [ width fill, height (px 80), Font.light, htmlAttribute <| class "backgroundGrow" ]
-                            [ row [ width fill, alignTop, padding 20 ]
+                            [ width fill, height (px 100), Font.light, htmlAttribute <| class "backgroundGrow" ]
+                            [ row [ width fill, alignTop ]
                                 [ el [ Font.size 35, centerX, centerY ] (text "Sent!")
                                 , image [ width (px 150), centerX, centerY, padding 10 ] { src = "/img/f16-sticker.png", description = "F-16 sticker" }
                                 ]
@@ -1064,7 +1066,7 @@ contactUs state address =
 
                     _ ->
                         row [] []
-                , row [ width fill, height fill, padding 30 ]
+                , row [ width fill, padding 15, alignBottom ]
                     (if state.currentPage < 3 then
                         [ Input.button
                             [ alignBottom
@@ -1423,9 +1425,10 @@ testimonials ts animateSelf =
                 , transparent (not animateSelf)
                 ]
                 [ row [ Background.image t.img, height (px 200), width fill ] []
-                , column [ paddingEach { top = 24, bottom = 48, left = 48, right = 48 }, spacing 18, height fill ]
-                    [ paragraph [ Font.medium, Font.center ] [ text ("\"" ++ t.quote ++ "\"") ]
+                , column [ paddingEach { top = 24, bottom = 48, left = 48, right = 48 }, height fill ]
+                    [ paragraph [ Font.medium, Font.center, paddingXY 0 18 ] [ text ("\"" ++ t.quote ++ "\"") ]
                     , paragraph [ Font.extraLight, Font.alignRight, Font.size 18, alignBottom ] [ text t.attribution ]
+                    , paragraph [ Font.extraLight, Font.alignRight, Font.size 18, alignBottom ] [ text t.job ]
                     ]
                 ]
     in
