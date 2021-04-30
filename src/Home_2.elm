@@ -7,7 +7,7 @@ import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border exposing (innerShadow, rounded, shadow)
-import Element.Events as EE
+import Element.Events as Events
 import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region
@@ -18,10 +18,11 @@ import Html.Attributes exposing (alt, attribute, autoplay, class, id, loop, src)
 import Html.Events
 import Json.Decode as Decode
 import Page
+import Palette exposing (black, gciBlue, gciBlueLight, warning, white)
 import PhoneNumber
 import PhoneNumber.Countries exposing (countryUS)
 import Request
-import Shared
+import Shared exposing (Address, NavItem, contactUs)
 import Simple.Animation as Animation exposing (Animation)
 import Simple.Animation.Animated as Animated
 import Simple.Animation.Property as P
@@ -31,15 +32,10 @@ import Time exposing (..)
 import View exposing (View)
 
 
-maxWidth : number
-maxWidth =
-    2000
-
-
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
     Page.element
-        { init = init
+        { init = init shared
         , update = update
         , view = view
         , subscriptions = subscriptions
@@ -56,44 +52,16 @@ type alias Model =
     , hideNavbar : Bool
     , userVisible : Bool
     , showContactUs : Bool
-    , contactDialogState : ContactDialogState
     , animationTracker : Dict String AnimationState
-    , navHoverTracker : List NavItem
     , onScreenTracker : List OnScreenItem
     , simpleBtnHoverTracker : List SimpleBtn
+    , navHoverTracker : List NavItem
     , socialMedia : List SocialMediaItem
     , certifications : List CertificationItem
     , testimonials : List Testimonial
     , boxes : List BoxesItem
     , currentYear : Int
     , address : Address
-    }
-
-
-type alias Address =
-    { street : String
-    , city : String
-    , phone : String
-    , phoneLink : String
-    , email : String
-    , emailLink : String
-    }
-
-
-type alias ContactDialogState =
-    { name : Maybe String
-    , nameErrorMessage : String
-    , nameError : Bool
-    , email : Maybe String
-    , emailErrorMessage : String
-    , emailError : Bool
-    , phone : Maybe String
-    , phoneErrorMessage : String
-    , phoneError : Bool
-    , message : Maybe String
-    , messageErrorMessage : String
-    , messageError : Bool
-    , currentPage : Int
     }
 
 
@@ -119,14 +87,6 @@ type alias Testimonial =
     , img : String
     , quote : String
     , attribution : String
-    }
-
-
-type alias NavItem =
-    { name : String
-    , link : String
-    , hovered : Bool
-    , message : Msg
     }
 
 
@@ -174,8 +134,8 @@ type Direction
     | Right
 
 
-init : ( Model, Cmd Msg )
-init =
+init : Shared.Model -> ( Model, Cmd Msg )
+init sharedModel =
     let
         emptyViewport =
             { scene =
@@ -195,30 +155,10 @@ init =
       , hideNavbar = False
       , userVisible = True
       , showContactUs = False
-      , contactDialogState =
-            ContactDialogState
-                Nothing
-                "Please give us your name."
-                False
-                Nothing
-                "That email seems wrong."
-                False
-                Nothing
-                "That phone number seems wrong"
-                False
-                Nothing
-                "Use your words please!"
-                False
-                0
       , currentYear = 0
-      , address =
-            Address
-                "4815 List Drive, Suite 109"
-                "Colorado Springs, CO 80919"
-                "+1 ( 719 ) 573 - 6777"
-                "tel:+17195736777"
-                "support@gci-global.com"
-                "mailto:support@gci-global.com"
+      , address = sharedModel.address
+      , contactDialogState = sharedModel.contactDialogState
+      , navHoverTracker = sharedModel.navHoverTracker
       , animationTracker =
             Dict.fromList
                 [ ( "gciBar", AnimationState Middle False )
@@ -229,12 +169,6 @@ init =
                 ]
       , onScreenTracker =
             [ OnScreenItem "earthVideo" True
-            ]
-      , navHoverTracker =
-            [ NavItem "WHAT WE DO" "#" False OpenContactUs
-            , NavItem "WHO WE ARE" "#" False OpenContactUs
-            , NavItem "NEWSROOM" "#" False OpenContactUs
-            , NavItem "CONTACT US" "#" False OpenContactUs
             ]
       , simpleBtnHoverTracker =
             [ SimpleBtn 0 "Contact Us" "#" False OpenContactUs
@@ -276,8 +210,6 @@ type Msg
     | GotElement String (Result Browser.Dom.Error Browser.Dom.Element)
     | GotOnScreenItem String (Result Browser.Dom.Error Browser.Dom.Element)
     | GotYear Int
-    | NavHover Int
-    | NavUnHover Int
     | BoxHover Int
     | BoxUnHover Int
     | SimpleBtnHover Int
@@ -291,6 +223,7 @@ type Msg
     | ContactDialogMessage String
     | ContactDialogBack
     | ContactDialogNext
+    | SharedMsg Shared.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -354,11 +287,13 @@ update msg model =
                 ( { model | userVisible = False }, controlVideo False )
 
         -- Pause
-        NavHover id ->
-            ( { model | navHoverTracker = List.indexedMap (setHovered id) model.navHoverTracker }, Cmd.none )
+        SharedMsg message ->
+            case message of
+                Shared.Msg.NavHover id ->
+                    ( { model | navHoverTracker = List.indexedMap (setHovered id) model.navHoverTracker }, Cmd.none )
 
-        NavUnHover id ->
-            ( { model | navHoverTracker = List.indexedMap (setUnHovered id) model.navHoverTracker }, Cmd.none )
+                Shared.Msg.NavUnHover id ->
+                    ( { model | navHoverTracker = List.indexedMap (setUnHovered id) model.navHoverTracker }, Cmd.none )
 
         BoxHover id ->
             ( { model | boxes = List.indexedMap (setHovered id) model.boxes, getMouse = True }, Cmd.none )
@@ -533,8 +468,8 @@ subscriptions model =
                         (Decode.field "movementX" Decode.int)
                         (Decode.field "movementY" Decode.int)
                     )
-                , recvScroll Scrolled
                 , onResize (\_ _ -> GetViewport)
+                , recvScroll Scrolled
                 ]
 
         else
@@ -571,7 +506,7 @@ view model =
         , inFront (point_down (shouldAnimate "testimonials" model))
         , inFront
             (if model.showContactUs then
-                contactUs model.contactDialogState model.address
+                map (\msg -> SharedMsg msg) (contactUs model.contactDialogState model.address)
 
              else
                 none
@@ -590,63 +525,6 @@ view model =
             , footer model.certifications model.address model.navHoverTracker model.socialMedia model.currentYear
             ]
     }
-
-
-
--- hook in for elm-simple-animation
-
-
-animatedUi : (List (Attribute msg) -> children -> Element msg) -> Animation -> List (Attribute msg) -> children -> Element msg
-animatedUi =
-    Animated.ui
-        { behindContent = Element.behindContent
-        , htmlAttribute = Element.htmlAttribute
-        , html = Element.html
-        }
-
-
-ael : Animation -> List (Element.Attribute msg) -> Element msg -> Element msg
-ael =
-    animatedUi Element.el
-
-
-arow : Animation -> List (Element.Attribute msg) -> List (Element msg) -> Element msg
-arow =
-    animatedUi Element.row
-
-
-acol : Animation -> List (Element.Attribute msg) -> List (Element msg) -> Element msg
-acol =
-    animatedUi Element.column
-
-
-
--- Colors
-
-
-white : Color
-white =
-    rgb 1 1 1
-
-
-warning : Color
-warning =
-    rgb255 204 51 51
-
-
-black : Color
-black =
-    rgb 0 0 0
-
-
-gciBlue : Color
-gciBlue =
-    rgb255 29 55 108
-
-
-gciBlueLight : Color
-gciBlueLight =
-    rgb255 59 85 138
 
 
 
@@ -894,288 +772,6 @@ isOnScreen id list =
     List.any (\item -> item.onScreen == True) (List.filter (\item -> item.id == id) list)
 
 
-contactUs : ContactDialogState -> Address -> Element Msg
-contactUs state address =
-    let
-        break =
-            html <| br [] []
-
-        contactDialog =
-            column [ width fill, height fill ]
-                [ case state.currentPage of
-                    0 ->
-                        column
-                            [ width fill, height (px 200), Font.light, spacing 25, htmlAttribute <| class "backgroundGrow" ]
-                            [ row [ width fill, alignTop, padding 20 ]
-                                [ el [ Font.size 35, centerX ] (text "Nice to meet you! ")
-                                , el [ Font.size 45, centerX ] (text "👋")
-                                ]
-                            , if state.nameError then
-                                el [ Font.size 25, centerX, Font.color warning ] (text state.nameErrorMessage)
-
-                              else
-                                el [ Font.size 25, centerX ] (text "Can we get a name?")
-                            , Input.text
-                                [ rounded 100
-                                , width (px 400)
-                                , centerX
-                                , onEnter ContactDialogNext
-                                , Border.color
-                                    (if state.nameError then
-                                        warning
-
-                                     else
-                                        gciBlue
-                                    )
-                                , Border.width 2
-                                , Font.center
-                                ]
-                                { onChange = ContactDialogName
-                                , text = Maybe.withDefault "" state.name
-                                , placeholder = Just (Input.placeholder [ Font.center ] (text "First & Last"))
-                                , label = Input.labelHidden "Name"
-                                }
-                            ]
-
-                    1 ->
-                        column
-                            [ width fill, height (px 300), Font.light, spacing 25, htmlAttribute <| class "backgroundGrow" ]
-                            [ row [ width fill, alignTop, padding 20 ]
-                                [ paragraph [ Font.size 35, centerX, Font.center ]
-                                    [ case String.trim (Maybe.withDefault "" state.name) of
-                                        "" ->
-                                            text "Thanks for reaching out!"
-
-                                        n ->
-                                            case List.head (String.split " " n) of
-                                                Just first_name ->
-                                                    case String.uncons first_name of
-                                                        Just ( first, tail ) ->
-                                                            text ("Thanks for reaching out " ++ (String.toUpper (String.fromChar first) ++ tail) ++ "!")
-
-                                                        Nothing ->
-                                                            text "Thanks for reaching out!"
-
-                                                Nothing ->
-                                                    text "Thanks for reaching out!"
-                                    ]
-                                ]
-                            , if state.emailError then
-                                el [ Font.size 25, centerX, Font.color warning ] (text state.emailErrorMessage)
-
-                              else if state.phoneError then
-                                el [ Font.size 25, centerX, Font.color warning ] (text state.phoneErrorMessage)
-
-                              else
-                                el [ Font.size 25, centerX ] (text "How can we contact you?")
-                            , Input.email
-                                [ rounded 100
-                                , width (px 400)
-                                , centerX
-                                , Font.center
-                                , onEnter ContactDialogNext
-                                , Border.color
-                                    (if state.emailError then
-                                        warning
-
-                                     else
-                                        gciBlue
-                                    )
-                                , Border.width 2
-                                ]
-                                { onChange = ContactDialogEmail
-                                , text = Maybe.withDefault "" state.email
-                                , placeholder = Just (Input.placeholder [ Font.center ] (text "name@exmaple.com"))
-                                , label = Input.labelHidden "Email"
-                                }
-                            , Input.text
-                                [ rounded 100
-                                , width (px 400)
-                                , centerX
-                                , Font.center
-                                , onEnter ContactDialogNext
-                                , htmlAttribute <| id "phoneInput"
-                                , Border.color
-                                    (if state.phoneError then
-                                        warning
-
-                                     else
-                                        gciBlue
-                                    )
-                                , Border.width 2
-                                ]
-                                { onChange = ContactDialogPhone
-                                , text = Maybe.withDefault "" state.phone
-                                , placeholder = Just (Input.placeholder [ Font.center ] (text "(123) 456 - 7890"))
-                                , label = Input.labelHidden "Phone Number"
-                                }
-                            ]
-
-                    2 ->
-                        column
-                            [ width fill, height (px 500), Font.light, spacing 25, htmlAttribute <| class "backgroundGrow" ]
-                            [ row [ width fill, alignTop, padding 20 ]
-                                [ if state.messageError then
-                                    el [ Font.size 35, centerX, Font.color warning ] (text state.messageErrorMessage)
-
-                                  else
-                                    el [ Font.size 35, centerX ] (text "What can we do for you?")
-                                ]
-                            , Input.multiline
-                                [ rounded 20
-                                , width (px 500)
-                                , height (fill |> maximum 400)
-                                , centerX
-                                , Border.color
-                                    (if state.messageError then
-                                        warning
-
-                                     else
-                                        gciBlue
-                                    )
-                                , Border.width 2
-                                ]
-                                { onChange = ContactDialogMessage
-                                , text = Maybe.withDefault "" state.message
-                                , placeholder =
-                                    Just
-                                        (Input.placeholder []
-                                            (paragraph []
-                                                [ text "Hopefully you need High Tech solutions."
-                                                , html <| br [] []
-                                                , text "Last time we did interior painting it didn't end well ..."
-                                                ]
-                                            )
-                                        )
-                                , spellcheck = True
-                                , label = Input.labelHidden "Message"
-                                }
-                            ]
-
-                    3 ->
-                        column
-                            [ width fill, height (px 80), Font.light, htmlAttribute <| class "backgroundGrow" ]
-                            [ row [ width fill, alignTop, padding 20 ]
-                                [ el [ Font.size 35, centerX, centerY ] (text "Sent!")
-                                , el [ Font.size 45, centerX, centerY, padding 10 ] (text "✈️")
-                                ]
-                            , el [ Font.size 25, centerX, padding 25 ] (paragraph [ Font.center ] [ text "We will reach back out to ", html <| br [] [], text (Maybe.withDefault "you" state.email ++ " soon!") ])
-                            ]
-
-                    _ ->
-                        row [] []
-                , row [ width fill, height fill, padding 30 ]
-                    (if state.currentPage < 3 then
-                        [ Input.button
-                            [ alignBottom
-                            , alignLeft
-                            , paddingXY 30 10
-                            , rounded 100
-                            , Font.color gciBlue
-                            , Border.color gciBlue
-                            , Border.width 2
-                            , mouseOver [ Border.color gciBlueLight, Font.color gciBlueLight ]
-                            ]
-                            { onPress = Just ContactDialogBack, label = text "Back" }
-                        , Input.button
-                            [ alignBottom
-                            , alignRight
-                            , paddingXY 30 10
-                            , rounded 100
-                            , Background.color gciBlue
-                            , Font.bold
-                            , Font.color white
-                            , Border.color gciBlue
-                            , mouseOver [ Border.color gciBlueLight, Background.color gciBlueLight ]
-                            , Border.width 2
-                            ]
-                            { onPress = Just ContactDialogNext, label = text "Next" }
-                        ]
-
-                     else
-                        [ Input.button
-                            [ alignBottom
-                            , paddingXY 100 10
-                            , rounded 100
-                            , centerX
-                            , Background.color gciBlue
-                            , Font.bold
-                            , Font.color white
-                            , Border.color gciBlue
-                            , mouseOver [ Border.color gciBlueLight, Background.color gciBlueLight ]
-                            , Border.width 2
-                            ]
-                            { onPress = Just CloseContactUs, label = text "Close" }
-                        ]
-                    )
-                , paragraph
-                    [ alignLeft
-                    , Font.center
-                    , centerY
-                    , centerX
-                    , padding 10
-                    , Border.widthEach { top = 1, bottom = 0, left = 0, right = 0 }
-                    ]
-                    [ text address.street
-                    , break
-                    , text address.city
-                    , break
-                    , link [ paddingXY 10 0, Border.widthEach { left = 0, top = 0, bottom = 0, right = 1 } ] { url = address.phoneLink, label = text address.phone }
-                    , link [ paddingXY 10 0 ] { url = address.emailLink, label = text address.email }
-                    ]
-                ]
-    in
-    el
-        [ width fill
-        , height fill
-        , htmlAttribute <| class "point_enter_down_long"
-        , behindContent
-            (el
-                [ width fill
-                , height fill
-                , Background.gradient
-                    { angle = degrees 165
-                    , steps = [ rgba255 87 83 78 0.7, rgba255 17 24 39 0.9 ]
-                    }
-                , EE.onClick CloseContactUs
-                ]
-                none
-            )
-        ]
-        (column
-            [ Background.color white
-            , width (px 600)
-            , height (px 600)
-            , centerX
-            , centerY
-            , Border.shadow { blur = 20, color = rgb 0.25 0.25 0.3, offset = ( 0, 0 ), size = 1 }
-            , rounded 25
-            , clip
-            , inFront
-                (row [ padding 20, alignRight ]
-                    [ Input.button
-                        [ alignRight
-                        , Font.family [ Font.typeface "icons" ]
-                        , Font.size 50
-                        , pointer
-                        , Font.color white
-                        , mouseOver [ Font.color warning ]
-                        ]
-                        { onPress = Just CloseContactUs, label = text "\u{E800}" }
-                    ]
-                )
-            ]
-            [ image
-                [ width fill
-                , height (fillPortion 3)
-                , clip
-                ]
-                { src = "/img/building.png", description = "Picutre of GCI's building" }
-            , el [ width fill, height (fillPortion 5) ] contactDialog
-            ]
-        )
-
-
 shouldAnimate : String -> Model -> Bool
 shouldAnimate id model =
     case Dict.get id model.animationTracker of
@@ -1216,104 +812,6 @@ point_down scrolled =
             )
             []
             (image [ width (px 40), height (px 40), Font.color gciBlue ] { src = "/img/down_arrow.svg", description = "down arrow" })
-        ]
-
-
-navbarBtn : ( Int, NavItem ) -> Element Msg
-navbarBtn ( id, item ) =
-    row
-        [ height (px 80)
-        , pointer
-        , paddingXY 80 0
-        , inFront
-            (row
-                [ htmlAttribute <|
-                    class
-                        (if item.hovered then
-                            "wipe_point_active"
-
-                         else
-                            "wipe_point"
-                        )
-                , width fill
-                , height fill
-                , Background.color white
-                ]
-                [ el [ centerX, centerY, Font.color black ] (text item.name) ]
-            )
-        , behindContent
-            (row
-                [ width fill
-                , height fill
-                , Background.color gciBlue
-                , EE.onClick item.message
-                , innerShadow { offset = ( 0, 0 ), size = 0.15, blur = 8, color = rgb255 13 25 48 }
-                ]
-                [ el [ centerX, centerY, Font.color white ] (text item.name) ]
-            )
-        , EE.onMouseEnter (NavHover id)
-        , EE.onMouseLeave (NavUnHover id)
-        ]
-        []
-
-
-navbar : List NavItem -> Bool -> Element Msg
-navbar animationTracker shouldShow =
-    let
-        spacer =
-            column
-                [ width fill
-                , height fill
-                , Background.color (rgb 1 1 1)
-                ]
-                []
-
-        logo =
-            el
-                [ height (px 80)
-                , Background.color white
-                ]
-                (image
-                    [ height (px 50)
-                    , paddingXY 24 0
-                    , centerX
-                    , centerY
-                    ]
-                    { src = "/img/logo_sans_ring.svg", description = "Global Circuit Inovations" }
-                )
-    in
-    arow
-        (if shouldShow then
-            Animation.fromTo
-                { duration = 300
-                , options = [ Animation.easeIn ]
-                }
-                [ P.y 0 ]
-                [ P.y -100 ]
-
-         else
-            Animation.fromTo
-                { duration = 300
-                , options = [ Animation.easeIn ]
-                }
-                [ P.y -100 ]
-                [ P.y 0 ]
-        )
-        [ width fill
-        , height shrink
-        , Font.family [ Font.sansSerif ]
-        , Font.size 15
-        , Region.navigation
-        , shadow { offset = ( 0, 0 ), size = 0.15, blur = 5, color = black }
-        ]
-        [ column [ width (fill |> maximum maxWidth), centerX ]
-            [ row [ width fill, spaceEvenly ]
-                (List.concat
-                    [ [ logo, spacer ]
-                    , List.map navbarBtn (List.indexedMap Tuple.pair animationTracker)
-                    ]
-                )
-            ]
         ]
 
 
@@ -1437,28 +935,11 @@ blur =
     row [ width fill, height fill, Background.color (rgba 1 1 1 0.1) ] []
 
 
-onEnter : msg -> Element.Attribute msg
-onEnter msg =
-    htmlAttribute
-        (Html.Events.on "keyup"
-            (Decode.field "key" Decode.string
-                |> Decode.andThen
-                    (\key ->
-                        if key == "Enter" then
-                            Decode.succeed msg
-
-                        else
-                            Decode.fail "Not the enter key"
-                    )
-            )
-        )
-
-
 footer : List CertificationItem -> Address -> List NavItem -> List SocialMediaItem -> Int -> Element Msg
 footer certifications address navbtns socials year =
     let
         footerNavBtn item =
-            el [ mouseOver [ Font.color gciBlue ], pointer, padding 10, EE.onClick item.message ] (text item.name)
+            el [ mouseOver [ Font.color gciBlue ], pointer, padding 10, Events.onClick item.message ] (text item.name)
 
         footerSocailBtn item =
             el
@@ -1568,9 +1049,9 @@ cleanRoom animateSelf simpleBtns =
                         ]
                         (text item.name)
                     )
-                , EE.onMouseEnter (SimpleBtnHover 0)
-                , EE.onMouseLeave (SimpleBtnUnHover 0)
-                , EE.onClick item.message
+                , Events.onMouseEnter (SimpleBtnHover 0)
+                , Events.onMouseLeave (SimpleBtnUnHover 0)
+                , Events.onClick item.message
                 , pointer
                 , htmlAttribute <| class "gciBtn"
                 ]
@@ -1655,11 +1136,11 @@ boxes w animateSelf content =
                             [ text item.name ]
                         ]
                     )
-                , EE.onMouseEnter (BoxHover id)
-                , EE.onMouseLeave (BoxUnHover id)
+                , Events.onMouseEnter (BoxHover id)
+                , Events.onMouseLeave (BoxUnHover id)
                 ]
                 [ paragraph
-                    [ Font.size 20
+                    [ Font.size 25
                     , Font.alignLeft
                     , Font.color white
                     , alignBottom
@@ -1698,8 +1179,8 @@ boxes w animateSelf content =
                         ]
                         (text "What We Do")
                     )
-                , EE.onMouseEnter (SimpleBtnHover 0)
-                , EE.onMouseLeave (SimpleBtnUnHover 0)
+                , Events.onMouseEnter (SimpleBtnHover 0)
+                , Events.onMouseLeave (SimpleBtnUnHover 0)
                 , htmlAttribute <| class "gciBtn"
                 ]
                 (text "What We Do")
