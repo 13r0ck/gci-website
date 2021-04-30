@@ -215,7 +215,7 @@ init =
             Address
                 "4815 List Drive, Suite 109"
                 "Colorado Springs, CO 80919"
-                "+1 ( 719 ) 573 - 6777"
+                "+1 (719) 573 - 6777"
                 "tel:+17195736777"
                 "support@gci-global.com"
                 "mailto:support@gci-global.com"
@@ -231,8 +231,8 @@ init =
             [ OnScreenItem "earthVideo" True
             ]
       , navHoverTracker =
-            [ NavItem "WHAT WE DO" "#" False OpenContactUs
-            , NavItem "WHO WE ARE" "#" False OpenContactUs
+            [ NavItem "WHO WE ARE" "#" False OpenContactUs
+            , NavItem "WHAT WE DO" "#" False OpenContactUs
             , NavItem "NEWSROOM" "#" False OpenContactUs
             , NavItem "CONTACT US" "#" False OpenContactUs
             ]
@@ -746,47 +746,47 @@ setPhoneCursor oldPhone newPhone =
                 setPhoneInputCursor
                     (case i of
                         0 ->
-                            5
+                            4
 
                         1 ->
-                            6
+                            5
 
                         2 ->
-                            7
+                            6
 
                         3 ->
-                            12
+                            10
 
                         4 ->
-                            13
+                            11
 
                         5 ->
-                            14
+                            12
 
                         n ->
-                            n + 12
+                            n + 10
                     )
 
             else
                 setPhoneInputCursor
                     (case i of
                         0 ->
-                            6
+                            5
 
                         1 ->
-                            7
+                            6
 
                         2 ->
-                            12
+                            10
 
                         3 ->
-                            13
+                            11
 
                         4 ->
-                            14
+                            12
 
                         n ->
-                            n + 13
+                            n + 11
                     )
 
         Nothing ->
@@ -801,25 +801,25 @@ prettyPhoneNumber number =
     in
     case String.length clean of
         0 ->
-            "+1 ( "
+            "+1 ("
 
         1 ->
-            "+1 ( " ++ clean
+            "+1 (" ++ clean
 
         2 ->
-            "+1 ( " ++ clean
+            "+1 (" ++ clean
 
         3 ->
-            "+1 ( " ++ clean ++ " )  "
+            "+1 (" ++ clean ++ ")  "
 
         4 ->
-            "+1 ( " ++ String.left 3 clean ++ " )  " ++ String.right 1 clean
+            "+1 (" ++ String.left 3 clean ++ ")  " ++ String.right 1 clean
 
         5 ->
-            "+1 ( " ++ String.left 3 clean ++ " )  " ++ String.right 2 clean
+            "+1 (" ++ String.left 3 clean ++ ")  " ++ String.right 2 clean
 
         _ ->
-            "+1 ( " ++ String.left 3 clean ++ " )  " ++ String.slice 3 6 clean ++ " - " ++ String.slice 6 10 clean
+            "+1 (" ++ String.left 3 clean ++ ")  " ++ String.slice 3 6 clean ++ " - " ++ String.slice 6 10 clean
 
 
 updateBoxes : Direction -> BoxesItem -> BoxesItem
@@ -1057,9 +1057,9 @@ contactUs state address =
                             [ width fill, height (px 80), Font.light, htmlAttribute <| class "backgroundGrow" ]
                             [ row [ width fill, alignTop, padding 20 ]
                                 [ el [ Font.size 35, centerX, centerY ] (text "Sent!")
-                                , el [ Font.size 45, centerX, centerY, padding 10 ] (text "✈️")
+                                , image [ width (px 150), centerX, centerY, padding 10 ] { src = "/img/f16-sticker.png", description = "F-16 sticker" }
                                 ]
-                            , el [ Font.size 25, centerX, padding 25 ] (paragraph [ Font.center ] [ text "We will reach back out to ", html <| br [] [], text (Maybe.withDefault "you" state.email ++ " soon!") ])
+                            , el [ Font.size 25, centerX ] (paragraph [ Font.center ] [ text "We will reach back out to ", html <| br [] [], text (Maybe.withDefault "you" state.email ++ " soon!") ])
                             ]
 
                     _ ->
@@ -1509,7 +1509,7 @@ footer certifications address navbtns socials year =
                 [ el [] (text ("©" ++ String.fromInt year ++ " Global Circuit Innovations, Inc."))
                 , el [ mouseOver [ Font.color gciBlue ], pointer ] (text "Accesability")
                 , el [ mouseOver [ Font.color gciBlue ], pointer ] (text "Sitemap")
-                , el [ mouseOver [ Font.color gciBlue ], pointer ] (text "Terms of Use")
+                , el [ mouseOver [ Font.color gciBlue ], pointer ] (text "Terms and Conditions")
                 , el [ mouseOver [ Font.color gciBlue ], pointer ] (text "Privacy")
                 , download [ mouseOver [ Font.color gciBlue ], pointer ]
                     { url = "/download/press.zip"
@@ -1744,7 +1744,7 @@ grayQuote w animateSelf =
                     w
                 )
             )
-        , height (px 500)
+        , height (px 400)
         , centerX
         , Background.gradient { angle = degrees 180, steps = [ white, rgb255 214 218 219 ] }
         , htmlAttribute <| id "grayQuote"
