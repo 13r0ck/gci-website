@@ -1,4 +1,4 @@
-module Pages.Whatwedo exposing (Model, Msg, page)
+module Pages.Whoweare exposing (Model, Msg, page)
 
 import Element exposing (..)
 import Gen.Params.Whatwedo exposing (Params)
