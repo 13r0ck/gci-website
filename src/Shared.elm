@@ -19,7 +19,9 @@ import Element.Events as Events
 import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region
+import Html exposing (a, br, video)
 import Html.Attributes exposing (alt, attribute, autoplay, class, id, loop, src)
+import Html.Events
 import Json.Decode as Json
 import Palette exposing (black, gciBlue, gciBlueLight, maxWidth, warning, white)
 import Ports exposing (recvScroll)
@@ -29,11 +31,14 @@ import Simple.Animation.Animated as Animated
 import Simple.Animation.Property as P
 import Storage as Storage
     exposing
-        ( BtnOptions(..)
+        ( Address
+        , BtnOptions(..)
+        , ContactDialogState
         , NavBarDisplay(..)
         , NavItem
         , Storage
         , changeUrl
+        , contactUsNext
         , navBtnHover
         , navBtnUnHover
         , setContactUs
@@ -248,3 +253,307 @@ navbar animationTracker display msgCommand =
                 )
             ]
         ]
+
+
+
+--contactUs : ContactDialogState -> Address -> Element Msg
+
+
+contactUs state address msgCommand =
+    let
+        break =
+            html <| br [] []
+
+        contactDialog =
+            column [ width fill, height fill ]
+                [ case state.currentPage of
+                    0 ->
+                        column
+                            [ width fill, height (px 250), Font.light, spacing 25, htmlAttribute <| class "backgroundGrow" ]
+                            [ row [ width fill, alignTop, padding 20 ]
+                                [ el [ Font.size 35, centerX ] (text "Nice to meet you! ")
+                                , el [ Font.size 45, centerX ] (text "👋")
+                                ]
+                            , if state.nameError then
+                                el [ Font.size 25, centerX, Font.color warning ] (text "Please tell us who you are.")
+
+                              else
+                                el [ Font.size 25, centerX ] (text "Can we get a name?")
+                            , Input.text
+                                [ rounded 100
+                                , width (px 400)
+                                , centerX
+                                , centerY
+                                , onEnter (msgCommand Storage.contactUsNext)
+                                , Border.color
+                                    (if state.nameError then
+                                        warning
+
+                                     else
+                                        gciBlue
+                                    )
+                                , Border.width 2
+                                , Font.center
+                                ]
+                                { onChange = (msgCommand Storage.contactName)
+                                , text = Maybe.withDefault "" state.name
+                                , placeholder = Just (Input.placeholder [ Font.center ] (text "First & Last"))
+                                , label = Input.labelHidden "Name"
+                                }
+                            ]
+
+                    1 ->
+                        column
+                            [ width fill, height (px 300), padding 30, Font.light, spacing 25, htmlAttribute <| class "backgroundGrow" ]
+                            [ row [ width fill, alignTop ]
+                                [ paragraph [ Font.size 35, centerX, Font.center ]
+                                    [ case String.trim (Maybe.withDefault "" state.name) of
+                                        "" ->
+                                            text "Thanks for reaching out!"
+
+                                        n ->
+                                            case List.head (String.split " " n) of
+                                                Just first_name ->
+                                                    case String.uncons first_name of
+                                                        Just ( first, tail ) ->
+                                                            text ("Thanks for reaching out " ++ (String.toUpper (String.fromChar first) ++ tail) ++ "!")
+
+                                                        Nothing ->
+                                                            text "Thanks for reaching out!"
+
+                                                Nothing ->
+                                                    text "Thanks for reaching out!"
+                                    ]
+                                ]
+                            , if state.emailError then
+                                el [ Font.size 25, centerX, Font.color warning ] (text "That email seems wrong.")
+
+                              else if state.phoneError then
+                                el [ Font.size 25, centerX, Font.color warning ] (text "That phone number seems wrong")
+
+                              else
+                                el [ Font.size 25, centerX ] (text "How can we contact you?")
+                            , Input.email
+                                [ rounded 100
+                                , width (px 400)
+                                , centerX
+                                , Font.center
+                                , onEnter (msgCommand Storage.contactUsNext)
+                                , Border.color
+                                    (if state.emailError then
+                                        warning
+
+                                     else
+                                        gciBlue
+                                    )
+                                , Border.width 2
+                                ]
+                                { onChange = (msgCommand Storage.contactEmail)
+                                , text = Maybe.withDefault "" state.email
+                                , placeholder = Just (Input.placeholder [ Font.center ] (text "name@exmaple.com"))
+                                , label = Input.labelHidden "Email"
+                                }
+                            , Input.text
+                                [ rounded 100
+                                , width (px 400)
+                                , centerX
+                                , Font.center
+                                , onEnter (msgCommand Storage.contactUsNext)
+                                , htmlAttribute <| id "phoneInput"
+                                , Border.color
+                                    (if state.phoneError then
+                                        warning
+
+                                     else
+                                        gciBlue
+                                    )
+                                , Border.width 2
+                                ]
+                                { onChange = (msgCommand Storage.contactPhone)
+                                , text = Maybe.withDefault "" state.phone
+                                , placeholder = Just (Input.placeholder [ Font.center ] (text "(123) 456 - 7890"))
+                                , label = Input.labelHidden "Phone Number"
+                                }
+                            ]
+
+                    2 ->
+                        column
+                            [ width fill, height (px 530), padding 30, Font.light, spacing 25, htmlAttribute <| class "backgroundGrow" ]
+                            [ row [ width fill, alignTop ]
+                                [ if state.messageError then
+                                    el [ Font.size 35, centerX, Font.color warning ] (text "Use your words please!")
+
+                                  else
+                                    el [ Font.size 35, centerX ] (text "What can we do for you?")
+                                ]
+                            , Input.multiline
+                                [ rounded 20
+                                , width (px 500)
+                                , height (fill |> maximum 400)
+                                , centerX
+                                , Border.color
+                                    (if state.messageError then
+                                        warning
+
+                                     else
+                                        gciBlue
+                                    )
+                                , Border.width 2
+                                ]
+                                { onChange = (msgCommand Storage.contactMessage)
+                                , text = Maybe.withDefault "" state.message
+                                , placeholder =
+                                    Just
+                                        (Input.placeholder []
+                                            (paragraph []
+                                                [ text "Hopefully you need High Tech solutions."
+                                                , html <| br [] []
+                                                , text "Last time we did interior painting it didn't end well ..."
+                                                ]
+                                            )
+                                        )
+                                , spellcheck = True
+                                , label = Input.labelHidden "Message"
+                                }
+                            ]
+
+                    3 ->
+                        column
+                            [ width fill, height (px 100), Font.light, htmlAttribute <| class "backgroundGrow" ]
+                            [ row [ width fill, alignTop ]
+                                [ el [ Font.size 35, centerX, centerY ] (text "Sent!")
+                                , image [ width (px 150), centerX, centerY, padding 10 ] { src = "/img/f16-sticker.png", description = "F-16 sticker" }
+                                ]
+                            , el [ Font.size 25, centerX ] (paragraph [ Font.center ] [ text "We will reach back out to ", html <| br [] [], text (Maybe.withDefault "you" state.email ++ " soon!") ])
+                            ]
+
+                    _ ->
+                        row [] []
+                , row [ width fill, padding 15, alignBottom ]
+                    (if state.currentPage < 3 then
+                        [ Input.button
+                            [ alignBottom
+                            , alignLeft
+                            , paddingXY 30 10
+                            , rounded 100
+                            , Font.color gciBlue
+                            , Border.color gciBlue
+                            , Border.width 2
+                            , mouseOver [ Border.color gciBlueLight, Font.color gciBlueLight ]
+                            ]
+                            { onPress = Just (msgCommand Storage.contactUsBack), label = text "Back" }
+                        , Input.button
+                            [ alignBottom
+                            , alignRight
+                            , paddingXY 30 10
+                            , rounded 100
+                            , Background.color gciBlue
+                            , Font.bold
+                            , Font.color white
+                            , Border.color gciBlue
+                            , mouseOver [ Border.color gciBlueLight, Background.color gciBlueLight ]
+                            , Border.width 2
+                            ]
+                            { onPress = Just (msgCommand Storage.contactUsNext), label = text "Next" }
+                        ]
+
+                     else
+                        [ Input.button
+                            [ alignBottom
+                            , paddingXY 100 10
+                            , rounded 100
+                            , centerX
+                            , Background.color gciBlue
+                            , Font.bold
+                            , Font.color white
+                            , Border.color gciBlue
+                            , mouseOver [ Border.color gciBlueLight, Background.color gciBlueLight ]
+                            , Border.width 2
+                            ]
+                            { onPress = Just (msgCommand Storage.contactUsNext), label = text "Close" }
+                        ]
+                    )
+                , paragraph
+                    [ alignLeft
+                    , Font.center
+                    , centerY
+                    , centerX
+                    , padding 10
+                    , Border.widthEach { top = 1, bottom = 0, left = 0, right = 0 }
+                    ]
+                    [ text address.street
+                    , break
+                    , text address.city
+                    , break
+                    , link [ paddingXY 10 0 ] { url = address.phoneLink, label = text address.phone }
+                    , text "|"
+                    , link [ paddingXY 10 0 ] { url = address.emailLink, label = text address.email }
+                    ]
+                ]
+    in
+    el
+        [ width fill
+        , height fill
+        , htmlAttribute <| class "point_enter_down_long"
+        , behindContent
+            (el
+                [ width fill
+                , height fill
+                , Background.gradient
+                    { angle = degrees 165
+                    , steps = [ rgba255 87 83 78 0.7, rgba255 17 24 39 0.9 ]
+                    }
+                , Events.onClick (msgCommand (Storage.setContactUs False))
+                ]
+                none
+            )
+        ]
+        (column
+            [ Background.color white
+            , width (px 600)
+            , height (px 600)
+            , centerX
+            , centerY
+            , Border.shadow { blur = 20, color = rgb 0.25 0.25 0.3, offset = ( 0, 0 ), size = 1 }
+            , rounded 25
+            , clip
+            , inFront
+                (row [ padding 20, alignRight ]
+                    [ Input.button
+                        [ alignRight
+                        , Font.family [ Font.typeface "icons" ]
+                        , Font.size 50
+                        , pointer
+                        , Font.color white
+                        , mouseOver [ Font.color warning ]
+                        ]
+                        { onPress = Just (msgCommand (Storage.setContactUs False)), label = text "\u{E800}" }
+                    ]
+                )
+            ]
+            [ image
+                [ width fill
+                , height (fillPortion 3)
+                , clip
+                ]
+                { src = "/img/building.png", description = "Picutre of GCI's building" }
+            , el [ width fill, height (fillPortion 5) ] contactDialog
+            ]
+        )
+
+
+onEnter : msg -> Element.Attribute msg
+onEnter msg =
+    htmlAttribute
+        (Html.Events.on "keyup"
+            (Json.field "key" Json.string
+                |> Json.andThen
+                    (\key ->
+                        if key == "Enter" then
+                            Json.succeed msg
+
+                        else
+                            Json.fail "Not the enter key"
+                    )
+            )
+        )
