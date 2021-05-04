@@ -6,6 +6,7 @@ module Shared exposing
     , ael
     , arow
     , contactUs
+    , footer
     , init
     , navbar
     , subscriptions
@@ -44,6 +45,8 @@ import Storage as Storage
         , navBtnUnHover
         , setContactUs
         )
+import Task
+import Time
 
 
 type alias Flags =
@@ -59,27 +62,63 @@ type alias Model =
 type alias Temp =
     { scrolledDistance : Int
     , navbarDisplay : NavBarDisplay
+    , address : Address
+    , socialMedia : List SocialMediaItem
+    , certifications : List CertificationItem
+    , currentYear : Int
+    }
+
+
+type alias CertificationItem =
+    { src : String
+    , description : String
+    }
+
+
+type alias SocialMediaItem =
+    { char : String
+    , hoverColor : Element.Color
+    , link : String
     }
 
 
 init : Request -> Flags -> ( Model, Cmd Msg )
 init _ flags =
-    let
-        _ =
-            Debug.log "cds" (Storage.fromJson flags).contactDialogState
-    in
     ( { storage =
             Storage.fromJson flags
                 |> (\f -> Storage Storage.init.navHoverTracker f.openContactUs f.contactDialogState)
-      , temp = { scrolledDistance = 0, navbarDisplay = Show }
+      , temp =
+            { scrolledDistance = 0
+            , navbarDisplay = Show
+            , address =
+                Address
+                    "4815 List Drive, Suite 109"
+                    "Colorado Springs, CO 80919"
+                    "+1 (719) 573 - 6777"
+                    "tel:+17195736777"
+                    "support@gci-global.com"
+                    "mailto:support@gci-global.com"
+            , socialMedia =
+                [ SocialMediaItem "\u{F09A}" (rgb255 59 89 152) "#"
+                , SocialMediaItem "\u{F099}" (rgb255 29 161 242) "#"
+                , SocialMediaItem "\u{F30C}" (rgb255 0 119 181) "#"
+                , SocialMediaItem "\u{F16A}" (rgb255 255 0 0) "#"
+                ]
+            , certifications =
+                [ CertificationItem "/img/platinum_certified-v2_white.svg" "AS9100:2016 - ISO 9001:2015 Certified"
+                , CertificationItem "/img/ANAB-certified_white.svg" "AS9100:2016 - ISO 9001:2015 Certified"
+                ]
+            , currentYear = 0
+            }
       }
-    , Cmd.none
+    , Task.perform GotYear currentYear
     )
 
 
 type Msg
     = StorageUpdated Storage
     | Scrolled Int
+    | GotYear Int
 
 
 update : Request -> Msg -> Model -> ( Model, Cmd Msg )
@@ -103,6 +142,9 @@ update _ msg model =
               }
             , Cmd.none
             )
+
+        GotYear year ->
+            ( { model | temp = model.temp |> (\t -> { t | currentYear = year }) }, Cmd.none )
 
         StorageUpdated storage ->
             ( { model | storage = storage }
@@ -148,6 +190,11 @@ acol =
 
 
 -- Helper Functions
+
+
+currentYear : Task.Task x Int
+currentYear =
+    Task.map2 Time.toYear Time.here Time.now
 
 
 navbar : List NavItem -> NavBarDisplay -> ((Storage -> Cmd msg) -> b) -> Element b
@@ -566,4 +613,104 @@ onEnter msg =
                             Json.fail "Not the enter key"
                     )
             )
+        )
+
+
+footer : List CertificationItem -> Address -> List NavItem -> List SocialMediaItem -> Int -> ((Storage -> Cmd msg) -> b) -> Element b
+footer certifications address navbtns socials year msgCommand =
+    let
+        footerNavBtn item =
+            el
+                [ mouseOver [ Font.color gciBlue ]
+                , pointer
+                , padding 10
+                , Events.onClick
+                    (msgCommand
+                        (case item.onClick of
+                            Url s ->
+                                changeUrl s
+
+                            SetContactUs b ->
+                                setContactUs
+                                    (if b then
+                                        "True"
+
+                                     else
+                                        "False"
+                                    )
+                        )
+                    )
+                ]
+                (text item.name)
+
+        footerSocailBtn item =
+            el
+                [ Font.family [ Font.typeface "icons" ]
+                , mouseOver [ Font.color item.hoverColor ]
+                , pointer
+                , padding 10
+                ]
+                (text item.char)
+
+        spacer =
+            el [ paddingXY 28 10 ] (text "|")
+
+        footerCertification item =
+            image [ width (fill |> maximum 400) ] { src = item.src, description = item.description }
+    in
+    el
+        [ width fill
+        , height fill
+        , Region.footer
+        , Background.color (rgb255 70 70 72)
+        , Border.color gciBlue
+        , Border.widthEach { top = 8, bottom = 0, left = 0, right = 0 }
+        ]
+        (column
+            [ Font.color white, centerX ]
+            [ row [ padding 20, spacing 40, centerX ]
+                (List.map footerCertification certifications)
+            , row
+                [ Font.bold, Font.size 15, padding 20, centerX ]
+                (List.map footerNavBtn navbtns ++ spacer :: List.map footerSocailBtn socials)
+            , el [ width fill, Border.widthEach { top = 1, bottom = 0, left = 0, right = 0 } ]
+                (paragraph [ centerX, width shrink, Font.size 18, padding 20 ]
+                    [ el [ padding 10 ] (text address.street)
+                    , el [ padding 10 ] (text address.city)
+                    , link [ padding 10 ] { label = text address.phone, url = address.phoneLink }
+                    , link [ padding 10 ] { label = text address.email, url = address.emailLink }
+                    ]
+                )
+            , row
+                [ spacing 10
+                , Font.size 12
+                , Border.widthEach { top = 1, bottom = 0, left = 0, right = 0 }
+                , paddingXY 200 20
+                , centerX
+                , alignBottom
+                ]
+                [ el [] (text ("©" ++ String.fromInt year ++ " Global Circuit Innovations, Inc."))
+                , el [ mouseOver [ Font.color gciBlue ], pointer ] (text "Accesability")
+                , el [ mouseOver [ Font.color gciBlue ], pointer ] (text "Sitemap")
+                , el [ mouseOver [ Font.color gciBlue ], pointer ] (text "Terms and Conditions")
+                , el [ mouseOver [ Font.color gciBlue ], pointer ] (text "Privacy")
+                , download [ mouseOver [ Font.color gciBlue ], pointer ]
+                    { url = "/download/press.zip"
+                    , label = text "Press Materials"
+                    }
+                , spacer
+                , newTabLink []
+                    { url = "https://regaltechsupport.com"
+                    , label =
+                        row
+                            [ spacing 5
+                            , paddingXY 5 5
+                            , mouseOver [ Font.color (rgb 255 165 0) ]
+                            ]
+                            [ image [ width (px 20) ] { src = "/img/regaltechsupport.ico", description = "Regal Tech Support, LLC Logo" }
+                            , text "Website made by Regal Tech Support"
+                            ]
+                    }
+                ]
+            ]
         )

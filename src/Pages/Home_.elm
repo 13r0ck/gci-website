@@ -23,7 +23,7 @@ import PhoneNumber
 import PhoneNumber.Countries exposing (countryUS)
 import Ports exposing (controlVideo, disableScrolling, recvScroll, setPhoneInputCursor)
 import Request
-import Shared exposing (acol, ael, arow, contactUs, navbar)
+import Shared exposing (acol, ael, arow, contactUs, footer, navbar)
 import Simple.Animation as Animation exposing (Animation)
 import Simple.Animation.Animated as Animated
 import Simple.Animation.Property as P
@@ -53,35 +53,16 @@ type alias Model =
     , hideNavbar : Bool
     , userVisible : Bool
     , showContactUs : Bool
-    , contactDialogState : ContactDialogState
     , animationTracker : Dict String AnimationState
-    , navHoverTracker : List NavItem
     , onScreenTracker : List OnScreenItem
     , simpleBtnHoverTracker : List SimpleBtn
-    , socialMedia : List SocialMediaItem
-    , certifications : List CertificationItem
     , testimonials : List Testimonial
     , boxes : List BoxesItem
-    , currentYear : Int
-    , address : Address
-    }
-
-
-type alias CertificationItem =
-    { src : String
-    , description : String
     }
 
 
 
 -- expects social media images to be a font. I reccommend using fontello to build the font
-
-
-type alias SocialMediaItem =
-    { char : String
-    , hoverColor : Element.Color
-    , link : String
-    }
 
 
 type alias Testimonial =
@@ -166,30 +147,10 @@ init =
       , hideNavbar = False
       , userVisible = True
       , showContactUs = False
-      , contactDialogState =
-            ContactDialogState
-                Nothing
-                False
-                Nothing
-                False
-                Nothing
-                False
-                Nothing
-                False
-                0
-      , currentYear = 0
-      , address =
-            Address
-                "4815 List Drive, Suite 109"
-                "Colorado Springs, CO 80919"
-                "+1 (719) 573 - 6777"
-                "tel:+17195736777"
-                "support@gci-global.com"
-                "mailto:support@gci-global.com"
       , animationTracker =
             Dict.fromList
                 [ ( "gciBar", AnimationState Middle False )
-                , ( "boxes", AnimationState (PercentOfViewport 40) False )
+                , ( "whatwedo", AnimationState (PercentOfViewport 40) False )
                 , ( "grayQuote", AnimationState (PercentOfViewport 100) False )
                 , ( "testimonials", AnimationState Middle False )
                 , ( "cleanRoom", AnimationState (PercentOfViewport 40) False )
@@ -197,24 +158,8 @@ init =
       , onScreenTracker =
             [ OnScreenItem "earthVideo" True
             ]
-      , navHoverTracker =
-            [ NavItem "WHO WE ARE" "#" False OpenContactUs
-            , NavItem "WHAT WE DO" "#" False OpenContactUs
-            , NavItem "NEWSROOM" "#" False OpenContactUs
-            , NavItem "CONTACT US" "#" False OpenContactUs
-            ]
       , simpleBtnHoverTracker =
             [ SimpleBtn 0 "Contact Us" "#" False OpenContactUs
-            ]
-      , socialMedia =
-            [ SocialMediaItem "\u{F09A}" (rgb255 59 89 152) "#"
-            , SocialMediaItem "\u{F099}" (rgb255 29 161 242) "#"
-            , SocialMediaItem "\u{F30C}" (rgb255 0 119 181) "#"
-            , SocialMediaItem "\u{F16A}" (rgb255 255 0 0) "#"
-            ]
-      , certifications =
-            [ CertificationItem "/img/platinum_certified-v2_white.svg" "AS9100:2016 - ISO 9001:2015 Certified"
-            , CertificationItem "/img/ANAB-certified_white.svg" "AS9100:2016 - ISO 9001:2015 Certified"
             ]
       , testimonials =
             [ Testimonial "Sikorsky Aircraft Corperation" "/img/sky.jpg" "High Tech." "" ""
@@ -227,7 +172,7 @@ init =
             , BoxesItem "Oil and Gas High Temperature Electronics" "#" "img/oil1.png" "/img/oil2.png" False "point_idle"
             ]
       }
-    , Cmd.batch [ Task.perform GotViewport Browser.Dom.getViewport, Task.perform GotYear currentYear ]
+    , Task.perform GotViewport Browser.Dom.getViewport
     )
 
 
@@ -242,24 +187,15 @@ type Msg
     | GotMouse Direction
     | GotElement String (Result Browser.Dom.Error Browser.Dom.Element)
     | GotOnScreenItem String (Result Browser.Dom.Error Browser.Dom.Element)
-    | GotYear Int
     | NavBar (Storage -> Cmd Msg)
+    | Footer (Storage -> Cmd Msg)
     | ContactUs (String -> Storage -> Cmd Msg) String
-      --| NavHover Int
-      --| NavUnHover Int
+    | OpenContactUs
     | BoxHover Int
     | BoxUnHover Int
     | SimpleBtnHover Int
     | SimpleBtnUnHover Int
     | VisibilityChanged Visibility
-    | OpenContactUs
-    | CloseContactUs
-    | ContactDialogName String
-    | ContactDialogEmail String
-    | ContactDialogPhone String
-    | ContactDialogMessage String
-    | ContactDialogBack
-    | ContactDialogNext
 
 
 update : Storage -> Msg -> Model -> ( Model, Cmd Msg )
@@ -311,9 +247,6 @@ update storage msg model =
                 Err _ ->
                     ( model, Cmd.none )
 
-        GotYear year ->
-            ( { model | currentYear = year }, Cmd.none )
-
         VisibilityChanged visibility ->
             if visibility == Visible then
                 ( { model | userVisible = True }, controlVideo True )
@@ -326,8 +259,14 @@ update storage msg model =
         NavBar cmd ->
             ( model, cmd storage )
 
+        Footer cmd ->
+            ( model, cmd storage )
+
         ContactUs cmd str ->
             ( model, cmd str storage )
+
+        OpenContactUs ->
+            ( model, Storage.setContactUs "True" storage )
 
         BoxHover id ->
             ( { model | boxes = List.indexedMap (setHovered id) model.boxes, getMouse = True }, Cmd.none )
@@ -343,130 +282,6 @@ update storage msg model =
 
         GotMouse direction ->
             ( { model | getMouse = False, boxes = List.map (updateBoxes direction) model.boxes }, Cmd.none )
-
-        OpenContactUs ->
-            ( { model | showContactUs = True }, disableScrolling True )
-
-        CloseContactUs ->
-            ( { model | showContactUs = False, navHoverTracker = List.map (\b -> { b | hovered = False }) model.navHoverTracker }, disableScrolling False )
-
-        ContactDialogName newName ->
-            if model.contactDialogState.nameError then
-                ( { model | contactDialogState = model.contactDialogState |> (\s -> { s | name = Just newName, nameError = newName == "" }) }, Cmd.none )
-
-            else
-                ( { model | contactDialogState = model.contactDialogState |> (\s -> { s | name = Just newName }) }, Cmd.none )
-
-        ContactDialogEmail newEmail ->
-            if model.contactDialogState.emailError then
-                ( { model | contactDialogState = model.contactDialogState |> (\s -> { s | email = Just (String.trim newEmail), emailError = not (Email.isValid newEmail) }) }, Cmd.none )
-
-            else
-                ( { model | contactDialogState = model.contactDialogState |> (\s -> { s | email = Just (String.trim newEmail) }) }, Cmd.none )
-
-        ContactDialogPhone newPhone ->
-            if model.contactDialogState.phoneError then
-                ( { model
-                    | contactDialogState =
-                        model.contactDialogState
-                            |> (\s ->
-                                    { s
-                                        | phone =
-                                            Just
-                                                (if newPhone == "+1 ( " then
-                                                    ""
-
-                                                 else if String.length newPhone < String.length (Maybe.withDefault newPhone s.phone) then
-                                                    newPhone
-
-                                                 else
-                                                    prettyPhoneNumber newPhone
-                                                )
-                                        , phoneError = not (validUSNumber (String.right 10 (String.filter isDigit (prettyPhoneNumber newPhone))))
-                                    }
-                               )
-                  }
-                , case model.contactDialogState.phone of
-                    Just p ->
-                        setPhoneCursor p newPhone
-
-                    Nothing ->
-                        Cmd.none
-                )
-
-            else
-                ( { model
-                    | contactDialogState =
-                        model.contactDialogState
-                            |> (\s ->
-                                    { s
-                                        | phone =
-                                            Just
-                                                (if newPhone == "+1 ( " then
-                                                    ""
-
-                                                 else if String.length newPhone < String.length (Maybe.withDefault newPhone s.phone) then
-                                                    newPhone
-
-                                                 else
-                                                    prettyPhoneNumber newPhone
-                                                )
-                                    }
-                               )
-                  }
-                , case model.contactDialogState.phone of
-                    Just p ->
-                        setPhoneCursor p newPhone
-
-                    Nothing ->
-                        Cmd.none
-                )
-
-        ContactDialogMessage newMessage ->
-            if model.contactDialogState.messageError then
-                ( { model | contactDialogState = model.contactDialogState |> (\s -> { s | message = Just newMessage, messageError = newMessage == "" }) }, Cmd.none )
-
-            else
-                ( { model | contactDialogState = model.contactDialogState |> (\s -> { s | message = Just newMessage }) }, Cmd.none )
-
-        ContactDialogNext ->
-            case model.contactDialogState.currentPage of
-                0 ->
-                    if not (String.trim (Maybe.withDefault "" model.contactDialogState.name) == "") then
-                        ( { model | contactDialogState = model.contactDialogState |> (\s -> { s | currentPage = s.currentPage + 1, nameError = False, name = Just (String.trim (Maybe.withDefault "" s.name)) }) }, Cmd.none )
-
-                    else
-                        ( { model | contactDialogState = model.contactDialogState |> (\s -> { s | nameError = True, name = Just (String.trim (Maybe.withDefault "" s.name)) }) }, Cmd.none )
-
-                1 ->
-                    if Email.isValid (Maybe.withDefault "" model.contactDialogState.email) && validUSNumber (String.right 10 (String.filter isDigit (Maybe.withDefault "" model.contactDialogState.phone))) then
-                        ( { model | contactDialogState = model.contactDialogState |> (\s -> { s | currentPage = s.currentPage + 1, phoneError = False, emailError = False }) }, Cmd.none )
-
-                    else if not (Email.isValid (Maybe.withDefault "" model.contactDialogState.email)) then
-                        ( { model | contactDialogState = model.contactDialogState |> (\s -> { s | emailError = True, phoneError = False }) }, Cmd.none )
-
-                    else if not (validUSNumber (String.right 10 (String.filter isDigit (Maybe.withDefault "" model.contactDialogState.phone)))) then
-                        ( { model | contactDialogState = model.contactDialogState |> (\s -> { s | phoneError = True }) }, Cmd.none )
-
-                    else
-                        ( { model | contactDialogState = model.contactDialogState |> (\s -> { s | currentPage = s.currentPage + 1, phoneError = False, emailError = False }) }, Cmd.none )
-
-                2 ->
-                    if Maybe.withDefault "" model.contactDialogState.message == "" then
-                        ( { model | contactDialogState = model.contactDialogState |> (\s -> { s | messageError = True }) }, Cmd.none )
-
-                    else
-                        ( { model | contactDialogState = model.contactDialogState |> (\s -> { s | currentPage = s.currentPage + 1, messageError = False }) }, Cmd.none )
-
-                _ ->
-                    ( { model | contactDialogState = model.contactDialogState |> (\s -> { s | currentPage = s.currentPage + 1 }) }, Cmd.none )
-
-        ContactDialogBack ->
-            if model.contactDialogState.currentPage == 0 then
-                ( { model | showContactUs = False, navHoverTracker = List.map (\b -> { b | hovered = False }) model.navHoverTracker }, disableScrolling False )
-
-            else
-                ( { model | contactDialogState = model.contactDialogState |> (\s -> { s | currentPage = s.currentPage - 1 }) }, Cmd.none )
 
 
 
@@ -536,7 +351,7 @@ view shared model =
         , inFront (point_down (shouldAnimate "testimonials" model))
         , inFront
             (if shared.storage.openContactUs then
-                contactUs shared.storage.contactDialogState model.address ContactUs
+                contactUs shared.storage.contactDialogState shared.temp.address ContactUs
 
              else
                 none
@@ -549,35 +364,16 @@ view shared model =
                 , innovations (shouldAnimate "testimonials" model)
                 , testimonials model.testimonials (shouldAnimate "testimonials" model)
                 , grayQuote current_width (shouldAnimate "grayQuote" model)
-                , boxes current_width (shouldAnimate "boxes" model) model.boxes
+                , boxes current_width (shouldAnimate "whatwedo" model) model.boxes
                 , cleanRoom (shouldAnimate "cleanRoom" model) model.simpleBtnHoverTracker
                 ]
-            , footer model.certifications model.address model.navHoverTracker model.socialMedia model.currentYear
+            , footer shared.temp.certifications shared.temp.address shared.storage.navHoverTracker shared.temp.socialMedia shared.temp.currentYear Footer
             ]
     }
 
 
 
 -- Helper Functions
-
-
-currentYear : Task.Task x Int
-currentYear =
-    Task.map2 Time.toYear Time.here Time.now
-
-
-validUSNumber : String -> Bool
-validUSNumber number =
-    if number == "" then
-        True
-
-    else
-        PhoneNumber.valid
-            { defaultCountry = countryUS
-            , otherCountries = []
-            , types = PhoneNumber.anyType
-            }
-            number
 
 
 updateElement : String -> Browser.Dom.Element -> ( String, AnimationState ) -> ( String, AnimationState )
@@ -983,85 +779,6 @@ onEnter msg =
         )
 
 
-footer : List CertificationItem -> Address -> List NavItem -> List SocialMediaItem -> Int -> Element Msg
-footer certifications address navbtns socials year =
-    let
-        footerNavBtn item =
-            el [ mouseOver [ Font.color gciBlue ], pointer, padding 10, EE.onClick item.message ] (text item.name)
-
-        footerSocailBtn item =
-            el
-                [ Font.family [ Font.typeface "icons" ]
-                , mouseOver [ Font.color item.hoverColor ]
-                , pointer
-                , padding 10
-                ]
-                (text item.char)
-
-        spacer =
-            el [ paddingXY 28 10 ] (text "|")
-
-        footerCertification item =
-            image [ width (fill |> maximum 400) ] { src = item.src, description = item.description }
-    in
-    el
-        [ width fill
-        , height fill
-        , Region.footer
-        , Background.color (rgb255 70 70 72)
-        , Border.color gciBlue
-        , Border.widthEach { top = 8, bottom = 0, left = 0, right = 0 }
-        ]
-        (column
-            [ Font.color white, centerX ]
-            [ row [ padding 20, spacing 40, centerX ]
-                (List.map footerCertification certifications)
-            , row
-                [ Font.bold, Font.size 15, padding 20, centerX ]
-                (List.map footerNavBtn navbtns ++ spacer :: List.map footerSocailBtn socials)
-            , el [ width fill, Border.widthEach { top = 1, bottom = 0, left = 0, right = 0 } ]
-                (paragraph [ centerX, width shrink, Font.size 18, padding 20 ]
-                    [ el [ padding 10 ] (text address.street)
-                    , el [ padding 10 ] (text address.city)
-                    , link [ padding 10 ] { label = text address.phone, url = address.phoneLink }
-                    , link [ padding 10 ] { label = text address.email, url = address.emailLink }
-                    ]
-                )
-            , row
-                [ spacing 10
-                , Font.size 12
-                , Border.widthEach { top = 1, bottom = 0, left = 0, right = 0 }
-                , paddingXY 200 20
-                , centerX
-                , alignBottom
-                ]
-                [ el [] (text ("©" ++ String.fromInt year ++ " Global Circuit Innovations, Inc."))
-                , el [ mouseOver [ Font.color gciBlue ], pointer ] (text "Accesability")
-                , el [ mouseOver [ Font.color gciBlue ], pointer ] (text "Sitemap")
-                , el [ mouseOver [ Font.color gciBlue ], pointer ] (text "Terms and Conditions")
-                , el [ mouseOver [ Font.color gciBlue ], pointer ] (text "Privacy")
-                , download [ mouseOver [ Font.color gciBlue ], pointer ]
-                    { url = "/download/press.zip"
-                    , label = text "Press Materials"
-                    }
-                , spacer
-                , newTabLink []
-                    { url = "https://regaltechsupport.com"
-                    , label =
-                        row
-                            [ spacing 5
-                            , paddingXY 5 5
-                            , mouseOver [ Font.color (rgb 255 165 0) ]
-                            ]
-                            [ image [ width (px 20) ] { src = "/img/regaltechsupport.ico", description = "Regal Tech Support, LLC Logo" }
-                            , text "Website made by Regal Tech Support"
-                            ]
-                    }
-                ]
-            ]
-        )
-
-
 cleanRoom : Bool -> List SimpleBtn -> Element Msg
 cleanRoom animateSelf simpleBtns =
     let
@@ -1235,7 +952,7 @@ boxes w animateSelf content =
     in
     column
         [ centerX
-        , htmlAttribute <| id "boxes"
+        , htmlAttribute <| id "whatwedo"
         , transparent (not animateSelf)
         ]
         [ ael
