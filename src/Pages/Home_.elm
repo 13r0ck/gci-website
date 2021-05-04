@@ -23,11 +23,11 @@ import PhoneNumber
 import PhoneNumber.Countries exposing (countryUS)
 import Ports exposing (controlVideo, disableScrolling, recvScroll, setPhoneInputCursor)
 import Request
-import Shared exposing (acol, ael, arow, navbar)
+import Shared exposing (acol, ael, arow, contactUs, navbar)
 import Simple.Animation as Animation exposing (Animation)
 import Simple.Animation.Animated as Animated
 import Simple.Animation.Property as P
-import Storage exposing (NavBarDisplay(..), Storage)
+import Storage exposing (Address, ContactDialogState, NavBarDisplay(..), Storage)
 import Task
 import Time exposing (..)
 import View exposing (View)
@@ -169,16 +169,12 @@ init =
       , contactDialogState =
             ContactDialogState
                 Nothing
-                "Please tell us who you are."
                 False
                 Nothing
-                "That email seems wrong."
                 False
                 Nothing
-                "That phone number seems wrong"
                 False
                 Nothing
-                "Use your words please!"
                 False
                 0
       , currentYear = 0
@@ -248,6 +244,7 @@ type Msg
     | GotOnScreenItem String (Result Browser.Dom.Error Browser.Dom.Element)
     | GotYear Int
     | NavBar (Storage -> Cmd Msg)
+    | ContactUs (String -> Storage -> Cmd Msg) String
       --| NavHover Int
       --| NavUnHover Int
     | BoxHover Int
@@ -328,6 +325,9 @@ update storage msg model =
         -- Pause
         NavBar cmd ->
             ( model, cmd storage )
+
+        ContactUs cmd str ->
+            ( model, cmd str storage )
 
         BoxHover id ->
             ( { model | boxes = List.indexedMap (setHovered id) model.boxes, getMouse = True }, Cmd.none )
@@ -536,7 +536,7 @@ view shared model =
         , inFront (point_down (shouldAnimate "testimonials" model))
         , inFront
             (if shared.storage.openContactUs then
-                contactUs model.contactDialogState model.address
+                contactUs shared.storage.contactDialogState model.address ContactUs
 
              else
                 none
@@ -843,107 +843,6 @@ point_down scrolled =
             []
             (image [ width (px 40), height (px 40), Font.color gciBlue ] { src = "/img/down_arrow.svg", description = "down arrow" })
         ]
-
-
-
-{-
-   navbarBtn : ( Int, NavItem ) -> Element Msg
-   navbarBtn ( id, item ) =
-       row
-           [ height (px 80)
-           , pointer
-           , paddingXY 80 0
-           , inFront
-               (row
-                   [ htmlAttribute <|
-                       class
-                           (if item.hovered then
-                               "wipe_point_active"
-
-                            else
-                               "wipe_point"
-                           )
-                   , width fill
-                   , height fill
-                   , Background.color white
-                   ]
-                   [ el [ centerX, centerY, Font.color black ] (text item.name) ]
-               )
-           , behindContent
-               (row
-                   [ width fill
-                   , height fill
-                   , Background.color gciBlue
-                   , EE.onClick item.message
-                   , innerShadow { offset = ( 0, 0 ), size = 0.15, blur = 8, color = rgb255 13 25 48 }
-                   ]
-                   [ el [ centerX, centerY, Font.color white ] (text item.name) ]
-               )
-           , EE.onMouseEnter (NavHover id)
-           , EE.onMouseLeave (NavUnHover id)
-           ]
-           []
-
-
-   navbar : List NavItem -> Bool -> Element Msg
-   navbar animationTracker shouldShow =
-       let
-           spacer =
-               column
-                   [ width fill
-                   , height fill
-                   , Background.color (rgb 1 1 1)
-                   ]
-                   []
-
-           logo =
-               el
-                   [ height (px 80)
-                   , Background.color white
-                   ]
-                   (image
-                       [ height (px 50)
-                       , paddingXY 24 0
-                       , centerX
-                       , centerY
-                       ]
-                       { src = "/img/logo_sans_ring.svg", description = "Global Circuit Inovations" }
-                   )
-       in
-       arow
-           (if shouldShow then
-               Animation.fromTo
-                   { duration = 300
-                   , options = [ Animation.easeIn ]
-                   }
-                   [ P.y 0 ]
-                   [ P.y -100 ]
-
-            else
-               Animation.fromTo
-                   { duration = 300
-                   , options = [ Animation.easeIn ]
-                   }
-                   [ P.y -100 ]
-                   [ P.y 0 ]
-           )
-           [ width fill
-           , height shrink
-           , Font.family [ Font.sansSerif ]
-           , Font.size 15
-           , Region.navigation
-           , shadow { offset = ( 0, 0 ), size = 0.15, blur = 5, color = black }
-           ]
-           [ column [ width (fill |> maximum maxWidth), centerX ]
-               [ row [ width fill, spaceEvenly ]
-                   (List.concat
-                       [ [ logo, spacer ]
-                       , List.map navbarBtn (List.indexedMap Tuple.pair animationTracker)
-                       ]
-                   )
-               ]
-           ]
--}
 
 
 head : Int -> Int -> Element msg

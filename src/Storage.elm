@@ -91,6 +91,19 @@ type BtnOptions
 
 toJson : Storage -> Value
 toJson storage =
+    let
+        us =
+            storage.contactDialogState
+
+        nullable : Maybe String -> E.Value
+        nullable a =
+            case a of
+                Nothing ->
+                    E.null
+
+                Just str ->
+                    E.string str
+    in
     E.object
         [ ( "navbar"
           , E.list object
@@ -118,6 +131,19 @@ toJson storage =
                 )
           )
         , ( "openContactUs", E.bool storage.openContactUs )
+        , ( "contactDialogState"
+          , E.object
+                [ ( "name", nullable us.name )
+                , ( "nameError", E.bool us.nameError )
+                , ( "email", nullable us.email )
+                , ( "emailError", E.bool us.emailError )
+                , ( "phone", nullable us.phone )
+                , ( "phoneError", E.bool us.phoneError )
+                , ( "message", nullable us.message )
+                , ( "messageError", E.bool us.messageError )
+                , ( "currentPage", E.int us.currentPage )
+                ]
+          )
         ]
 
 
@@ -148,16 +174,18 @@ decoder =
             )
         )
         (Json.field "openContactUs" Json.bool)
-        (Json.succeed ContactDialogState
-            |> required "name" (Json.nullable Json.string)
-            |> required "nameError" Json.bool
-            |> required "email" (Json.nullable Json.string)
-            |> required "emailError" Json.bool
-            |> required "phone" (Json.nullable Json.string)
-            |> required "phoneError" Json.bool
-            |> required "message" (Json.nullable Json.string)
-            |> required "messageError" Json.bool
-            |> optional "currentPage" Json.int 0
+        (Json.field "contactDialogState" <|
+            (Json.succeed ContactDialogState
+                |> required "name" (Json.nullable Json.string)
+                |> required "nameError" Json.bool
+                |> required "email" (Json.nullable Json.string)
+                |> required "emailError" Json.bool
+                |> required "phone" (Json.nullable Json.string)
+                |> required "phoneError" Json.bool
+                |> required "message" (Json.nullable Json.string)
+                |> required "messageError" Json.bool
+                |> optional "currentPage" Json.int 0
+            )
         )
 
 
@@ -175,7 +203,7 @@ fromJson json =
 init : Storage
 init =
     Storage
-        [ NavItem "WHO WE ARE" "#" False (Url "/")
+        [ NavItem "WHO WE ARE" "#" False (Url "/whoweare")
         , NavItem "WHAT WE DO" "#" False (Url "/#boxes")
         , NavItem "NEWSROOM" "#" False (Url "/newsroom")
         , NavItem "CONTACT US" "#" False (SetContactUs True)
@@ -222,7 +250,14 @@ changeUrl url storage =
 
 setContactUs : String -> Storage -> Cmd msg
 setContactUs state storage =
-    { storage | openContactUs = (if state == "True" then True else False) }
+    { storage
+        | openContactUs =
+            if state == "True" then
+                True
+
+            else
+                False
+    }
         |> toJson
         |> save
 

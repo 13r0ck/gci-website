@@ -5,6 +5,7 @@ module Shared exposing
     , acol
     , ael
     , arow
+    , contactUs
     , init
     , navbar
     , subscriptions
@@ -63,7 +64,13 @@ type alias Temp =
 
 init : Request -> Flags -> ( Model, Cmd Msg )
 init _ flags =
-    ( { storage = Storage Storage.init.navHoverTracker (Storage.fromJson flags).openContactUs
+    let
+        _ =
+            Debug.log "cds" (Storage.fromJson flags).contactDialogState
+    in
+    ( { storage =
+            Storage.fromJson flags
+                |> (\f -> Storage Storage.init.navHoverTracker f.openContactUs f.contactDialogState)
       , temp = { scrolledDistance = 0, navbarDisplay = Show }
       }
     , Cmd.none
@@ -183,7 +190,13 @@ navbar animationTracker display msgCommand =
                                 changeUrl s
 
                             SetContactUs b ->
-                                setContactUs b
+                                setContactUs
+                                    (if b then
+                                        "True"
+
+                                     else
+                                        "False"
+                                    )
                         )
                     )
                 , Events.onMouseEnter (msgCommand (navBtnHover id))
@@ -255,10 +268,7 @@ navbar animationTracker display msgCommand =
         ]
 
 
-
---contactUs : ContactDialogState -> Address -> Element Msg
-
-
+contactUs : ContactDialogState -> Address -> ((String -> Storage -> Cmd msg) -> String -> b) -> Element b
 contactUs state address msgCommand =
     let
         break =
@@ -284,7 +294,7 @@ contactUs state address msgCommand =
                                 , width (px 400)
                                 , centerX
                                 , centerY
-                                , onEnter (msgCommand Storage.contactUsNext)
+                                , onEnter (msgCommand Storage.contactUsNext "")
                                 , Border.color
                                     (if state.nameError then
                                         warning
@@ -295,7 +305,7 @@ contactUs state address msgCommand =
                                 , Border.width 2
                                 , Font.center
                                 ]
-                                { onChange = (msgCommand Storage.contactName)
+                                { onChange = msgCommand Storage.contactName
                                 , text = Maybe.withDefault "" state.name
                                 , placeholder = Just (Input.placeholder [ Font.center ] (text "First & Last"))
                                 , label = Input.labelHidden "Name"
@@ -338,7 +348,7 @@ contactUs state address msgCommand =
                                 , width (px 400)
                                 , centerX
                                 , Font.center
-                                , onEnter (msgCommand Storage.contactUsNext)
+                                , onEnter (msgCommand Storage.contactUsNext "")
                                 , Border.color
                                     (if state.emailError then
                                         warning
@@ -348,7 +358,7 @@ contactUs state address msgCommand =
                                     )
                                 , Border.width 2
                                 ]
-                                { onChange = (msgCommand Storage.contactEmail)
+                                { onChange = msgCommand Storage.contactEmail
                                 , text = Maybe.withDefault "" state.email
                                 , placeholder = Just (Input.placeholder [ Font.center ] (text "name@exmaple.com"))
                                 , label = Input.labelHidden "Email"
@@ -358,7 +368,7 @@ contactUs state address msgCommand =
                                 , width (px 400)
                                 , centerX
                                 , Font.center
-                                , onEnter (msgCommand Storage.contactUsNext)
+                                , onEnter (msgCommand Storage.contactUsNext "")
                                 , htmlAttribute <| id "phoneInput"
                                 , Border.color
                                     (if state.phoneError then
@@ -369,7 +379,7 @@ contactUs state address msgCommand =
                                     )
                                 , Border.width 2
                                 ]
-                                { onChange = (msgCommand Storage.contactPhone)
+                                { onChange = msgCommand Storage.contactPhone
                                 , text = Maybe.withDefault "" state.phone
                                 , placeholder = Just (Input.placeholder [ Font.center ] (text "(123) 456 - 7890"))
                                 , label = Input.labelHidden "Phone Number"
@@ -400,7 +410,7 @@ contactUs state address msgCommand =
                                     )
                                 , Border.width 2
                                 ]
-                                { onChange = (msgCommand Storage.contactMessage)
+                                { onChange = msgCommand Storage.contactMessage
                                 , text = Maybe.withDefault "" state.message
                                 , placeholder =
                                     Just
@@ -441,7 +451,7 @@ contactUs state address msgCommand =
                             , Border.width 2
                             , mouseOver [ Border.color gciBlueLight, Font.color gciBlueLight ]
                             ]
-                            { onPress = Just (msgCommand Storage.contactUsBack), label = text "Back" }
+                            { onPress = Just (msgCommand Storage.contactUsBack ""), label = text "Back" }
                         , Input.button
                             [ alignBottom
                             , alignRight
@@ -454,7 +464,7 @@ contactUs state address msgCommand =
                             , mouseOver [ Border.color gciBlueLight, Background.color gciBlueLight ]
                             , Border.width 2
                             ]
-                            { onPress = Just (msgCommand Storage.contactUsNext), label = text "Next" }
+                            { onPress = Just (msgCommand Storage.contactUsNext ""), label = text "Next" }
                         ]
 
                      else
@@ -470,7 +480,7 @@ contactUs state address msgCommand =
                             , mouseOver [ Border.color gciBlueLight, Background.color gciBlueLight ]
                             , Border.width 2
                             ]
-                            { onPress = Just (msgCommand Storage.contactUsNext), label = text "Close" }
+                            { onPress = Just (msgCommand Storage.setContactUs "False"), label = text "Close" }
                         ]
                     )
                 , paragraph
@@ -503,7 +513,7 @@ contactUs state address msgCommand =
                     { angle = degrees 165
                     , steps = [ rgba255 87 83 78 0.7, rgba255 17 24 39 0.9 ]
                     }
-                , Events.onClick (msgCommand (Storage.setContactUs False))
+                , Events.onClick (msgCommand Storage.setContactUs "False")
                 ]
                 none
             )
@@ -527,7 +537,7 @@ contactUs state address msgCommand =
                         , Font.color white
                         , mouseOver [ Font.color warning ]
                         ]
-                        { onPress = Just (msgCommand (Storage.setContactUs False)), label = text "\u{E800}" }
+                        { onPress = Just (msgCommand Storage.setContactUs "False"), label = text "\u{E800}" }
                     ]
                 )
             ]
