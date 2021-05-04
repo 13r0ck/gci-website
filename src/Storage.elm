@@ -204,7 +204,7 @@ init : Storage
 init =
     Storage
         [ NavItem "WHO WE ARE" "#" False (Url "/whoweare")
-        , NavItem "WHAT WE DO" "#" False (Url "/#boxes")
+        , NavItem "WHAT WE DO" "#" False (Url "/#whatwedo")
         , NavItem "NEWSROOM" "#" False (Url "/newsroom")
         , NavItem "CONTACT US" "#" False (SetContactUs True)
         ]
