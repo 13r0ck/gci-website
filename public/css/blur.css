@@ -4,12 +4,12 @@
 
 .wipe_point {
   clip-path: polygon(-1% 0%, 101% 0%, 101% 100%, 50% 200%, -1% 100%);
-  transition: 0.2s ease;
+  transition: 0.3s ease;
 }
 
 .wipe_point_active {
   clip-path: polygon(-1% -170%, 101% -170%, 101% -70%, 50% 0%, -1% -70% );
-  transition:  0.2s ease;
+  transition:  0.3s ease;
 }
 
 /* Directional wipe for boxes */

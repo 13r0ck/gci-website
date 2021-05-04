@@ -18,30 +18,27 @@ import Html.Attributes exposing (alt, attribute, autoplay, class, id, loop, src)
 import Html.Events
 import Json.Decode as Decode
 import Page
+import Palette exposing (black, gciBlue, gciBlueLight, maxWidth, warning, white)
 import PhoneNumber
 import PhoneNumber.Countries exposing (countryUS)
+import Ports exposing (controlVideo, disableScrolling, recvScroll, setPhoneInputCursor)
 import Request
-import Shared
+import Shared exposing (acol, ael, arow, navbar)
 import Simple.Animation as Animation exposing (Animation)
 import Simple.Animation.Animated as Animated
 import Simple.Animation.Property as P
-import Storage exposing (controlVideo, disableScrolling, recvScroll, setPhoneInputCursor)
+import Storage exposing (NavBarDisplay(..), Storage)
 import Task
 import Time exposing (..)
 import View exposing (View)
-
-
-maxWidth : number
-maxWidth =
-    2000
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
     Page.element
         { init = init
-        , update = update
-        , view = view
+        , update = update shared.storage
+        , view = view shared
         , subscriptions = subscriptions
         }
 
@@ -199,7 +196,7 @@ init =
       , contactDialogState =
             ContactDialogState
                 Nothing
-                "Please give us your name."
+                "Please tell us who you are."
                 False
                 Nothing
                 "That email seems wrong."
@@ -277,8 +274,9 @@ type Msg
     | GotElement String (Result Browser.Dom.Error Browser.Dom.Element)
     | GotOnScreenItem String (Result Browser.Dom.Error Browser.Dom.Element)
     | GotYear Int
-    | NavHover Int
-    | NavUnHover Int
+    | NavBar (Storage -> Cmd Msg)
+      --| NavHover Int
+      --| NavUnHover Int
     | BoxHover Int
     | BoxUnHover Int
     | SimpleBtnHover Int
@@ -294,8 +292,8 @@ type Msg
     | ContactDialogNext
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+update : Storage -> Msg -> Model -> ( Model, Cmd Msg )
+update storage msg model =
     case msg of
         GotViewport viewport ->
             ( { model
@@ -355,11 +353,8 @@ update msg model =
                 ( { model | userVisible = False }, controlVideo False )
 
         -- Pause
-        NavHover id ->
-            ( { model | navHoverTracker = List.indexedMap (setHovered id) model.navHoverTracker }, Cmd.none )
-
-        NavUnHover id ->
-            ( { model | navHoverTracker = List.indexedMap (setUnHovered id) model.navHoverTracker }, Cmd.none )
+        NavBar cmd ->
+            ( model, cmd storage )
 
         BoxHover id ->
             ( { model | boxes = List.indexedMap (setHovered id) model.boxes, getMouse = True }, Cmd.none )
@@ -396,10 +391,6 @@ update msg model =
             else
                 ( { model | contactDialogState = model.contactDialogState |> (\s -> { s | email = Just (String.trim newEmail) }) }, Cmd.none )
 
-        {- TODO:
-           Set cursor position relative after char edit for cursor position to make sense if editing not last char
-
-        -}
         ContactDialogPhone newPhone ->
             if model.contactDialogState.phoneError then
                 ( { model
@@ -557,8 +548,8 @@ subscriptions model =
 -- VIEW
 
 
-view : Model -> View Msg
-view model =
+view : Shared.Model -> Model -> View Msg
+view shared model =
     let
         current_width =
             model.viewPort.viewport.width |> ceiling
@@ -568,10 +559,10 @@ view model =
     in
     { title = "GCI - Authorized Reverse Engineering IC Solutions for Obsolescence and High Temperature Environments"
     , attributes =
-        [ inFront (navbar model.navHoverTracker model.hideNavbar)
+        [ inFront (navbar shared.storage.navHoverTracker shared.temp.navbarDisplay NavBar)
         , inFront (point_down (shouldAnimate "testimonials" model))
         , inFront
-            (if model.showContactUs then
+            (if shared.storage.openContactUs then
                 contactUs model.contactDialogState model.address
 
              else
@@ -591,63 +582,6 @@ view model =
             , footer model.certifications model.address model.navHoverTracker model.socialMedia model.currentYear
             ]
     }
-
-
-
--- hook in for elm-simple-animation
-
-
-animatedUi : (List (Attribute msg) -> children -> Element msg) -> Animation -> List (Attribute msg) -> children -> Element msg
-animatedUi =
-    Animated.ui
-        { behindContent = Element.behindContent
-        , htmlAttribute = Element.htmlAttribute
-        , html = Element.html
-        }
-
-
-ael : Animation -> List (Element.Attribute msg) -> Element msg -> Element msg
-ael =
-    animatedUi Element.el
-
-
-arow : Animation -> List (Element.Attribute msg) -> List (Element msg) -> Element msg
-arow =
-    animatedUi Element.row
-
-
-acol : Animation -> List (Element.Attribute msg) -> List (Element msg) -> Element msg
-acol =
-    animatedUi Element.column
-
-
-
--- Colors
-
-
-white : Color
-white =
-    rgb 1 1 1
-
-
-warning : Color
-warning =
-    rgb255 204 51 51
-
-
-black : Color
-black =
-    rgb 0 0 0
-
-
-gciBlue : Color
-gciBlue =
-    rgb255 29 55 108
-
-
-gciBlueLight : Color
-gciBlueLight =
-    rgb255 59 85 138
 
 
 
@@ -1122,7 +1056,8 @@ contactUs state address =
                     , break
                     , text address.city
                     , break
-                    , link [ paddingXY 10 0, Border.widthEach { left = 0, top = 0, bottom = 0, right = 1 } ] { url = address.phoneLink, label = text address.phone }
+                    , link [ paddingXY 10 0 ] { url = address.phoneLink, label = text address.phone }
+                    , text "|"
                     , link [ paddingXY 10 0 ] { url = address.emailLink, label = text address.email }
                     ]
                 ]
@@ -1221,102 +1156,105 @@ point_down scrolled =
         ]
 
 
-navbarBtn : ( Int, NavItem ) -> Element Msg
-navbarBtn ( id, item ) =
-    row
-        [ height (px 80)
-        , pointer
-        , paddingXY 80 0
-        , inFront
-            (row
-                [ htmlAttribute <|
-                    class
-                        (if item.hovered then
-                            "wipe_point_active"
 
-                         else
-                            "wipe_point"
-                        )
-                , width fill
-                , height fill
-                , Background.color white
-                ]
-                [ el [ centerX, centerY, Font.color black ] (text item.name) ]
-            )
-        , behindContent
-            (row
-                [ width fill
-                , height fill
-                , Background.color gciBlue
-                , EE.onClick item.message
-                , innerShadow { offset = ( 0, 0 ), size = 0.15, blur = 8, color = rgb255 13 25 48 }
-                ]
-                [ el [ centerX, centerY, Font.color white ] (text item.name) ]
-            )
-        , EE.onMouseEnter (NavHover id)
-        , EE.onMouseLeave (NavUnHover id)
-        ]
-        []
+{-
+   navbarBtn : ( Int, NavItem ) -> Element Msg
+   navbarBtn ( id, item ) =
+       row
+           [ height (px 80)
+           , pointer
+           , paddingXY 80 0
+           , inFront
+               (row
+                   [ htmlAttribute <|
+                       class
+                           (if item.hovered then
+                               "wipe_point_active"
+
+                            else
+                               "wipe_point"
+                           )
+                   , width fill
+                   , height fill
+                   , Background.color white
+                   ]
+                   [ el [ centerX, centerY, Font.color black ] (text item.name) ]
+               )
+           , behindContent
+               (row
+                   [ width fill
+                   , height fill
+                   , Background.color gciBlue
+                   , EE.onClick item.message
+                   , innerShadow { offset = ( 0, 0 ), size = 0.15, blur = 8, color = rgb255 13 25 48 }
+                   ]
+                   [ el [ centerX, centerY, Font.color white ] (text item.name) ]
+               )
+           , EE.onMouseEnter (NavHover id)
+           , EE.onMouseLeave (NavUnHover id)
+           ]
+           []
 
 
-navbar : List NavItem -> Bool -> Element Msg
-navbar animationTracker shouldShow =
-    let
-        spacer =
-            column
-                [ width fill
-                , height fill
-                , Background.color (rgb 1 1 1)
-                ]
-                []
+   navbar : List NavItem -> Bool -> Element Msg
+   navbar animationTracker shouldShow =
+       let
+           spacer =
+               column
+                   [ width fill
+                   , height fill
+                   , Background.color (rgb 1 1 1)
+                   ]
+                   []
 
-        logo =
-            el
-                [ height (px 80)
-                , Background.color white
-                ]
-                (image
-                    [ height (px 50)
-                    , paddingXY 24 0
-                    , centerX
-                    , centerY
-                    ]
-                    { src = "/img/logo_sans_ring.svg", description = "Global Circuit Inovations" }
-                )
-    in
-    arow
-        (if shouldShow then
-            Animation.fromTo
-                { duration = 300
-                , options = [ Animation.easeIn ]
-                }
-                [ P.y 0 ]
-                [ P.y -100 ]
+           logo =
+               el
+                   [ height (px 80)
+                   , Background.color white
+                   ]
+                   (image
+                       [ height (px 50)
+                       , paddingXY 24 0
+                       , centerX
+                       , centerY
+                       ]
+                       { src = "/img/logo_sans_ring.svg", description = "Global Circuit Inovations" }
+                   )
+       in
+       arow
+           (if shouldShow then
+               Animation.fromTo
+                   { duration = 300
+                   , options = [ Animation.easeIn ]
+                   }
+                   [ P.y 0 ]
+                   [ P.y -100 ]
 
-         else
-            Animation.fromTo
-                { duration = 300
-                , options = [ Animation.easeIn ]
-                }
-                [ P.y -100 ]
-                [ P.y 0 ]
-        )
-        [ width fill
-        , height shrink
-        , Font.family [ Font.sansSerif ]
-        , Font.size 15
-        , Region.navigation
-        , shadow { offset = ( 0, 0 ), size = 0.15, blur = 5, color = black }
-        ]
-        [ column [ width (fill |> maximum maxWidth), centerX ]
-            [ row [ width fill, spaceEvenly ]
-                (List.concat
-                    [ [ logo, spacer ]
-                    , List.map navbarBtn (List.indexedMap Tuple.pair animationTracker)
-                    ]
-                )
-            ]
-        ]
+            else
+               Animation.fromTo
+                   { duration = 300
+                   , options = [ Animation.easeIn ]
+                   }
+                   [ P.y -100 ]
+                   [ P.y 0 ]
+           )
+           [ width fill
+           , height shrink
+           , Font.family [ Font.sansSerif ]
+           , Font.size 15
+           , Region.navigation
+           , shadow { offset = ( 0, 0 ), size = 0.15, blur = 5, color = black }
+           ]
+           [ column [ width (fill |> maximum maxWidth), centerX ]
+               [ row [ width fill, spaceEvenly ]
+                   (List.concat
+                       [ [ logo, spacer ]
+                       , List.map navbarBtn (List.indexedMap Tuple.pair animationTracker)
+                       ]
+                   )
+               ]
+           ]
+-}
 
 
 head : Int -> Int -> Element msg
