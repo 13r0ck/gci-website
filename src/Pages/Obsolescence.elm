@@ -3,9 +3,9 @@ module Pages.Obsolescence exposing (Model, Msg, page)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Region as Region
+import Gen.Params.Obsolescence exposing (Params)
 import Html.Attributes exposing (id)
 import Page
-import Gen.Params.Obsolescence exposing (Params)
 import Palette exposing (maxWidth)
 import Request
 import Shared exposing (contactUs, footer, navbar)
@@ -76,7 +76,7 @@ view : Shared.Model -> Model -> View Msg
 view shared model =
     { title = "GCI - Authorized Reverse Engineering IC Solutions for Obsolescence and High Temperature Environments"
     , attributes =
-        [ inFront (navbar shared.storage.navHoverTracker shared.temp.navbarDisplay NavBar)
+        [ inFront (navbar shared NavBar)
         , inFront
             (if shared.storage.openContactUs then
                 contactUs shared.storage.contactDialogState shared.temp.address ContactUs

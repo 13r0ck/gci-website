@@ -23,7 +23,7 @@ import PhoneNumber
 import PhoneNumber.Countries exposing (countryUS)
 import Ports exposing (controlVideo, recvScroll, setPhoneInputCursor)
 import Request
-import Shared exposing (acol, ael, arow, contactUs, footer, navbar)
+import Shared exposing (Temp, acol, ael, arow, contactUs, footer, navbar)
 import Simple.Animation as Animation exposing (Animation)
 import Simple.Animation.Animated as Animated
 import Simple.Animation.Property as P
@@ -36,7 +36,7 @@ import View exposing (View)
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
     Page.element
-        { init = init
+        { init = init shared.temp
         , update = update shared.storage
         , view = view shared
         , subscriptions = subscriptions
@@ -126,8 +126,8 @@ type Direction
     | Right
 
 
-init : ( Model, Cmd Msg )
-init =
+init : Temp -> ( Model, Cmd Msg )
+init temp =
     let
         emptyViewport =
             { scene =
@@ -137,8 +137,8 @@ init =
             , viewport =
                 { x = 0
                 , y = 0
-                , width = 0
-                , height = 0
+                , width = temp.width |> toFloat
+                , height = temp.height |> toFloat
                 }
             }
     in
@@ -347,7 +347,7 @@ view shared model =
     in
     { title = "GCI - Authorized Reverse Engineering IC Solutions for Obsolescence and High Temperature Environments"
     , attributes =
-        [ inFront (navbar shared.storage.navHoverTracker shared.temp.navbarDisplay NavBar)
+        [ inFront (navbar shared NavBar)
         , inFront (point_down (shouldAnimate "testimonials" model))
         , inFront
             (if shared.storage.openContactUs then
@@ -358,9 +358,9 @@ view shared model =
             )
         ]
     , element =
-        column [ width fill, Region.mainContent, htmlAttribute <| id "home" ]
+        column [ width fill, Region.mainContent, htmlAttribute <| id "home", clip ]
             [ column [ width (fill |> maximum maxWidth), centerX, spacing 25 ]
-                [ head current_width current_height
+                [ head shared.temp
                 , innovations (shouldAnimate "testimonials" model)
                 , testimonials model.testimonials (shouldAnimate "testimonials" model)
                 , grayQuote current_width (shouldAnimate "grayQuote" model)
@@ -641,23 +641,56 @@ point_down scrolled =
         ]
 
 
-head : Int -> Int -> Element msg
-head w h =
+head : Temp -> Element msg
+head temp =
     let
+        w =
+            temp.width
+
+        h =
+            temp.height
+
         glassLogo =
-            image [ width (px w), height videoHeight, centerX, centerY ] { src = "/img/glass.png", description = "GCI logo on glass" }
+            image
+                [ width
+                    (px
+                        (if temp.device.class == Phone then
+                            w * 2
+
+                         else
+                            w
+                        )
+                    )
+                , height (px videoHeight)
+                , centerX
+                , centerY
+                ]
+                { src = "/img/glass.png", description = "GCI logo on glass" }
 
         logo =
             el
                 [ width (px w)
-                , height videoHeight
+                , height (px videoHeight)
                 , centerX
                 , centerY
                 ]
                 (image
-                    [ width (px (w // 2) |> maximum (maxWidth // 2))
+                    [ width
+                        (if temp.device.class == Phone then
+                            fill
+
+                         else
+                            px (w // 2) |> maximum (maxWidth // 2)
+                        )
                     , centerX
                     , centerY
+                    , padding
+                        (if temp.device.class == Phone then
+                            25
+
+                         else
+                            0
+                        )
                     ]
                     { src = "/img/logo_sans_ring.svg", description = "Global Circuit Inovations" }
                 )
@@ -669,7 +702,11 @@ head w h =
                     , alt "Earth from Space"
                     , autoplay True
                     , loop True
-                    , Html.Attributes.width w
+                    , if scaleByHeight then
+                        Html.Attributes.height h
+
+                      else
+                        Html.Attributes.width w
                     , attribute "muted" "True"
                     , attribute "poster" "/img/earthVideo.jpg"
                     , id "earthVideo"
@@ -677,9 +714,12 @@ head w h =
                     []
 
         videoHeight =
-            px <| ceiling <| toFloat h * 0.8
+            ceiling <| toFloat h * 0.8
+
+        scaleByHeight =
+            w // videoHeight <= 16 // 9
     in
-    row [ width fill, height videoHeight, Background.color (rgb 0 0 0), clip ]
+    row [ width fill, height (px videoHeight), Background.color (rgb 0 0 0), clip ]
         [ el
             [ width fill
             , Background.color (rgb 0 0 0)
