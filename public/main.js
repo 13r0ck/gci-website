@@ -57,4 +57,4 @@ const scrollToHash = () => {
   }
 }
 
-app.ports.onUrlChange.subscribe(_ => setTimeout(scrollToHash, 50))
+app.ports.onUrlChange.subscribe(_ => setTimeout(scrollToHash, 0))
