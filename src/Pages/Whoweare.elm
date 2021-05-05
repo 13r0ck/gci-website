@@ -3,6 +3,7 @@ module Pages.Whoweare exposing (Model, Msg, page)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Region as Region
+import Gen.Params.Whoweare exposing (Params)
 import Html.Attributes exposing (id)
 import Page
 import Palette exposing (maxWidth)

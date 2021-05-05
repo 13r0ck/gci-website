@@ -3,9 +3,9 @@ module Pages.Obsolescence exposing (Model, Msg, page)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Region as Region
-import Gen.Params.Whatwedo exposing (Params)
 import Html.Attributes exposing (id)
 import Page
+import Gen.Params.Obsolescence exposing (Params)
 import Palette exposing (maxWidth)
 import Request
 import Shared exposing (contactUs, footer, navbar)
