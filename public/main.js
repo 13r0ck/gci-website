@@ -1,5 +1,8 @@
   const app = Elm.Main.init({
-    flags: JSON.parse(localStorage.getItem('storage'))
+    flags: {width: window.innerWidth,
+           height: window.innerHeight,
+           storage: JSON.parse(localStorage.getItem('storage'))
+          }
   })
 
 
@@ -58,3 +61,11 @@ const scrollToHash = () => {
 }
 
 app.ports.onUrlChange.subscribe(_ => setTimeout(scrollToHash, 0))
+
+var hamburger = document.querySelector(".hamburger");
+// On click
+hamburger.addEventListener("click", function() {
+  // Toggle class "is-active"
+  hamburger.classList.toggle("is-active");
+  // Do something else, like open/close menu
+});

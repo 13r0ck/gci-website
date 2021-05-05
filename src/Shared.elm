@@ -2,6 +2,7 @@ module Shared exposing
     ( Flags
     , Model
     , Msg
+    , Temp
     , acol
     , ael
     , arow
@@ -13,6 +14,7 @@ module Shared exposing
     , update
     )
 
+import Browser.Events
 import Browser.Navigation as Nav
 import Element exposing (..)
 import Element.Background as Background
@@ -21,8 +23,8 @@ import Element.Events as Events
 import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region
-import Html exposing (a, br, video)
-import Html.Attributes exposing (alt, attribute, autoplay, class, id, loop, src)
+import Html exposing (a, br, div, span, video)
+import Html.Attributes exposing (alt, attribute, autoplay, class, classList, id, loop, src)
 import Html.Events
 import Json.Decode as Json
 import Palette exposing (black, gciBlue, gciBlueLight, maxWidth, warning, white)
@@ -50,7 +52,10 @@ import Time
 
 
 type alias Flags =
-    Json.Value
+    { width : Int
+    , height : Int
+    , storage : Json.Value
+    }
 
 
 type alias Model =
@@ -66,6 +71,9 @@ type alias Temp =
     , socialMedia : List SocialMediaItem
     , certifications : List CertificationItem
     , currentYear : Int
+    , device : Device
+    , width : Int
+    , height : Int
     }
 
 
@@ -85,7 +93,7 @@ type alias SocialMediaItem =
 init : Request -> Flags -> ( Model, Cmd Msg )
 init _ flags =
     ( { storage =
-            Storage.fromJson flags
+            Storage.fromJson flags.storage
                 |> (\f -> Storage Storage.init.navHoverTracker f.openContactUs f.contactDialogState)
       , temp =
             { scrolledDistance = 0
@@ -101,7 +109,7 @@ init _ flags =
             , socialMedia =
                 [ SocialMediaItem "\u{F09A}" (rgb255 59 89 152) "#"
                 , SocialMediaItem "\u{F099}" (rgb255 29 161 242) "#"
-                , SocialMediaItem "\u{F30C}" (rgb255 0 119 181) "#"
+                , SocialMediaItem "\u{F30C}" (rgb255 0 119 181) "https://www.linkedin.com/company/4804252"
                 , SocialMediaItem "\u{F16A}" (rgb255 255 0 0) "#"
                 ]
             , certifications =
@@ -109,6 +117,9 @@ init _ flags =
                 , CertificationItem "/img/ANAB-certified_white.svg" "AS9100:2016 - ISO 9001:2015 Certified"
                 ]
             , currentYear = 0
+            , device = classifyDevice { width = flags.width, height = flags.height }
+            , width = flags.width
+            , height = flags.height
             }
       }
     , Task.perform GotYear currentYear
@@ -119,11 +130,15 @@ type Msg
     = StorageUpdated Storage
     | Scrolled Int
     | GotYear Int
+    | WindowResized Int Int
 
 
 update : Request -> Msg -> Model -> ( Model, Cmd Msg )
 update _ msg model =
     case msg of
+        WindowResized w h ->
+            ( { model | temp = model.temp |> (\t -> { t | device = classifyDevice { width = w, height = h }, width = w, height = h }) }, Cmd.none )
+
         Scrolled distance ->
             ( { model
                 | temp =
@@ -161,6 +176,7 @@ subscriptions _ _ =
     Sub.batch
         [ Storage.onChange StorageUpdated
         , recvScroll Scrolled
+        , Browser.Events.onResize WindowResized
         ]
 
 
@@ -201,9 +217,18 @@ currentYear =
     Task.map2 Time.toYear Time.here Time.now
 
 
-navbar : List NavItem -> NavBarDisplay -> ((Storage -> Cmd msg) -> b) -> Element b
-navbar animationTracker display msgCommand =
+navbar : Model -> ((Storage -> Cmd msg) -> b) -> Element b
+navbar shared msgCommand =
     let
+        animationTracker =
+            shared.storage.navHoverTracker
+
+        display =
+            shared.temp.navbarDisplay
+
+        device =
+            shared.temp.device
+
         navBtn ( id, item ) =
             case item.onClick of
                 Url s ->
@@ -276,21 +301,34 @@ navbar animationTracker display msgCommand =
                 []
 
         logo =
-            link []
+            link [ height fill, Background.color white ]
                 { url = "/#home"
                 , label =
                     el
-                        [ height (px 80)
-                        , Background.color white
+                        [ height fill
                         , pointer
                         ]
                         (image
                             [ height (px 50)
-                            , paddingXY 24 0
+                            , paddingXY
+                                (if device.class == Phone then
+                                    10
+
+                                 else
+                                    24
+                                )
+                                0
                             , centerX
                             , centerY
                             ]
-                            { src = "/img/logo_sans_ring.svg", description = "Global Circuit Inovations" }
+                            { src =
+                                if shared.temp.width < 350 then
+                                    "/img/logo_sans_text.svg"
+
+                                else
+                                    "/img/logo_sans_ring.svg"
+                            , description = "Global Circuit Inovations"
+                            }
                         )
                 }
     in
@@ -322,14 +360,58 @@ navbar animationTracker display msgCommand =
         , Region.navigation
         , shadow { offset = ( 0, 0 ), size = 0.15, blur = 5, color = black }
         ]
-        [ column [ width (fill |> maximum maxWidth), centerX ]
-            [ row [ width fill, spaceEvenly ]
-                (List.concat
-                    [ [ logo, spacer ]
-                    , List.map navBtn (List.indexedMap Tuple.pair animationTracker)
+        [ case device.class of
+            Desktop ->
+                column [ width (fill |> maximum maxWidth), centerX ]
+                    [ row [ width fill, spaceEvenly ]
+                        (List.concat
+                            [ [ logo, spacer ]
+                            , List.map navBtn (List.indexedMap Tuple.pair animationTracker)
+                            ]
+                        )
                     ]
-                )
-            ]
+
+            BigDesktop ->
+                column [ width (fill |> maximum maxWidth), centerX ]
+                    [ row [ width fill, spaceEvenly ]
+                        (List.concat
+                            [ [ logo, spacer ]
+                            , List.map navBtn (List.indexedMap Tuple.pair animationTracker)
+                            ]
+                        )
+                    ]
+
+            _ ->
+                row [ width fill, height (px 80), Background.color white, spacing 10 ]
+                    [ el [ width (px 10) ] logo
+                    , if device.class == Tablet then
+                        Input.button [ height fill, alignRight, centerY ]
+                            { onPress = Just (msgCommand (setContactUs "True"))
+                            , label =
+                                image [ height (px 50) ]
+                                    { src =
+                                        if shared.storage.openContactUs then
+                                            "/img/email-open.svg"
+
+                                        else
+                                            "/img/email.svg"
+                                    , description = "contact button"
+                                    }
+                            }
+
+                      else
+                        none
+                    , Input.button [ alignRight ]
+                        { onPress = Just (msgCommand (setContactUs "False"))
+                        , label =
+                            html <|
+                                div [ classList [ ( "hamburger", True ), ( "hamburger--collapse", True ), ( "is-active", True ) ] ]
+                                    [ div [ class "hamburger-box" ]
+                                        [ div [ class "hamburger-inner" ] []
+                                        ]
+                                    ]
+                        }
+                    ]
         ]
 
 
