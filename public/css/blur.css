@@ -210,3 +210,26 @@
 .backgroundGrow {
     transition: height 0.2s linear;
 }
+
+
+/* Works on Firefox */
+.gciScroll {
+  scrollbar-width: thin;
+  scrollbar-color: #1d376c white;
+  scroll-margin-top: 20px;
+  scroll-margin-bottom: 20px;
+}
+
+/* Works on Chrome, Edge, and Safari */
+*::-webkit-scrollbar {
+  width: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  margin: 20px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: #1d376c;
+  border-radius: 10px;
+}

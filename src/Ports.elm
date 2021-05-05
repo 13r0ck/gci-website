@@ -23,3 +23,6 @@ port save : Json.Value -> Cmd msg
 
 
 port load : (Json.Value -> msg) -> Sub msg
+
+
+port onUrlChange : () -> Cmd msg
