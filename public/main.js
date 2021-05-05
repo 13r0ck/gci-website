@@ -43,3 +43,18 @@ app.ports.save.subscribe(storage => {
   localStorage.setItem('storage', JSON.stringify(storage))
   app.ports.load.send(storage)
 })
+
+// Handle smoothly scrolling to links
+const scrollToHash = () => {
+  const BREAKPOINT_XL = 1920
+  const NAVBAR_HEIGHT_PX = window.innerWidth > BREAKPOINT_XL ? 127 : 102
+  const element = window.location.hash && document.querySelector(window.location.hash)
+  if (element) {
+    // element.scrollIntoView({ behavior: 'smooth' })
+    window.scroll({ behavior: 'smooth', top: window.pageYOffset + element.getBoundingClientRect().top - NAVBAR_HEIGHT_PX })
+  } else {
+    window.scroll({ behavior: 'auto', top: 0 })
+  }
+}
+
+app.ports.onUrlChange.subscribe(_ => setTimeout(scrollToHash, 50))

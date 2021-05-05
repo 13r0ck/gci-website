@@ -21,7 +21,7 @@ import Page
 import Palette exposing (black, gciBlue, gciBlueLight, maxWidth, warning, white)
 import PhoneNumber
 import PhoneNumber.Countries exposing (countryUS)
-import Ports exposing (controlVideo, disableScrolling, recvScroll, setPhoneInputCursor)
+import Ports exposing (controlVideo, recvScroll, setPhoneInputCursor)
 import Request
 import Shared exposing (acol, ael, arow, contactUs, footer, navbar)
 import Simple.Animation as Animation exposing (Animation)
@@ -167,9 +167,9 @@ init =
             , Testimonial "Sikorsky Aircraft Corperation" "/img/sky.jpg" "Innovations." "" ""
             ]
       , boxes =
-            [ BoxesItem "Electronic Obsolescence Solutions" "#" "/img/plane1.png" "/img/plane2.png" False "point_idle"
-            , BoxesItem "Electronic Systems" "#" "/img/circuit1.png" "/img/circuit2.png" False "point_idle"
-            , BoxesItem "Oil and Gas High Temperature Electronics" "#" "img/oil1.png" "/img/oil2.png" False "point_idle"
+            [ BoxesItem "Electronic Obsolescence Solutions" "/obsolescence" "/img/plane1.png" "/img/plane2.png" False "point_idle"
+            , BoxesItem "Electronic Systems" "/systems" "/img/circuit1.png" "/img/circuit2.png" False "point_idle"
+            , BoxesItem "Oil and Gas High Temperature Electronics" "/oil" "img/oil1.png" "/img/oil2.png" False "point_idle"
             ]
       }
     , Task.perform GotViewport Browser.Dom.getViewport
@@ -358,7 +358,7 @@ view shared model =
             )
         ]
     , element =
-        column [ width fill, Region.mainContent ]
+        column [ width fill, Region.mainContent, htmlAttribute <| id "home" ]
             [ column [ width (fill |> maximum maxWidth), centerX, spacing 25 ]
                 [ head current_width current_height
                 , innovations (shouldAnimate "testimonials" model)
@@ -868,52 +868,56 @@ boxes w animateSelf content =
             (toFloat maxW * 0.9 |> floor) // List.length content
 
         box ( id, item ) =
-            arow
-                (if animateSelf then
-                    Animation.fromTo
-                        { duration = (id + 1) * 500
-                        , options = []
-                        }
-                        [ P.opacity 0, P.y 100 ]
-                        [ P.opacity 100, P.y 0 ]
+            link []
+                { url = item.link
+                , label =
+                    arow
+                        (if animateSelf then
+                            Animation.fromTo
+                                { duration = (id + 1) * 500
+                                , options = []
+                                }
+                                [ P.opacity 0, P.y 100 ]
+                                [ P.opacity 100, P.y 0 ]
 
-                 else
-                    Animation.empty
-                )
-                [ width (px eachWidth)
-                , height (px eachWidth)
-                , Background.image item.img_default
-                , inFront
-                    (row
-                        [ width fill
-                        , height fill
-                        , Background.image item.img_hover
-                        , htmlAttribute <| class item.class
+                         else
+                            Animation.empty
+                        )
+                        [ width (px eachWidth)
+                        , height (px eachWidth)
+                        , Background.image item.img_default
+                        , inFront
+                            (row
+                                [ width fill
+                                , height fill
+                                , Background.image item.img_hover
+                                , htmlAttribute <| class item.class
+                                ]
+                                [ paragraph
+                                    [ Font.size 45
+                                    , Font.alignLeft
+                                    , Font.light
+                                    , alignBottom
+                                    , alignLeft
+                                    , padding 20
+                                    ]
+                                    [ text item.name ]
+                                ]
+                            )
+                        , EE.onMouseEnter (BoxHover id)
+                        , EE.onMouseLeave (BoxUnHover id)
                         ]
                         [ paragraph
-                            [ Font.size 45
+                            [ Font.size 20
                             , Font.alignLeft
-                            , Font.light
+                            , Font.color white
                             , alignBottom
                             , alignLeft
-                            , padding 20
+                            , padding 10
                             ]
                             [ text item.name ]
                         ]
-                    )
-                , EE.onMouseEnter (BoxHover id)
-                , EE.onMouseLeave (BoxUnHover id)
-                ]
-                [ paragraph
-                    [ Font.size 20
-                    , Font.alignLeft
-                    , Font.color white
-                    , alignBottom
-                    , alignLeft
-                    , padding 10
-                    ]
-                    [ text item.name ]
-                ]
+                }
 
         btn item =
             el
@@ -952,7 +956,6 @@ boxes w animateSelf content =
     in
     column
         [ centerX
-        , htmlAttribute <| id "whatwedo"
         , transparent (not animateSelf)
         ]
         [ ael
@@ -973,7 +976,7 @@ boxes w animateSelf content =
             , Font.extraLight
             ]
             (text "What do we do? Great Technology.")
-        , row [] (List.map box (List.indexedMap Tuple.pair content))
+        , row [ htmlAttribute <| id "whatwedo" ] (List.map box (List.indexedMap Tuple.pair content))
         , paragraph [ centerX, Font.light, Font.center, Font.size 28, width (px 900), padding 20 ] [ text "GCI provides solutions for otherwise obsolite electronic systems. Keeping assets fully operational for many decades in the future." ]
         ]
 

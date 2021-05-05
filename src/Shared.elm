@@ -26,7 +26,7 @@ import Html.Attributes exposing (alt, attribute, autoplay, class, id, loop, src)
 import Html.Events
 import Json.Decode as Json
 import Palette exposing (black, gciBlue, gciBlueLight, maxWidth, warning, white)
-import Ports exposing (recvScroll)
+import Ports exposing (disableScrolling, recvScroll)
 import Request exposing (Request)
 import Simple.Animation as Animation exposing (Animation)
 import Simple.Animation.Animated as Animated
@@ -148,7 +148,11 @@ update _ msg model =
 
         StorageUpdated storage ->
             ( { model | storage = storage }
-            , Cmd.none
+            , if storage.openContactUs then
+                disableScrolling True
+
+              else
+                disableScrolling False
             )
 
 
@@ -200,7 +204,15 @@ currentYear =
 navbar : List NavItem -> NavBarDisplay -> ((Storage -> Cmd msg) -> b) -> Element b
 navbar animationTracker display msgCommand =
     let
-        navbarBtn ( id, item ) =
+        navBtn ( id, item ) =
+            case item.onClick of
+                Url s ->
+                    link [] { url = s, label = navbarBtn ( id, item ) False }
+
+                setContactUs ->
+                    navbarBtn ( id, item ) True
+
+        navbarBtn ( id, item ) shouldOnClick =
             row
                 [ height (px 80)
                 , pointer
@@ -230,22 +242,26 @@ navbar animationTracker display msgCommand =
                         ]
                         [ el [ centerX, centerY, Font.color white ] (text item.name) ]
                     )
-                , Events.onClick
-                    (msgCommand
-                        (case item.onClick of
-                            Url s ->
-                                changeUrl s
+                , if shouldOnClick then
+                    Events.onClick
+                        (msgCommand
+                            (case item.onClick of
+                                Url s ->
+                                    changeUrl s
 
-                            SetContactUs b ->
-                                setContactUs
-                                    (if b then
-                                        "True"
+                                SetContactUs b ->
+                                    setContactUs
+                                        (if b then
+                                            "True"
 
-                                     else
-                                        "False"
-                                    )
+                                         else
+                                            "False"
+                                        )
+                            )
                         )
-                    )
+
+                  else
+                    pointer
                 , Events.onMouseEnter (msgCommand (navBtnHover id))
                 , Events.onMouseLeave (msgCommand (navBtnUnHover id))
                 ]
@@ -260,21 +276,23 @@ navbar animationTracker display msgCommand =
                 []
 
         logo =
-            el
-                [ height (px 80)
-                , Background.color white
-                , pointer
-                , Events.onClick
-                    (msgCommand (changeUrl "/"))
-                ]
-                (image
-                    [ height (px 50)
-                    , paddingXY 24 0
-                    , centerX
-                    , centerY
-                    ]
-                    { src = "/img/logo_sans_ring.svg", description = "Global Circuit Inovations" }
-                )
+            link []
+                { url = "/#home"
+                , label =
+                    el
+                        [ height (px 80)
+                        , Background.color white
+                        , pointer
+                        ]
+                        (image
+                            [ height (px 50)
+                            , paddingXY 24 0
+                            , centerX
+                            , centerY
+                            ]
+                            { src = "/img/logo_sans_ring.svg", description = "Global Circuit Inovations" }
+                        )
+                }
     in
     arow
         (case display of
@@ -308,7 +326,7 @@ navbar animationTracker display msgCommand =
             [ row [ width fill, spaceEvenly ]
                 (List.concat
                     [ [ logo, spacer ]
-                    , List.map navbarBtn (List.indexedMap Tuple.pair animationTracker)
+                    , List.map navBtn (List.indexedMap Tuple.pair animationTracker)
                     ]
                 )
             ]
@@ -435,7 +453,14 @@ contactUs state address msgCommand =
 
                     2 ->
                         column
-                            [ width fill, height (px 530), padding 30, Font.light, spacing 25, htmlAttribute <| class "backgroundGrow" ]
+                            [ width fill
+                            , height (px 530)
+                            , padding 30
+                            , Font.light
+                            , spacing 25
+                            , htmlAttribute <| class "backgroundGrow"
+                            , htmlAttribute <| class "gciScroll"
+                            ]
                             [ row [ width fill, alignTop ]
                                 [ if state.messageError then
                                     el [ Font.size 35, centerX, Font.color warning ] (text "Use your words please!")
