@@ -9,6 +9,7 @@
 app.ports.controlVideo.subscribe(message => {
     var vid = document.getElementById("earthVideo"); 
     if (message) {
+      vid.muted = true;
       vid.play()
     } else
       vid.pause()
@@ -62,6 +63,7 @@ const scrollToHash = () => {
 
 app.ports.onUrlChange.subscribe(_ => setTimeout(scrollToHash, 0))
 
+/*
 var hamburger = document.querySelector(".hamburger");
 // On click
 hamburger.addEventListener("click", function() {
@@ -69,3 +71,4 @@ hamburger.addEventListener("click", function() {
   hamburger.classList.toggle("is-active");
   // Do something else, like open/close menu
 });
+*/

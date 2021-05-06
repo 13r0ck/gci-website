@@ -686,7 +686,7 @@ head temp =
                     , centerY
                     , padding
                         (if temp.device.class == Phone then
-                            25
+                            floor (toFloat w * 0.1)
 
                          else
                             0
@@ -698,7 +698,7 @@ head temp =
         earthVideo =
             html <|
                 video
-                    [ src "/videos/earth_1080p.webm"
+                    [ src "/videos/earth_720p.webm"
                     , alt "Earth from Space"
                     , autoplay True
                     , loop True
@@ -707,7 +707,6 @@ head temp =
 
                       else
                         Html.Attributes.width w
-                    , attribute "muted" "True"
                     , attribute "poster" "/img/earthVideo.jpg"
                     , id "earthVideo"
                     ]
