@@ -6,7 +6,7 @@ import Char exposing (isDigit)
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
-import Element.Border as Border exposing (innerShadow, rounded, shadow)
+import Element.Border as Border exposing (innerShadow, rounded, shadow, widthEach)
 import Element.Events as EE
 import Element.Font as Font
 import Element.Input as Input
@@ -18,7 +18,7 @@ import Html.Attributes exposing (alt, attribute, autoplay, class, id, loop, src)
 import Html.Events
 import Json.Decode as Decode
 import Page
-import Palette exposing (black, gciBlue, gciBlueLight, maxWidth, warning, white)
+import Palette exposing (FontSize(..), black, fontSize, gciBlue, gciBlueLight, maxWidth, warning, white)
 import PhoneNumber
 import PhoneNumber.Countries exposing (countryUS)
 import Ports exposing (controlVideo, recvScroll, setPhoneInputCursor)
@@ -53,6 +53,7 @@ type alias Model =
     , hideNavbar : Bool
     , userVisible : Bool
     , showContactUs : Bool
+    , testimonial_viewNum : Int
     , animationTracker : Dict String AnimationState
     , onScreenTracker : List OnScreenItem
     , simpleBtnHoverTracker : List SimpleBtn
@@ -147,6 +148,7 @@ init temp =
       , hideNavbar = False
       , userVisible = True
       , showContactUs = False
+      , testimonial_viewNum = 1
       , animationTracker =
             Dict.fromList
                 [ ( "gciBar", AnimationState Middle False )
@@ -169,7 +171,7 @@ init temp =
       , boxes =
             [ BoxesItem "Electronic Obsolescence Solutions" "/obsolescence" "/img/plane1.png" "/img/plane2.png" False "point_idle"
             , BoxesItem "Electronic Systems" "/systems" "/img/circuit1.png" "/img/circuit2.png" False "point_idle"
-            , BoxesItem "Oil and Gas High Temperature Electronics" "/oil" "img/oil1.png" "/img/oil2.png" False "point_idle"
+            , BoxesItem "Oil and Gas High Temp Electronics" "/oil" "img/oil1.png" "/img/oil2.png" False "point_idle"
             ]
       }
     , Task.perform GotViewport Browser.Dom.getViewport
@@ -184,6 +186,8 @@ type Msg
     = GotViewport Viewport
     | GetViewport
     | Scrolled Int
+    | TestimonialLeft
+    | TestimonialRight
     | GotMouse Direction
     | GotElement String (Result Browser.Dom.Error Browser.Dom.Element)
     | GotOnScreenItem String (Result Browser.Dom.Error Browser.Dom.Element)
@@ -283,6 +287,30 @@ update storage msg model =
         GotMouse direction ->
             ( { model | getMouse = False, boxes = List.map (updateBoxes direction) model.boxes }, Cmd.none )
 
+        TestimonialLeft ->
+            ( { model
+                | testimonial_viewNum =
+                    if not (model.testimonial_viewNum == 0) then
+                        model.testimonial_viewNum - 1
+
+                    else
+                        model.testimonial_viewNum
+              }
+            , Cmd.none
+            )
+
+        TestimonialRight ->
+            ( { model
+                | testimonial_viewNum =
+                    if not (model.testimonial_viewNum == List.length model.testimonials - 1) then
+                        model.testimonial_viewNum + 1
+
+                    else
+                        model.testimonial_viewNum
+              }
+            , Cmd.none
+            )
+
 
 
 -- SUBSCRIPTIONS
@@ -361,11 +389,11 @@ view shared model =
         column [ width fill, Region.mainContent, htmlAttribute <| id "home", clip ]
             [ column [ width (fill |> maximum maxWidth), centerX, spacing 25 ]
                 [ head shared.temp
-                , innovations (shouldAnimate "testimonials" model)
-                , testimonials model.testimonials (shouldAnimate "testimonials" model)
-                , grayQuote current_width (shouldAnimate "grayQuote" model)
-                , boxes current_width (shouldAnimate "whatwedo" model) model.boxes
-                , cleanRoom (shouldAnimate "cleanRoom" model) model.simpleBtnHoverTracker
+                , innovations (shouldAnimate "testimonials" model) shared.temp
+                , testimonials model.testimonials model.testimonial_viewNum (shouldAnimate "testimonials" model) shared.temp
+                , grayQuote current_width (shouldAnimate "grayQuote" model) shared.temp
+                , boxes current_width (shouldAnimate "whatwedo" model) model.boxes shared.temp
+                , cleanRoom (shouldAnimate "cleanRoom" model) model.simpleBtnHoverTracker shared.temp
                 ]
             , footer shared.temp.certifications shared.temp.address shared.storage.navHoverTracker shared.temp.socialMedia shared.temp.currentYear Footer
             ]
@@ -413,117 +441,6 @@ animationTrackerToCmd ( k, _ ) =
 onScreenItemtoCmd : String -> Cmd Msg
 onScreenItemtoCmd id =
     Task.attempt (GotOnScreenItem id) (Browser.Dom.getElement id)
-
-
-setPhoneCursor : String -> String -> Cmd msg
-setPhoneCursor oldPhone newPhone =
-    let
-        parse val =
-            String.toList (String.filter isDigit (String.replace "+1" "" val))
-
-        index a =
-            a |> Tuple.first
-
-        one a =
-            a |> Tuple.second |> Tuple.first
-
-        two a =
-            a |> Tuple.second |> Tuple.second
-    in
-    -- creates List (index, (oldDigit, newDigit)) and filters for first change returning that number
-    -- the first difference is what matters, so we just take the head and return the modified index
-    case
-        List.head
-            (List.filterMap
-                (\a ->
-                    if not (one a == two a) then
-                        Just (index a)
-
-                    else
-                        Nothing
-                )
-                (List.indexedMap Tuple.pair (List.map2 Tuple.pair (parse oldPhone) (parse newPhone)))
-            )
-    of
-        Just i ->
-            if String.length oldPhone > String.length newPhone then
-                setPhoneInputCursor
-                    (case i of
-                        0 ->
-                            4
-
-                        1 ->
-                            5
-
-                        2 ->
-                            6
-
-                        3 ->
-                            10
-
-                        4 ->
-                            11
-
-                        5 ->
-                            12
-
-                        n ->
-                            n + 10
-                    )
-
-            else
-                setPhoneInputCursor
-                    (case i of
-                        0 ->
-                            5
-
-                        1 ->
-                            6
-
-                        2 ->
-                            10
-
-                        3 ->
-                            11
-
-                        4 ->
-                            12
-
-                        n ->
-                            n + 11
-                    )
-
-        Nothing ->
-            Cmd.none
-
-
-prettyPhoneNumber : String -> String
-prettyPhoneNumber number =
-    let
-        clean =
-            String.filter isDigit (String.replace "+1" "" number)
-    in
-    case String.length clean of
-        0 ->
-            "+1 ("
-
-        1 ->
-            "+1 (" ++ clean
-
-        2 ->
-            "+1 (" ++ clean
-
-        3 ->
-            "+1 (" ++ clean ++ ")  "
-
-        4 ->
-            "+1 (" ++ String.left 3 clean ++ ")  " ++ String.right 1 clean
-
-        5 ->
-            "+1 (" ++ String.left 3 clean ++ ")  " ++ String.right 2 clean
-
-        _ ->
-            "+1 (" ++ String.left 3 clean ++ ")  " ++ String.slice 3 6 clean ++ " - " ++ String.slice 6 10 clean
 
 
 updateBoxes : Direction -> BoxesItem -> BoxesItem
@@ -735,8 +652,18 @@ head temp =
         ]
 
 
-innovations : Bool -> Element msg
-innovations animateSelf =
+innovations : Bool -> Temp -> Element msg
+innovations animateSelf temp =
+    let
+        device =
+            temp.device.class
+
+        isPhone =
+            device == Phone
+
+        isDesktop =
+            device == Desktop || device == BigDesktop
+    in
     acol
         (if animateSelf then
             Animation.fromTo
@@ -755,19 +682,63 @@ innovations animateSelf =
         , htmlAttribute <| id "testimonials"
         , transparent (not animateSelf)
         ]
-        [ el [ centerX, Font.extraLight, Font.size 50 ] (text "Our Innovations are Your Solutions")
-        , paragraph [ centerX, Font.medium ] [ text "We don't just do stuff, we do stuff really good. Like super good. We are very cool. Pinky Promise." ]
+        [ paragraph
+            [ centerX
+            , Font.extraLight
+            , fontSize device Xlg
+            , if isPhone then
+                Font.alignLeft
+
+              else
+                Font.center
+            ]
+            [ text "Our Innovations are Your Solutions" ]
+        , if not isDesktop then
+            none
+
+          else
+            paragraph [ centerX, Font.medium, padding 10, Font.center ] [ text "We don't just do stuff, we do stuff really good. Like super good. We are very cool. Pinky Promise." ]
         ]
 
 
-testimonials : List Testimonial -> Bool -> Element msg
-testimonials ts animateSelf =
+testimonials : List Testimonial -> Int -> Bool -> Temp -> Element Msg
+testimonials ts viewNum animateSelf temp =
     let
+        numberToShow =
+            if isPhone then
+                1
+
+            else
+                temp.width // floor (toFloat testimonial_width * 1.2)
+
+        testimonial_width =
+            if isPhone then
+                toFloat temp.width * 0.7 |> floor
+
+            else
+                370
+
+        device =
+            temp.device.class
+
+        isPhone =
+            device == Phone
+
+        isDesktop =
+            device == Desktop || device == BigDesktop
+
+        quotePadding =
+            if isPhone then
+                5
+
+            else
+                48
+
         testimonial i t =
             acol
                 (if animateSelf then
                     Animation.fromTo
-                        { duration = (i + 1) * 500
+                        { duration = (i + 1) * 300
                         , options = []
                         }
                         [ P.opacity 0, P.y 100 ]
@@ -776,7 +747,13 @@ testimonials ts animateSelf =
                  else
                     Animation.empty
                 )
-                [ width fill
+                [ width
+                    (if numberToShow >= List.length ts then
+                        fill |> maximum testimonial_width
+
+                     else
+                        px testimonial_width
+                    )
                 , height fill
                 , Background.color white
                 , rounded 10
@@ -786,14 +763,47 @@ testimonials ts animateSelf =
                 , transparent (not animateSelf)
                 ]
                 [ row [ Background.image t.img, height (px 200), width fill ] []
-                , column [ paddingEach { top = 24, bottom = 48, left = 48, right = 48 }, height fill ]
-                    [ paragraph [ Font.medium, Font.center, paddingXY 0 18 ] [ text ("\"" ++ t.quote ++ "\"") ]
-                    , paragraph [ Font.extraLight, Font.alignRight, Font.size 18, alignBottom ] [ text t.attribution ]
-                    , paragraph [ Font.extraLight, Font.alignRight, Font.size 18, alignBottom ] [ text t.job ]
+                , column [ paddingEach { top = quotePadding, bottom = quotePadding, left = quotePadding, right = quotePadding }, height fill, width fill ]
+                    [ paragraph [ Font.medium, Font.center, fontSize device Sm, paddingXY 0 18 ] [ text ("\"" ++ t.quote ++ "\"") ]
+                    , paragraph [ Font.extraLight, Font.alignRight, fontSize device Xsm, alignBottom ] [ text t.attribution ]
+                    , paragraph [ Font.extraLight, Font.alignRight, fontSize device Xsm, alignBottom ] [ text t.job ]
                     ]
                 ]
     in
-    row [ width (fill |> maximum (toFloat maxWidth * 0.9 |> ceiling)), centerX, height shrink, spacing 48, paddingXY 48 0 ] (List.indexedMap testimonial ts)
+    if numberToShow >= List.length ts then
+        row [ width (fill |> maximum (toFloat maxWidth * 0.9 |> ceiling)), centerX, height shrink, spacing 48, paddingXY 48 0 ] (List.indexedMap testimonial ts)
+
+    else
+        row [ width fill ]
+            [ Input.button [ centerX ]
+                { onPress =
+                    if viewNum == 0 then
+                        Nothing
+
+                    else
+                        Just TestimonialLeft
+                , label = image [ width (px 30), height (px 30), centerY, centerX, mouseOver [ moveLeft 5 ] ] { src = "/img/left.svg", description = "left button" }
+                }
+            , el [ padding 10 ]
+                (el
+                    [ width (px (testimonial_width * numberToShow + 48 * (numberToShow - 1) + 10))
+                    , height fill
+                    , centerX
+                    , centerY
+                    , clip
+                    ]
+                    (row [ moveLeft (toFloat (testimonial_width * viewNum + 48 * viewNum)), width (fill |> maximum (toFloat maxWidth * 0.9 |> ceiling)), centerX, height shrink, spacing 48, paddingEach { left = 10, bottom = 20, top = 20, right = 0 }, htmlAttribute <| class "animateTransform" ] (List.indexedMap testimonial ts))
+                )
+            , Input.button [ centerX ]
+                { onPress =
+                    if viewNum + numberToShow >= List.length ts then
+                        Nothing
+
+                    else
+                        Just TestimonialRight
+                , label = image [ width (px 30), height (px 30), centerY, centerX, mouseOver [ moveRight 5 ] ] { src = "/img/right.svg", description = "right button" }
+                }
+            ]
 
 
 blur : Element msg
@@ -818,16 +828,22 @@ onEnter msg =
         )
 
 
-cleanRoom : Bool -> List SimpleBtn -> Element Msg
-cleanRoom animateSelf simpleBtns =
+cleanRoom : Bool -> List SimpleBtn -> Temp -> Element Msg
+cleanRoom animateSelf simpleBtns temp =
     let
+        device =
+            temp.device.class
+
+        isPhone =
+            device == Phone
+
         btn item =
             el
                 [ centerX
                 , Border.width 5
                 , paddingXY 20 10
                 , Border.rounded 10
-                , Font.size 30
+                , fontSize device Md
                 , Font.color white
                 , Font.bold
                 , htmlAttribute <| class "background_transition"
@@ -845,7 +861,7 @@ cleanRoom animateSelf simpleBtns =
                         , centerX
                         , centerY
                         , paddingXY 22 10
-                        , Font.size 30
+                        , fontSize device Md
                         , Font.color gciBlue
                         , rounded 5
                         , Font.bold
@@ -876,13 +892,17 @@ cleanRoom animateSelf simpleBtns =
                     "point_idle"
                 )
         ]
-        [ column [ width fill ] []
+        [ if isPhone then
+            none
+
+          else
+            column [ width fill ] []
         , column [ width (fillPortion 2), height fill ]
             [ paragraph
                 [ width fill
                 , alignRight
                 , Font.extraBold
-                , Font.size 40
+                , fontSize device Lg
                 , Font.color white
                 , Font.center
                 , centerY
@@ -897,14 +917,17 @@ cleanRoom animateSelf simpleBtns =
         ]
 
 
-boxes : Int -> Bool -> List BoxesItem -> Element Msg
-boxes w animateSelf content =
+boxes : Int -> Bool -> List BoxesItem -> Temp -> Element Msg
+boxes w animateSelf content temp =
     let
+        device =
+            temp.device.class
+
         maxW =
             min w maxWidth
 
         eachWidth =
-            (toFloat maxW * 0.9 |> floor) // List.length content
+            max 250 ((toFloat maxW * 0.9 |> floor) // List.length content)
 
         box ( id, item ) =
             link []
@@ -926,14 +949,14 @@ boxes w animateSelf content =
                         , height (px eachWidth)
                         , Background.image item.img_default
                         , inFront
-                            (row
+                            (el
                                 [ width fill
                                 , height fill
                                 , Background.image item.img_hover
                                 , htmlAttribute <| class item.class
                                 ]
-                                [ paragraph
-                                    [ Font.size 45
+                                (paragraph
+                                    [ fontSize device Md
                                     , Font.alignLeft
                                     , Font.light
                                     , alignBottom
@@ -941,14 +964,15 @@ boxes w animateSelf content =
                                     , padding 20
                                     ]
                                     [ text item.name ]
-                                ]
+                                )
                             )
                         , EE.onMouseEnter (BoxHover id)
                         , EE.onMouseLeave (BoxUnHover id)
                         ]
                         [ paragraph
-                            [ Font.size 20
+                            [ fontSize device Sm
                             , Font.alignLeft
+                            , Font.bold
                             , Font.color white
                             , alignBottom
                             , alignLeft
@@ -957,41 +981,6 @@ boxes w animateSelf content =
                             [ text item.name ]
                         ]
                 }
-
-        btn item =
-            el
-                [ centerX
-                , Border.width 5
-                , paddingXY 20 10
-                , Border.rounded 10
-                , Font.size 30
-                , Font.color gciBlue
-                , Font.bold
-                , inFront
-                    (el
-                        [ htmlAttribute <|
-                            class
-                                (if item.hovered then
-                                    "point_enter_down"
-
-                                 else
-                                    "point_leave_up"
-                                )
-                        , centerX
-                        , centerY
-                        , paddingXY 20 10
-                        , Font.size 30
-                        , Font.color white
-                        , Font.bold
-                        , Background.color gciBlue
-                        ]
-                        (text "What We Do")
-                    )
-                , EE.onMouseEnter (SimpleBtnHover 0)
-                , EE.onMouseLeave (SimpleBtnUnHover 0)
-                , htmlAttribute <| class "gciBtn"
-                ]
-                (text "What We Do")
     in
     column
         [ centerX
@@ -1011,17 +1000,31 @@ boxes w animateSelf content =
             )
             [ centerX
             , paddingEach { top = 64, bottom = 24, left = 0, right = 0 }
-            , Font.size 32
+            , fontSize device Lg
             , Font.extraLight
             ]
-            (text "What do we do? Great Technology.")
-        , row [ htmlAttribute <| id "whatwedo" ] (List.map box (List.indexedMap Tuple.pair content))
-        , paragraph [ centerX, Font.light, Font.center, Font.size 28, width (px 900), padding 20 ] [ text "GCI provides solutions for otherwise obsolite electronic systems. Keeping assets fully operational for many decades in the future." ]
+            (paragraph [ Font.center ] [ text "What do we do? Great Technology." ])
+        , el [ width (px (eachWidth * (temp.width // eachWidth))), centerX ] (wrappedRow [ htmlAttribute <| id "whatwedo", centerX ] (List.map box (List.indexedMap Tuple.pair content)))
+        , paragraph [ centerX, Font.light, Font.center, fontSize device Md, padding 20 ] [ text "GCI provides solutions for otherwise obsolite electronic systems. Keeping assets fully operational for many decades in the future." ]
         ]
 
 
-grayQuote : Int -> Bool -> Element msg
-grayQuote w animateSelf =
+grayQuote : Int -> Bool -> Temp -> Element msg
+grayQuote w animateSelf temp =
+    let
+        device =
+            temp.device.class
+
+        isPhone =
+            device == Phone
+
+        dynamicPadding =
+            if isPhone then
+                10
+
+            else
+                toFloat (min temp.width maxWidth) * 0.1 |> round
+    in
     column
         [ width
             (px
@@ -1032,8 +1035,9 @@ grayQuote w animateSelf =
                     w
                 )
             )
-        , height (px 400)
+        , height fill
         , centerX
+        , paddingXY 0 100
         , Background.gradient { angle = degrees 180, steps = [ white, rgb255 214 218 219 ] }
         , htmlAttribute <| id "grayQuote"
         ]
@@ -1051,10 +1055,10 @@ grayQuote w animateSelf =
             )
             [ centerY ]
             (paragraph
-                [ paddingXY 200 0
+                [ paddingXY dynamicPadding 0
                 , Font.alignLeft
                 , Font.extraLight
-                , Font.size 50
+                , fontSize device Xlg
                 , Font.color (rgb255 95 106 144)
                 , transparent (not animateSelf)
                 ]
@@ -1077,10 +1081,11 @@ grayQuote w animateSelf =
                 [ Font.alignLeft
                 , centerX
                 , centerY
+                , Font.light
                 , Font.color (rgb255 95 106 144)
-                , Font.size 20
+                , fontSize device Md
                 , transparent (not animateSelf)
-                , paddingXY 200 30
+                , paddingXY dynamicPadding 30
                 ]
                 [ text "Global Circuit Innovation's expertise has a range of digital and analog security over many decades. This knowledge base is applied to develop electronic obsolescence solutions for legacy systems. Our device physics skills and experience enables us to provide environmental hardening for extremely high temperature applications." ]
             )
