@@ -233,3 +233,7 @@
   background-color: #1d376c;
   border-radius: 10px;
 }
+
+.animateTransform {
+  transition: all 0.5s ease-in-out;
+}

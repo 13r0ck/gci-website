@@ -763,11 +763,11 @@ footer certifications address navbtns socials year msgCommand =
             el [ paddingXY 28 10 ] (text "|")
 
         footerCertification item =
-            image [ width (fill |> maximum 400) ] { src = item.src, description = item.description }
+            image [ width fill ] { src = item.src, description = item.description }
     in
     el
-        [ width fill
-        , height fill
+        [ height fill
+        , width fill
         , Region.footer
         , Background.color (rgb255 70 70 72)
         , Border.color gciBlue
@@ -775,20 +775,20 @@ footer certifications address navbtns socials year msgCommand =
         ]
         (column
             [ Font.color white, centerX ]
-            [ row [ padding 20, spacing 40, centerX ]
+            [ wrappedRow [ padding 20, spacing 40, centerX ]
                 (List.map footerCertification certifications)
-            , row
+            , wrappedRow
                 [ Font.bold, Font.size 15, padding 20, centerX ]
                 (List.map footerNavBtn navbtns ++ spacer :: List.map footerSocailBtn socials)
             , el [ width fill, Border.widthEach { top = 1, bottom = 0, left = 0, right = 0 } ]
-                (paragraph [ centerX, width shrink, Font.size 18, padding 20 ]
+                (wrappedRow [ centerX, width shrink, Font.size 18, padding 20 ]
                     [ el [ padding 10 ] (text address.street)
                     , el [ padding 10 ] (text address.city)
                     , link [ padding 10 ] { label = text address.phone, url = address.phoneLink }
                     , link [ padding 10 ] { label = text address.email, url = address.emailLink }
                     ]
                 )
-            , row
+            , wrappedRow
                 [ spacing 10
                 , Font.size 12
                 , Border.widthEach { top = 1, bottom = 0, left = 0, right = 0 }
@@ -821,3 +821,38 @@ footer certifications address navbtns socials year msgCommand =
                 ]
             ]
         )
+
+
+classifyDevice : { window | height : Int, width : Int } -> Device
+classifyDevice window =
+    -- Tested in this ellie:
+    -- https://ellie-app.com/68QM7wLW8b9a1
+    { class =
+        let
+            width =
+                window.width
+
+            longSide =
+                max window.width window.height
+
+            shortSide =
+                min window.width window.height
+        in
+        if width <= 600 then
+            Phone
+
+        else if width > 600 && width <= 1200 then
+            Tablet
+
+        else if width > 1200 && width <= 1920 then
+            Desktop
+
+        else
+            BigDesktop
+    , orientation =
+        if window.width < window.height then
+            Portrait
+
+        else
+            Landscape
+    }
