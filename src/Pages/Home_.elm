@@ -818,15 +818,34 @@ testimonials ts viewNum animateSelf temp =
 
     else
         row [ width fill ]
-            [ Input.button [ centerX ]
-                { onPress =
-                    if viewNum == 0 then
-                        Nothing
+            [ ael
+                (if viewNum == 0 then
+                    Animation.fromTo
+                        { duration = 200
+                        , options = []
+                        }
+                        [ P.opacity 100, P.y 0 ]
+                        [ P.opacity 0, P.y 10 ]
 
-                    else
-                        Just TestimonialLeft
-                , label = image [ width (px 30), height (px 30), centerY, centerX, mouseOver [ moveLeft 5 ] ] { src = "/img/left.svg", description = "left button" }
-                }
+                 else
+                    Animation.fromTo
+                        { duration = 200
+                        , options = []
+                        }
+                        [ P.opacity 0, P.y 10 ]
+                        [ P.opacity 100, P.y 0 ]
+                )
+                []
+                (Input.button [ centerX ]
+                    { onPress =
+                        if viewNum == 0 then
+                            Nothing
+
+                        else
+                            Just TestimonialLeft
+                    , label = image [ width (px 30), height (px 30), centerY, centerX, mouseOver [ moveLeft 5 ] ] { src = "/img/left.svg", description = "left button" }
+                    }
+                )
             , el [ padding 10 ]
                 (el
                     ([ width (px (testimonial_width * numberToShow + 48 * (numberToShow - 1) + 10))
@@ -839,15 +858,34 @@ testimonials ts viewNum animateSelf temp =
                     )
                     (row [ moveLeft (toFloat (testimonial_width * viewNum + 48 * viewNum)), width (fill |> maximum (toFloat maxWidth * 0.9 |> ceiling)), centerX, height shrink, spacing 48, paddingEach { left = 10, bottom = 20, top = 20, right = 0 }, htmlAttribute <| class "animateTransform" ] (List.indexedMap testimonial ts))
                 )
-            , Input.button [ centerX ]
-                { onPress =
-                    if viewNum + numberToShow >= List.length ts then
-                        Nothing
+            , ael
+                (if viewNum + numberToShow >= List.length ts then
+                    Animation.fromTo
+                        { duration = 200
+                        , options = []
+                        }
+                        [ P.opacity 100, P.y 0 ]
+                        [ P.opacity 0, P.y 10 ]
 
-                    else
-                        Just TestimonialRight
-                , label = image [ width (px 30), height (px 30), centerY, centerX, mouseOver [ moveRight 5 ] ] { src = "/img/right.svg", description = "right button" }
-                }
+                 else
+                    Animation.fromTo
+                        { duration = 200
+                        , options = []
+                        }
+                        [ P.opacity 0, P.y 10 ]
+                        [ P.opacity 100, P.y 0 ]
+                )
+                []
+                (Input.button [ centerX ]
+                    { onPress =
+                        if viewNum + numberToShow >= List.length ts then
+                            Nothing
+
+                        else
+                            Just TestimonialRight
+                    , label = image [ width (px 30), height (px 30), centerY, centerX, mouseOver [ moveRight 5 ] ] { src = "/img/right.svg", description = "right button" }
+                    }
+                )
             ]
 
 
