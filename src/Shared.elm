@@ -919,29 +919,34 @@ footer shared msgCommand =
             shared.temp.width
 
         footerNavBtn item =
-            el
-                [ mouseOver [ Font.color gciBlue ]
-                , pointer
-                , centerX
-                , padding 10
-                , Events.onClick
-                    (msgCommand
-                        (case item.onClick of
-                            Url s ->
-                                changeUrl s
+            let
+                attr =
+                    [ mouseOver [ Font.color gciBlue ]
+                    , pointer
+                    , centerX
+                    , padding 10
+                    ]
+            in
+            case item.onClick of
+                Url s ->
+                    link attr { url = s, label = text item.name }
 
-                            SetContactUs b ->
-                                setContactUs
-                                    (if b then
-                                        "True"
+                SetContactUs b ->
+                    Input.button attr
+                        { onPress =
+                            Just
+                                (msgCommand
+                                    (setContactUs
+                                        (if b then
+                                            "True"
 
-                                     else
-                                        "False"
+                                         else
+                                            "False"
+                                        )
                                     )
-                        )
-                    )
-                ]
-                (text item.name)
+                                )
+                        , label = text item.name
+                        }
 
         footerSocailBtn item =
             el
