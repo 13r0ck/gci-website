@@ -829,12 +829,14 @@ testimonials ts viewNum animateSelf temp =
                 }
             , el [ padding 10 ]
                 (el
-                    [ width (px (testimonial_width * numberToShow + 48 * (numberToShow - 1) + 10))
-                    , height fill
-                    , centerX
-                    , centerY
-                    , clip
-                    ]
+                    ([ width (px (testimonial_width * numberToShow + 48 * (numberToShow - 1) + 10))
+                     , height fill
+                     , centerX
+                     , centerY
+                     , clip
+                     ]
+                        ++ List.map (\a -> htmlAttribute <| a) (Swiper.onSwipeEvents TestimonialSwiped)
+                    )
                     (row [ moveLeft (toFloat (testimonial_width * viewNum + 48 * viewNum)), width (fill |> maximum (toFloat maxWidth * 0.9 |> ceiling)), centerX, height shrink, spacing 48, paddingEach { left = 10, bottom = 20, top = 20, right = 0 }, htmlAttribute <| class "animateTransform" ] (List.indexedMap testimonial ts))
                 )
             , Input.button [ centerX ]
