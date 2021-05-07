@@ -115,6 +115,8 @@ init _ flags =
             , certifications =
                 [ CertificationItem "/img/platinum_certified-v2_white.svg" "AS9100:2016 - ISO 9001:2015 Certified"
                 , CertificationItem "/img/ANAB-certified_white.svg" "AS9100:2016 - ISO 9001:2015 Certified"
+                , CertificationItem "/img/ANAB-certified_white.svg" "AS9100:2016 - ISO 9001:2015 Certified"
+                , CertificationItem "/img/ANAB-certified_white.svg" "AS9100:2016 - ISO 9001:2015 Certified"
                 ]
             , currentYear = 0
             , device = classifyDevice { width = flags.width, height = flags.height }
@@ -147,11 +149,15 @@ update _ msg model =
                                 { t
                                     | scrolledDistance = distance
                                     , navbarDisplay =
-                                        if distance > model.temp.scrolledDistance then
-                                            Hide
+                                        if abs (distance - model.temp.scrolledDistance) > 10 then
+                                            if distance > model.temp.scrolledDistance then
+                                                Hide
+
+                                            else
+                                                Enter
 
                                         else
-                                            Enter
+                                            t.navbarDisplay
                                 }
                            )
               }
@@ -723,9 +729,27 @@ onEnter msg =
         )
 
 
-footer : List CertificationItem -> Address -> List NavItem -> List SocialMediaItem -> Int -> ((Storage -> Cmd msg) -> b) -> Element b
-footer certifications address navbtns socials year msgCommand =
+footer : Model -> ((Storage -> Cmd msg) -> b) -> Element b
+footer shared msgCommand =
     let
+        certifications =
+            shared.temp.certifications
+
+        address =
+            shared.temp.address
+
+        navbtns =
+            shared.storage.navHoverTracker
+
+        socials =
+            shared.temp.socialMedia
+
+        year =
+            shared.temp.currentYear
+
+        certificationWidth =
+            min 400 (shared.temp.width - (12 * List.length certifications)) // List.length certifications
+
         footerNavBtn item =
             el
                 [ mouseOver [ Font.color gciBlue ]
@@ -763,7 +787,7 @@ footer certifications address navbtns socials year msgCommand =
             el [ paddingXY 28 10 ] (text "|")
 
         footerCertification item =
-            image [ width fill ] { src = item.src, description = item.description }
+            image [ height (px 150) ] { src = item.src, description = item.description }
     in
     el
         [ height fill
@@ -775,7 +799,7 @@ footer certifications address navbtns socials year msgCommand =
         ]
         (column
             [ Font.color white, centerX ]
-            [ wrappedRow [ padding 20, spacing 40, centerX ]
+            [ row [ padding 20, spacing 40, centerX ]
                 (List.map footerCertification certifications)
             , wrappedRow
                 [ Font.bold, Font.size 15, padding 20, centerX ]

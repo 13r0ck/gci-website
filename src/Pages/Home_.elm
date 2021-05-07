@@ -395,7 +395,7 @@ view shared model =
                 , boxes current_width (shouldAnimate "whatwedo" model) model.boxes shared.temp
                 , cleanRoom (shouldAnimate "cleanRoom" model) model.simpleBtnHoverTracker shared.temp
                 ]
-            , footer shared.temp.certifications shared.temp.address shared.storage.navHoverTracker shared.temp.socialMedia shared.temp.currentYear Footer
+            , footer shared Footer
             ]
     }
 
