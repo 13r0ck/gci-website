@@ -16,6 +16,7 @@ module Shared exposing
 
 import Browser.Events
 import Browser.Navigation as Nav
+import Debug exposing (todo)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border exposing (innerShadow, rounded, shadow)
@@ -27,7 +28,7 @@ import Html exposing (a, br, div, span, video)
 import Html.Attributes exposing (alt, attribute, autoplay, class, classList, id, loop, src)
 import Html.Events
 import Json.Decode as Json
-import Palette exposing (black, gciBlue, gciBlueLight, maxWidth, warning, white)
+import Palette exposing (FontSize(..), black, fontSize, gciBlue, gciBlueLight, maxWidth, warning, white)
 import Ports exposing (disableScrolling, recvScroll)
 import Request exposing (Request)
 import Simple.Animation as Animation exposing (Animation)
@@ -104,7 +105,7 @@ init _ flags =
                     "Colorado Springs, CO 80919"
                     "+1 (719) 573 - 6777"
                     "tel:+17195736777"
-                    "support@gci-global.com"
+                    "info@gci-global.com"
                     "mailto:support@gci-global.com"
             , socialMedia =
                 [ SocialMediaItem "\u{F09A}" (rgb255 59 89 152) "#"
@@ -114,8 +115,6 @@ init _ flags =
                 ]
             , certifications =
                 [ CertificationItem "/img/platinum_certified-v2_white.svg" "AS9100:2016 - ISO 9001:2015 Certified"
-                , CertificationItem "/img/ANAB-certified_white.svg" "AS9100:2016 - ISO 9001:2015 Certified"
-                , CertificationItem "/img/ANAB-certified_white.svg" "AS9100:2016 - ISO 9001:2015 Certified"
                 , CertificationItem "/img/ANAB-certified_white.svg" "AS9100:2016 - ISO 9001:2015 Certified"
                 ]
             , currentYear = 0
@@ -233,7 +232,7 @@ navbar shared msgCommand =
             shared.temp.navbarDisplay
 
         device =
-            shared.temp.device
+            shared.temp.device.class
 
         navBtn ( id, item ) =
             case item.onClick of
@@ -317,7 +316,7 @@ navbar shared msgCommand =
                         (image
                             [ height (px 50)
                             , paddingXY
-                                (if device.class == Phone then
+                                (if device == Phone then
                                     10
 
                                  else
@@ -362,11 +361,11 @@ navbar shared msgCommand =
         [ width fill
         , height shrink
         , Font.family [ Font.sansSerif ]
-        , Font.size 15
+        , fontSize device Xsm
         , Region.navigation
         , shadow { offset = ( 0, 0 ), size = 0.15, blur = 5, color = black }
         ]
-        [ case device.class of
+        [ case device of
             Desktop ->
                 column [ width (fill |> maximum maxWidth), centerX ]
                     [ row [ width fill, spaceEvenly ]
@@ -390,7 +389,7 @@ navbar shared msgCommand =
             _ ->
                 row [ width fill, height (px 80), Background.color white, spacing 10 ]
                     [ el [ height fill ] logo
-                    , if device.class == Tablet then
+                    , if device == Tablet then
                         Input.button [ height fill, alignRight, centerY ]
                             { onPress = Just (msgCommand (setContactUs "True"))
                             , label =
@@ -421,9 +420,33 @@ navbar shared msgCommand =
         ]
 
 
-contactUs : ContactDialogState -> Address -> ((String -> Storage -> Cmd msg) -> String -> b) -> Element b
-contactUs state address msgCommand =
+contactUs : Model -> ((String -> Storage -> Cmd msg) -> String -> b) -> Element b
+contactUs shared msgCommand =
     let
+        state =
+            shared.storage.contactDialogState
+
+        address =
+            shared.temp.address
+
+        device =
+            shared.temp.device.class
+
+        isDesktop =
+            device == Desktop
+
+        isBigDesktop =
+            device == BigDesktop
+
+        isPhone =
+            device == Phone
+
+        w =
+            shared.temp.width
+
+        h =
+            shared.temp.height
+
         break =
             html <| br [] []
 
@@ -434,17 +457,17 @@ contactUs state address msgCommand =
                         column
                             [ width fill, height (px 250), Font.light, spacing 25, htmlAttribute <| class "backgroundGrow" ]
                             [ row [ width fill, alignTop, padding 20 ]
-                                [ el [ Font.size 35, centerX ] (text "Nice to meet you! ")
-                                , el [ Font.size 45, centerX ] (text "👋")
+                                [ el [ fontSize device Md, centerX ] (text "Nice to meet you! ")
+                                , el [ fontSize device Lg, centerX ] (text "👋")
                                 ]
                             , if state.nameError then
-                                el [ Font.size 25, centerX, Font.color warning ] (text "Please tell us who you are.")
+                                el [ fontSize device Sm, centerX, Font.color warning ] (text "Please tell us who you are.")
 
                               else
-                                el [ Font.size 25, centerX ] (text "Can we get a name?")
+                                el [ fontSize device Sm, centerX ] (text "Can we get a name?")
                             , Input.text
                                 [ rounded 100
-                                , width (px 400)
+                                , width (px (min 400 w))
                                 , centerX
                                 , centerY
                                 , onEnter (msgCommand Storage.contactUsNext "")
@@ -469,7 +492,7 @@ contactUs state address msgCommand =
                         column
                             [ width fill, height (px 300), padding 30, Font.light, spacing 25, htmlAttribute <| class "backgroundGrow" ]
                             [ row [ width fill, alignTop ]
-                                [ paragraph [ Font.size 35, centerX, Font.center ]
+                                [ paragraph [ fontSize device Md, centerX, Font.center ]
                                     [ case String.trim (Maybe.withDefault "" state.name) of
                                         "" ->
                                             text "Thanks for reaching out!"
@@ -489,16 +512,16 @@ contactUs state address msgCommand =
                                     ]
                                 ]
                             , if state.emailError then
-                                el [ Font.size 25, centerX, Font.color warning ] (text "That email seems wrong.")
+                                el [ fontSize device Sm, centerX, Font.color warning ] (text "That email seems wrong.")
 
                               else if state.phoneError then
-                                el [ Font.size 25, centerX, Font.color warning ] (text "That phone number seems wrong")
+                                el [ fontSize device Sm, centerX, Font.color warning ] (text "That phone number seems wrong")
 
                               else
-                                el [ Font.size 25, centerX ] (text "How can we contact you?")
+                                el [ fontSize device Sm, centerX ] (text "How can we contact you?")
                             , Input.email
                                 [ rounded 100
-                                , width (px 400)
+                                , width (px (min w 400))
                                 , centerX
                                 , Font.center
                                 , onEnter (msgCommand Storage.contactUsNext "")
@@ -518,7 +541,7 @@ contactUs state address msgCommand =
                                 }
                             , Input.text
                                 [ rounded 100
-                                , width (px 400)
+                                , width (px (min w 400))
                                 , centerX
                                 , Font.center
                                 , onEnter (msgCommand Storage.contactUsNext "")
@@ -542,8 +565,16 @@ contactUs state address msgCommand =
                     2 ->
                         column
                             [ width fill
-                            , height (px 530)
                             , padding 30
+                            , height
+                                (px
+                                    (if isPhone then
+                                        310
+
+                                     else
+                                        530
+                                    )
+                                )
                             , Font.light
                             , spacing 25
                             , htmlAttribute <| class "backgroundGrow"
@@ -551,15 +582,24 @@ contactUs state address msgCommand =
                             ]
                             [ row [ width fill, alignTop ]
                                 [ if state.messageError then
-                                    el [ Font.size 35, centerX, Font.color warning ] (text "Use your words please!")
+                                    el [ fontSize device Md, centerX, Font.color warning ] (text "Use your words please!")
 
                                   else
-                                    el [ Font.size 35, centerX ] (text "What can we do for you?")
+                                    el [ fontSize device Md, centerX ] (text "What can we do for you?")
                                 ]
                             , Input.multiline
                                 [ rounded 20
-                                , width (px 500)
-                                , height (fill |> maximum 400)
+                                , width (px (min w 500))
+                                , height
+                                    (px
+                                        (if isPhone then
+                                            200
+
+                                         else
+                                            415
+                                        )
+                                    )
+                                , alignTop
                                 , centerX
                                 , Border.color
                                     (if state.messageError then
@@ -591,10 +631,10 @@ contactUs state address msgCommand =
                         column
                             [ width fill, height (px 100), Font.light, htmlAttribute <| class "backgroundGrow" ]
                             [ row [ width fill, alignTop ]
-                                [ el [ Font.size 35, centerX, centerY ] (text "Sent!")
+                                [ el [ fontSize device Md, centerX, centerY ] (text "Sent!")
                                 , image [ width (px 150), centerX, centerY, padding 10 ] { src = "/img/f16-sticker.png", description = "F-16 sticker" }
                                 ]
-                            , el [ Font.size 25, centerX ] (paragraph [ Font.center ] [ text "We will reach back out to ", html <| br [] [], text (Maybe.withDefault "you" state.email ++ " soon!") ])
+                            , el [ fontSize device Sm, centerX ] (paragraph [ Font.center ] [ text "We will reach back out to ", html <| br [] [], text (Maybe.withDefault "you" state.email ++ " soon!") ])
                             ]
 
                     _ ->
@@ -680,10 +720,22 @@ contactUs state address msgCommand =
         ]
         (column
             [ Background.color white
-            , width (px 600)
-            , height (px 600)
+            , width (px (min 600 w))
+            , height
+                (px
+                    (if isPhone then
+                        round (toFloat h * 0.75)
+
+                     else
+                        600
+                    )
+                )
             , centerX
-            , centerY
+            , if isPhone then
+                alignTop
+
+              else
+                centerY
             , Border.shadow { blur = 20, color = rgb 0.25 0.25 0.3, offset = ( 0, 0 ), size = 1 }
             , rounded 25
             , clip
@@ -692,9 +744,15 @@ contactUs state address msgCommand =
                     [ Input.button
                         [ alignRight
                         , Font.family [ Font.typeface "icons" ]
-                        , Font.size 50
+                        , fontSize device Xlg
                         , pointer
-                        , Font.color white
+                        , Font.color
+                            (if isDesktop || isBigDesktop then
+                                white
+
+                             else
+                                warning
+                            )
                         , mouseOver [ Font.color warning ]
                         ]
                         { onPress = Just (msgCommand Storage.setContactUs "False"), label = text "\u{E800}" }
@@ -747,13 +805,23 @@ footer shared msgCommand =
         year =
             shared.temp.currentYear
 
-        certificationWidth =
-            min 400 (shared.temp.width - (12 * List.length certifications)) // List.length certifications
+        device =
+            shared.temp.device.class
+
+        isDesktop =
+            device == Desktop
+
+        isBigDesktop =
+            device == BigDesktop
+
+        w =
+            shared.temp.width
 
         footerNavBtn item =
             el
                 [ mouseOver [ Font.color gciBlue ]
                 , pointer
+                , centerX
                 , padding 10
                 , Events.onClick
                     (msgCommand
@@ -787,7 +855,14 @@ footer shared msgCommand =
             el [ paddingXY 28 10 ] (text "|")
 
         footerCertification item =
-            image [ height (px 150) ] { src = item.src, description = item.description }
+            el
+                (if shared.temp.width < 1000 then
+                    [ width fill ]
+
+                 else
+                    [ width shrink, centerX ]
+                )
+                (image [ height (px 150), centerX ] { src = item.src, description = item.description })
     in
     el
         [ height fill
@@ -798,39 +873,41 @@ footer shared msgCommand =
         , Border.widthEach { top = 8, bottom = 0, left = 0, right = 0 }
         ]
         (column
-            [ Font.color white, centerX ]
-            [ row [ padding 20, spacing 40, centerX ]
+            [ Font.color white, centerX, width (fill |> minimum shared.temp.width), clip ]
+            [ wrappedRow [ padding 20, spacing 40, centerX, width (minimum shared.temp.width fill) ]
                 (List.map footerCertification certifications)
-            , wrappedRow
-                [ Font.bold, Font.size 15, padding 20, centerX ]
-                (List.map footerNavBtn navbtns ++ spacer :: List.map footerSocailBtn socials)
-            , el [ width fill, Border.widthEach { top = 1, bottom = 0, left = 0, right = 0 } ]
-                (wrappedRow [ centerX, width shrink, Font.size 18, padding 20 ]
-                    [ el [ padding 10 ] (text address.street)
-                    , el [ padding 10 ] (text address.city)
-                    , link [ padding 10 ] { label = text address.phone, url = address.phoneLink }
-                    , link [ padding 10 ] { label = text address.email, url = address.emailLink }
+            , if isDesktop || isBigDesktop then
+                row [ Font.bold, fontSize device Xsm, centerX ]
+                    (List.map footerNavBtn navbtns ++ spacer :: List.map footerSocailBtn socials)
+
+              else
+                column [ width fill, Font.bold, fontSize device Xsm ]
+                    [ wrappedRow [ width (minimum w fill) ] (List.map (\btn -> el [ width fill ] (footerNavBtn btn)) navbtns)
+                    , row [ centerX ] (List.map footerSocailBtn socials)
+                    ]
+            , el [ width fill, Border.widthEach { top = 1, bottom = 1, left = 0, right = 0 } ]
+                (wrappedRow [ centerX, width shrink, fontSize device Xsm, padding 20 ]
+                    [ el [ width fill ] (el [ padding 10, centerX ] (text address.street))
+                    , el [ width fill ] (el [ padding 10, centerX ] (text address.city))
+                    , el [ width fill ] (link [ padding 10, centerX ] { label = text address.phone, url = address.phoneLink })
+                    , el [ width fill ] (link [ padding 10, centerX ] { label = text address.email, url = address.emailLink })
                     ]
                 )
-            , wrappedRow
-                [ spacing 10
-                , Font.size 12
-                , Border.widthEach { top = 1, bottom = 0, left = 0, right = 0 }
-                , paddingXY 200 20
-                , centerX
-                , alignBottom
-                ]
-                [ el [] (text ("©" ++ String.fromInt year ++ " Global Circuit Innovations, Inc."))
-                , el [ mouseOver [ Font.color gciBlue ], pointer ] (text "Accesability")
-                , el [ mouseOver [ Font.color gciBlue ], pointer ] (text "Sitemap")
-                , el [ mouseOver [ Font.color gciBlue ], pointer ] (text "Terms and Conditions")
-                , el [ mouseOver [ Font.color gciBlue ], pointer ] (text "Privacy")
-                , download [ mouseOver [ Font.color gciBlue ], pointer ]
-                    { url = "/download/press.zip"
-                    , label = text "Press Materials"
-                    }
-                , spacer
-                , newTabLink []
+            , column [ fontSize device Xsm, paddingXY 200 20, centerX, spacing 10 ]
+                [ wrappedRow [ spacing 15 ]
+                    [ el [ width fill ] (el [ centerX ] (text ("©" ++ String.fromInt year ++ " Global Circuit Innovations, Inc.")))
+                    , el [ width fill ] (link [ mouseOver [ Font.color gciBlue ], centerX ] { url = "#", label = text "Accesability" })
+                    , el [ width fill ] (link [ mouseOver [ Font.color gciBlue ], centerX ] { url = "#", label = text "Sitemap" })
+                    , el [ width fill ] (link [ mouseOver [ Font.color gciBlue ], centerX ] { url = "#", label = text "Terms and Conditions" })
+                    , el [ width fill ] (link [ mouseOver [ Font.color gciBlue ], centerX ] { url = "#", label = text "Privacy" })
+                    , el [ width fill ]
+                        (download [ mouseOver [ Font.color gciBlue ], pointer, centerX ]
+                            { url = "/download/press.zip"
+                            , label = text "Press Materials"
+                            }
+                        )
+                    ]
+                , newTabLink [ centerX ]
                     { url = "https://regaltechsupport.com"
                     , label =
                         row
@@ -838,7 +915,7 @@ footer shared msgCommand =
                             , paddingXY 5 5
                             , mouseOver [ Font.color (rgb 255 165 0) ]
                             ]
-                            [ image [ width (px 20) ] { src = "/img/regaltechsupport.ico", description = "Regal Tech Support, LLC Logo" }
+                            [ image [ width (px 20) ] { src = "https://regaltechsupport.com/img/favicon.ico", description = "Regal Tech Support, LLC Logo" }
                             , text "Website made by Regal Tech Support"
                             ]
                     }
