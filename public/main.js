@@ -53,12 +53,14 @@ const scrollToHash = () => {
   const BREAKPOINT_XL = 1920
   const NAVBAR_HEIGHT_PX = window.innerWidth > BREAKPOINT_XL ? 127 : 102
   const element = window.location.hash && document.querySelector(window.location.hash)
+  localStorage.setItem('storage', localStorage.getItem('storage').replace('"mobileNav":true', '"mobileNav":false'))
   if (element) {
     // element.scrollIntoView({ behavior: 'smooth' })
     window.scroll({ behavior: 'smooth', top: window.pageYOffset + element.getBoundingClientRect().top - NAVBAR_HEIGHT_PX })
   } else {
     window.scroll({ behavior: 'auto', top: 0 })
   }
+  app.ports.load.send(JSON.parse(localStorage.getItem('storage')));
 }
 
 app.ports.onUrlChange.subscribe(_ => setTimeout(scrollToHash, 0))
