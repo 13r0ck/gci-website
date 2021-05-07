@@ -250,33 +250,36 @@ navbar shared msgCommand =
                     navbarBtn ( id, item ) True
 
         mobileNavBtn item =
-            Input.button
-                [ fontSize device Md
-                , Border.color gciBlue
-                , Border.widthEach { bottom = 2, left = 0, right = 0, top = 0 }
-                , htmlAttribute <| class "letterSpacing"
-                , centerX
-                , padding 5
-                ]
-                { onPress =
-                    Just
-                        (msgCommand
-                            (case item.onClick of
-                                Url s ->
-                                    changeUrl s
+            let
+                attr =
+                    [ fontSize device Md
+                    , Border.color gciBlue
+                    , Border.widthEach { bottom = 2, left = 0, right = 0, top = 0 }
+                    , htmlAttribute <| class "letterSpacing"
+                    , centerX
+                    , padding 5
+                    ]
+            in
+            case item.onClick of
+                Url s ->
+                    link attr { url = s, label = text item.name }
 
-                                SetContactUs b ->
-                                    setContactUs
+                SetContactUs b ->
+                    Input.button attr
+                        { onPress =
+                            Just
+                                (msgCommand
+                                    (setContactUs
                                         (if b then
                                             "True"
 
                                          else
                                             "False"
                                         )
-                            )
-                        )
-                , label = text item.name
-                }
+                                    )
+                                )
+                        , label = text item.name
+                        }
 
         navbarBtn ( id, item ) shouldOnClick =
             row
@@ -826,7 +829,16 @@ contactUs shared msgCommand =
             , rounded 25
             , clip
             , inFront
-                (row [ padding (if isPhone then 0 else 20), alignRight ]
+                (row
+                    [ padding
+                        (if isPhone then
+                            0
+
+                         else
+                            20
+                        )
+                    , alignRight
+                    ]
                     [ Input.button
                         [ alignRight
                         , Font.family [ Font.typeface "icons" ]
@@ -983,7 +995,13 @@ footer shared msgCommand =
                     ]
                 )
             , column [ fontSize device Xsm, paddingXY 200 20, centerX, spacing 10 ]
-                [ (if isPhone then column else wrappedRow) [ spacing 15 ]
+                [ (if isPhone then
+                    column
+
+                   else
+                    wrappedRow
+                  )
+                    [ spacing 15 ]
                     [ el [ width fill ] (el [ centerX ] (text ("©" ++ String.fromInt year ++ " Global Circuit Innovations, Inc.")))
                     , el [ width fill ] (link [ mouseOver [ Font.color gciBlue ], centerX ] { url = "#", label = text "Accesability" })
                     , el [ width fill ] (link [ mouseOver [ Font.color gciBlue ], centerX ] { url = "#", label = text "Sitemap" })
