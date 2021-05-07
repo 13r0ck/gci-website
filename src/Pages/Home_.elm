@@ -153,7 +153,7 @@ init temp =
             Dict.fromList
                 [ ( "gciBar", AnimationState Middle False )
                 , ( "whatwedo", AnimationState (PercentOfViewport 40) False )
-                , ( "grayQuote", AnimationState (PercentOfViewport 100) False )
+                , ( "grayQuote", AnimationState (PercentOfViewport 50) False )
                 , ( "testimonials", AnimationState Middle False )
                 , ( "cleanRoom", AnimationState (PercentOfViewport 40) False )
                 ]
@@ -554,7 +554,12 @@ point_down scrolled =
                 ]
             )
             []
-            (image [ width (px 40), height (px 40), Font.color gciBlue ] { src = "/img/down_arrow.svg", description = "down arrow" })
+            (if scrolled then
+                image [ width (px 40), height (px 40) ] { src = "/img/down_arrow.svg", description = "down arrow" }
+
+             else
+                link [ width (px 40), height (px 40) ] { url = "/#testimonials", label = image [ width fill, height fill ] { src = "/img/down_arrow.svg", description = "down arrow" } }
+            )
         ]
 
 
@@ -985,6 +990,7 @@ boxes w animateSelf content temp =
     column
         [ centerX
         , transparent (not animateSelf)
+        , htmlAttribute <| id "whatwedo"
         ]
         [ ael
             (if animateSelf then
@@ -1004,7 +1010,7 @@ boxes w animateSelf content temp =
             , Font.extraLight
             ]
             (paragraph [ Font.center ] [ text "What do we do? Great Technology." ])
-        , el [ width (px (eachWidth * (temp.width // eachWidth))), centerX ] (wrappedRow [ htmlAttribute <| id "whatwedo", centerX ] (List.map box (List.indexedMap Tuple.pair content)))
+        , el [ width (px (eachWidth * (temp.width // eachWidth))), centerX ] (wrappedRow [ centerX ] (List.map box (List.indexedMap Tuple.pair content)))
         , paragraph [ centerX, Font.light, Font.center, fontSize device Md, padding 20 ] [ text "GCI provides solutions for otherwise obsolite electronic systems. Keeping assets fully operational for many decades in the future." ]
         ]
 

@@ -18,6 +18,7 @@ module Storage exposing
     , navBtnUnHover
     , onChange
     , setContactUs
+    , toggleMobileNav
     )
 
 import Browser.Navigation as Nav
@@ -40,6 +41,7 @@ type alias Storage =
     { navHoverTracker : List NavItem
     , openContactUs : Bool
     , contactDialogState : ContactDialogState
+    , mobileNav : Bool
     }
 
 
@@ -144,12 +146,13 @@ toJson storage =
                 , ( "currentPage", E.int us.currentPage )
                 ]
           )
+        , ( "mobileNav", E.bool storage.mobileNav )
         ]
 
 
 decoder : Json.Decoder Storage
 decoder =
-    Json.map3 Storage
+    Json.map4 Storage
         (Json.field "navbar"
             (Json.list
                 (Json.map4 NavItem
@@ -187,6 +190,7 @@ decoder =
                 |> optional "currentPage" Json.int 0
             )
         )
+        (Json.field "mobileNav" Json.bool)
 
 
 
@@ -220,6 +224,7 @@ init =
             False
             0
         )
+        False
 
 
 
@@ -260,6 +265,11 @@ setContactUs state storage =
     }
         |> toJson
         |> save
+
+
+toggleMobileNav : String -> Storage -> Cmd msg
+toggleMobileNav state storage =
+    { storage | mobileNav = not storage.mobileNav } |> toJson |> save
 
 
 contactUsNext : String -> Storage -> Cmd msg

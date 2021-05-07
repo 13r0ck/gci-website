@@ -47,6 +47,7 @@ import Storage as Storage
         , navBtnHover
         , navBtnUnHover
         , setContactUs
+        , toggleMobileNav
         )
 import Task
 import Time
@@ -95,7 +96,7 @@ init : Request -> Flags -> ( Model, Cmd Msg )
 init _ flags =
     ( { storage =
             Storage.fromJson flags.storage
-                |> (\f -> Storage Storage.init.navHoverTracker f.openContactUs f.contactDialogState)
+                |> (\f -> Storage Storage.init.navHoverTracker f.openContactUs f.contactDialogState False)
       , temp =
             { scrolledDistance = 0
             , navbarDisplay = Show
@@ -234,6 +235,12 @@ navbar shared msgCommand =
         device =
             shared.temp.device.class
 
+        isDesktop =
+            device == Desktop
+
+        isBigDesktop =
+            device == BigDesktop
+
         navBtn ( id, item ) =
             case item.onClick of
                 Url s ->
@@ -241,6 +248,35 @@ navbar shared msgCommand =
 
                 setContactUs ->
                     navbarBtn ( id, item ) True
+
+        mobileNavBtn item =
+            Input.button
+                [ fontSize device Md
+                , Border.color gciBlue
+                , Border.widthEach { bottom = 2, left = 0, right = 0, top = 0 }
+                , htmlAttribute <| class "letterSpacing"
+                , centerX
+                , padding 5
+                ]
+                { onPress =
+                    Just
+                        (msgCommand
+                            (case item.onClick of
+                                Url s ->
+                                    changeUrl s
+
+                                SetContactUs b ->
+                                    setContactUs
+                                        (if b then
+                                            "True"
+
+                                         else
+                                            "False"
+                                        )
+                            )
+                        )
+                , label = text item.name
+                }
 
         navbarBtn ( id, item ) shouldOnClick =
             row
@@ -358,13 +394,63 @@ navbar shared msgCommand =
                     [ P.y -100 ]
                     [ P.y 0 ]
         )
-        [ width fill
-        , height shrink
-        , Font.family [ Font.sansSerif ]
-        , fontSize device Xsm
-        , Region.navigation
-        , shadow { offset = ( 0, 0 ), size = 0.15, blur = 5, color = black }
-        ]
+        (( shared.storage.mobileNav
+         , [ width fill
+           , height shrink
+           , Font.family [ Font.sansSerif ]
+           , fontSize device Xsm
+           , Region.navigation
+           , shadow { offset = ( 0, 0 ), size = 0.15, blur = 5, color = black }
+           ]
+         )
+            |> (\( m, a ) ->
+                    if not (isDesktop || isBigDesktop) then
+                        behindContent
+                            (el
+                                [ width fill
+                                , height fill
+                                , below
+                                    (ael
+                                        (if shared.storage.mobileNav then
+                                            Animation.fromTo
+                                                { duration = 500
+                                                , options = []
+                                                }
+                                                [ P.y -300 ]
+                                                [ P.y 0 ]
+
+                                         else
+                                            Animation.fromTo
+                                                { duration = 500
+                                                , options = []
+                                                }
+                                                [ P.y 0 ]
+                                                [ P.y -300 ]
+                                        )
+                                        [ Background.color white
+                                        , width fill
+                                        , shadow { offset = ( 0, 2 ), size = 0.15, blur = 3, color = black }
+                                        ]
+                                        (column
+                                            [ width fill
+                                            , centerX
+                                            , Font.light
+                                            , width shrink
+                                            , padding 20
+                                            , spacing 20
+                                            ]
+                                            (List.map mobileNavBtn animationTracker)
+                                        )
+                                    )
+                                ]
+                                none
+                            )
+                            :: a
+
+                    else
+                        a
+               )
+        )
         [ case device of
             Desktop ->
                 column [ width (fill |> maximum maxWidth), centerX ]
@@ -387,7 +473,7 @@ navbar shared msgCommand =
                     ]
 
             _ ->
-                row [ width fill, height (px 80), Background.color white, spacing 10 ]
+                row [ width fill, height (px 80), Background.color white ]
                     [ el [ height fill ] logo
                     , if device == Tablet then
                         Input.button [ height fill, alignRight, centerY ]
@@ -407,10 +493,10 @@ navbar shared msgCommand =
                       else
                         none
                     , Input.button [ alignRight ]
-                        { onPress = Just (msgCommand (setContactUs "False"))
+                        { onPress = Just (msgCommand (toggleMobileNav ""))
                         , label =
                             html <|
-                                div [ classList [ ( "hamburger", True ), ( "hamburger--collapse", True ), ( "is-active", True ) ] ]
+                                div [ classList [ ( "hamburger", True ), ( "hamburger--collapse", True ), ( "is-active", shared.storage.mobileNav ) ] ]
                                     [ div [ class "hamburger-box" ]
                                         [ div [ class "hamburger-inner" ] []
                                         ]
