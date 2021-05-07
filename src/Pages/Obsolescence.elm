@@ -79,7 +79,7 @@ view shared model =
         [ inFront (navbar shared NavBar)
         , inFront
             (if shared.storage.openContactUs then
-                contactUs shared.storage.contactDialogState shared.temp.address ContactUs
+                contactUs shared ContactUs
 
              else
                 none

@@ -379,7 +379,7 @@ view shared model =
         , inFront (point_down (shouldAnimate "testimonials" model))
         , inFront
             (if shared.storage.openContactUs then
-                contactUs shared.storage.contactDialogState shared.temp.address ContactUs
+                contactUs shared ContactUs
 
              else
                 none
