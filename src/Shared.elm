@@ -1001,7 +1001,7 @@ footer shared msgCommand =
                    else
                     wrappedRow
                   )
-                    [ spacing 15 ]
+                    [ spacing 15, width fill ]
                     [ el [ width fill ] (el [ centerX ] (text ("©" ++ String.fromInt year ++ " Global Circuit Innovations, Inc.")))
                     , el [ width fill ] (link [ mouseOver [ Font.color gciBlue ], centerX ] { url = "#", label = text "Accesability" })
                     , el [ width fill ] (link [ mouseOver [ Font.color gciBlue ], centerX ] { url = "#", label = text "Sitemap" })
