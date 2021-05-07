@@ -90,6 +90,6 @@ view shared model =
             [ column [ width (fill |> maximum maxWidth), centerX, spacing 25 ]
                 [ row [ htmlAttribute <| id "placeholder", width fill, Background.gradient { angle = degrees 0, steps = [ rgb 1 0 0, rgb 0 1 0, rgb 0 0 1 ] }, height (px 1000) ] []
                 ]
-            , footer shared.temp.certifications shared.temp.address shared.storage.navHoverTracker shared.temp.socialMedia shared.temp.currentYear Footer
+            , footer shared Footer
             ]
     }
