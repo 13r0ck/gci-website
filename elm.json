@@ -17,6 +17,7 @@
             "elm/time": "1.0.0",
             "elm/url": "1.0.0",
             "elm-community/maybe-extra": "5.2.0",
+            "marshallformula/elm-swiper": "1.0.2",
             "mdgriffith/elm-ui": "1.1.8",
             "panthershark/email-parser": "1.0.2",
             "robinheghan/elm-phone-numbers": "1.0.0",

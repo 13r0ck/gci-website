@@ -28,6 +28,7 @@ import Simple.Animation as Animation exposing (Animation)
 import Simple.Animation.Animated as Animated
 import Simple.Animation.Property as P
 import Storage exposing (Address, ContactDialogState, NavBarDisplay(..), Storage)
+import Swiper exposing (SwipingState)
 import Task
 import Time exposing (..)
 import View exposing (View)
@@ -50,6 +51,7 @@ page shared req =
 type alias Model =
     { viewPort : Viewport
     , getMouse : Bool
+    , swipingState : SwipingState
     , hideNavbar : Bool
     , userVisible : Bool
     , showContactUs : Bool
@@ -145,6 +147,7 @@ init temp =
     in
     ( { viewPort = emptyViewport
       , getMouse = False
+      , swipingState = Swiper.initialSwipingState
       , hideNavbar = False
       , userVisible = True
       , showContactUs = False
@@ -186,6 +189,7 @@ type Msg
     = GotViewport Viewport
     | GetViewport
     | Scrolled Int
+    | TestimonialSwiped Swiper.SwipeEvent
     | TestimonialLeft
     | TestimonialRight
     | GotMouse Direction
@@ -310,6 +314,40 @@ update storage msg model =
               }
             , Cmd.none
             )
+
+        TestimonialSwiped event ->
+            let
+                test fn =
+                    Tuple.second (fn event model.swipingState)
+            in
+            if test Swiper.hasSwipedLeft then
+                ( { model
+                    | testimonial_viewNum =
+                        if not (model.testimonial_viewNum == 0) then
+                            model.testimonial_viewNum - 1
+
+                        else
+                            model.testimonial_viewNum
+                    , swipingState = Tuple.first (Swiper.hasSwipedLeft event model.swipingState)
+                  }
+                , Cmd.none
+                )
+
+            else if test Swiper.hasSwipedRight then
+                ( { model
+                    | testimonial_viewNum =
+                        if not (model.testimonial_viewNum == List.length model.testimonials - 1) then
+                            model.testimonial_viewNum + 1
+
+                        else
+                            model.testimonial_viewNum
+                    , swipingState = Tuple.first (Swiper.hasSwipedRight event model.swipingState)
+                  }
+                , Cmd.none
+                )
+
+            else
+                ( { model | swipingState = Tuple.first (Swiper.hasSwipedDown event model.swipingState) }, Cmd.none )
 
 
 
