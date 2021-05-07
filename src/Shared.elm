@@ -894,6 +894,9 @@ footer shared msgCommand =
         device =
             shared.temp.device.class
 
+        isPhone =
+            device == Phone
+
         isDesktop =
             device == Desktop
 
@@ -980,7 +983,7 @@ footer shared msgCommand =
                     ]
                 )
             , column [ fontSize device Xsm, paddingXY 200 20, centerX, spacing 10 ]
-                [ wrappedRow [ spacing 15 ]
+                [ (if isPhone then column else wrappedRow) [ spacing 15 ]
                     [ el [ width fill ] (el [ centerX ] (text ("©" ++ String.fromInt year ++ " Global Circuit Innovations, Inc.")))
                     , el [ width fill ] (link [ mouseOver [ Font.color gciBlue ], centerX ] { url = "#", label = text "Accesability" })
                     , el [ width fill ] (link [ mouseOver [ Font.color gciBlue ], centerX ] { url = "#", label = text "Sitemap" })
