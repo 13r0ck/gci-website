@@ -8,7 +8,7 @@ import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border exposing (innerShadow, rounded, shadow, widthEach)
 import Element.Events as EE
-import Element.Font as Font
+import Element.Font as Font exposing (center)
 import Element.Input as Input
 import Element.Region as Region
 import Email as Email
@@ -846,7 +846,7 @@ testimonials ts viewNum animateSelf temp =
                     , label = image [ width (px 30), height (px 30), centerY, centerX, mouseOver [ moveLeft 5 ] ] { src = "/img/left.svg", description = "left button" }
                     }
                 )
-            , el [ padding 10 ]
+            , el [ padding 10, centerX ]
                 (el
                     ([ width (px (testimonial_width * numberToShow + 48 * (numberToShow - 1) + 10))
                      , height fill
