@@ -810,7 +810,7 @@ contactUs shared msgCommand =
             , height
                 (px
                     (if isPhone then
-                        round (toFloat h * 0.75)
+                        round (toFloat h * 0.85)
 
                      else
                         600
@@ -826,7 +826,7 @@ contactUs shared msgCommand =
             , rounded 25
             , clip
             , inFront
-                (row [ padding 20, alignRight ]
+                (row [ padding (if isPhone then 0 else 20), alignRight ]
                     [ Input.button
                         [ alignRight
                         , Font.family [ Font.typeface "icons" ]
