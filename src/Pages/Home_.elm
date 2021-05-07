@@ -819,7 +819,7 @@ testimonials ts viewNum animateSelf temp =
     else
         row [ width fill ]
             [ ael
-                (if viewNum == 0 then
+                (if viewNum == 0 || not animateSelf then
                     Animation.fromTo
                         { duration = 200
                         , options = []
@@ -859,7 +859,7 @@ testimonials ts viewNum animateSelf temp =
                     (row [ moveLeft (toFloat (testimonial_width * viewNum + 48 * viewNum)), width (fill |> maximum (toFloat maxWidth * 0.9 |> ceiling)), centerX, height shrink, spacing 48, paddingEach { left = 10, bottom = 20, top = 20, right = 0 }, htmlAttribute <| class "animateTransform" ] (List.indexedMap testimonial ts))
                 )
             , ael
-                (if viewNum + numberToShow >= List.length ts then
+                (if viewNum + numberToShow >= List.length ts || not animateSelf then
                     Animation.fromTo
                         { duration = 200
                         , options = []
