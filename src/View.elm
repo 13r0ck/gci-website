@@ -1,7 +1,7 @@
 module View exposing (View, map, none, placeholder, toBrowserDocument)
 
 import Browser
-import Element exposing (Element)
+import Element exposing (Element, FocusStyle, focusStyle)
 
 
 type alias View msg =
@@ -36,6 +36,6 @@ toBrowserDocument : View msg -> Browser.Document msg
 toBrowserDocument view =
     { title = view.title
     , body =
-        [ Element.layout view.attributes view.element
+        [ Element.layoutWith { options = [ focusStyle (FocusStyle Nothing Nothing Nothing) ] } view.attributes view.element
         ]
     }
