@@ -63,7 +63,7 @@ const scrollToHash = () => {
   app.ports.load.send(JSON.parse(localStorage.getItem('storage')));
 }
 
-app.ports.onUrlChange.subscribe(_ => setTimeout(scrollToHash, 0))
+app.ports.onUrlChange.subscribe(_ => setTimeout(scrollToHash, 400))
 
 /*
 var hamburger = document.querySelector(".hamburger");
