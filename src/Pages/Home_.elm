@@ -729,11 +729,7 @@ innovations animateSelf temp =
             [ centerX
             , Font.extraLight
             , fontSize device Xlg
-            , if isPhone then
-                Font.alignLeft
-
-              else
-                Font.center
+            , Font.center
             ]
             [ text "Our Innovations are Your Solutions" ]
         , if not isDesktop then
