@@ -383,7 +383,7 @@ navbar shared msgCommand =
 
             _ ->
                 row [ width fill, height (px 80), Background.color white, spacing 10 ]
-                    [ el [ width (px 10) ] logo
+                    [ el [ height fill ] logo
                     , if device.class == Tablet then
                         Input.button [ height fill, alignRight, centerY ]
                             { onPress = Just (msgCommand (setContactUs "True"))
