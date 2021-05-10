@@ -621,7 +621,7 @@ head temp =
                             w
                         )
                     )
-                , height (px videoHeight)
+                , height (px h)
                 , centerX
                 , centerY
                 ]
@@ -673,7 +673,7 @@ head temp =
                     []
 
         videoHeight =
-            ceiling <| toFloat h * 0.8
+            ceiling <| toFloat h * 0.75
 
         scaleByHeight =
             w // videoHeight <= 16 // 9

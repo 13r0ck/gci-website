@@ -810,15 +810,7 @@ contactUs shared msgCommand =
         (column
             [ Background.color white
             , width (px (min 600 w))
-            , height
-                (px
-                    (if isPhone then
-                        round (toFloat h * 0.85)
-
-                     else
-                        600
-                    )
-                )
+            , height (px (min h 600))
             , centerX
             , if isPhone then
                 alignTop
