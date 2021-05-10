@@ -32,12 +32,11 @@ RUN mkdir /compile-path/elm
 
 # 1c: Download and compile Rust dependencies (and store as a separate Docker layer)
 WORKDIR /usr/server
-RUN cargo install --target x86_64-unknown-linux-musl --path .
+#RUN cargo install --target x86_64-unknown-linux-musl --path .
 
 # 1d: Build the exe using the actual source code
-RUN rustup override set nightly
 RUN cargo install --target x86_64-unknown-linux-musl --path .
-RUN cargo build --release
+#RUN cargo build --release
 RUN cp ./target/x86_64-unknown-linux-musl/release/elm-spa_server /compile-path/server/
 
 #2: Build the elm project
