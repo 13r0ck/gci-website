@@ -110,7 +110,7 @@ init _ flags =
                     "mailto:support@gci-global.com"
             , socialMedia =
                 [ SocialMediaItem "\u{F09A}" (rgb255 59 89 152) "#"
-                , SocialMediaItem "\u{F099}" (rgb255 29 161 242) "#"
+                , SocialMediaItem "\u{F099}" (rgb255 29 161 242) "https://twitter.com/dieextraction"
                 , SocialMediaItem "\u{F30C}" (rgb255 0 119 181) "https://www.linkedin.com/company/4804252"
                 , SocialMediaItem "\u{F16A}" (rgb255 255 0 0) "#"
                 ]
@@ -941,13 +941,13 @@ footer shared msgCommand =
                         }
 
         footerSocailBtn item =
-            el
+            newTabLink
                 [ Font.family [ Font.typeface "icons" ]
                 , mouseOver [ Font.color item.hoverColor ]
                 , pointer
                 , padding 10
                 ]
-                (text item.char)
+                { url = item.link, label = text item.char }
 
         spacer =
             el [ paddingXY 28 10 ] (text "|")
@@ -979,9 +979,9 @@ footer shared msgCommand =
                     (List.map footerNavBtn navbtns ++ spacer :: List.map footerSocailBtn socials)
 
               else
-                column [ width fill, Font.bold, fontSize device Xsm ]
+                column [ width fill, Font.bold, fontSize device Sm, spacing 10 ]
                     [ wrappedRow [ width (minimum w fill) ] (List.map (\btn -> el [ width fill ] (footerNavBtn btn)) navbtns)
-                    , row [ centerX ] (List.map footerSocailBtn socials)
+                    , row [ centerX, fontSize device Md ] (List.map footerSocailBtn socials)
                     ]
             , el [ width fill, Border.widthEach { top = 1, bottom = 1, left = 0, right = 0 } ]
                 (wrappedRow [ centerX, width shrink, fontSize device Xsm, padding 20 ]
