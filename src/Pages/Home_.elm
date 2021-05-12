@@ -64,10 +64,6 @@ type alias Model =
     }
 
 
-
--- expects social media images to be a font. I reccommend using fontello to build the font
-
-
 type alias Testimonial =
     { title : String
     , img : String
@@ -167,9 +163,9 @@ init temp =
             [ SimpleBtn 0 "Contact Us" "#" False OpenContactUs
             ]
       , testimonials =
-            [ Testimonial "Sikorsky Aircraft Corperation" "/img/sky.jpg" "High Tech." "" ""
+            [ Testimonial "Sikorsky Aircraft Corperation" "/img/sky.jpg" "Global Circuit Innovations provided a form, fit and function solution to keep our Black Hawk helicopters flying." "- Peter Kubik" "(Senior Staff Engineer)"
             , Testimonial "USAF" "/img/helicopter0.jpg" "GCI offers cost effective, proven obsolescence solutions to keep planes flying and save the US Air Force tens of millions of dollars." "- Jeffery Sillart" "(USAF Lead-Engineer, F-16)"
-            , Testimonial "Sikorsky Aircraft Corperation" "/img/sky.jpg" "Innovations." "" ""
+            , Testimonial "Sikorsky Aircraft Corperation" "/img/sky.jpg" "This is the spot for a third testimonial" "- Brock" "(Cool Dude)"
             ]
       , boxes =
             [ BoxesItem "Electronic Obsolescence Solutions" "/obsolescence" "/img/plane1.png" "/img/plane2.png" False "point_idle"

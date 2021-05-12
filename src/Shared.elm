@@ -85,6 +85,10 @@ type alias CertificationItem =
     }
 
 
+
+-- expects social media images to be a font. I reccommend using fontello to build the font
+
+
 type alias SocialMediaItem =
     { char : String
     , hoverColor : Element.Color
@@ -112,7 +116,6 @@ init _ flags =
                 [ SocialMediaItem "\u{F09A}" (rgb255 59 89 152) "#"
                 , SocialMediaItem "\u{F099}" (rgb255 29 161 242) "https://twitter.com/dieextraction"
                 , SocialMediaItem "\u{F30C}" (rgb255 0 119 181) "https://www.linkedin.com/company/4804252"
-                , SocialMediaItem "\u{F16A}" (rgb255 255 0 0) "#"
                 ]
             , certifications =
                 [ CertificationItem "/img/platinum_certified-v2_white.svg" "AS9100:2016 - ISO 9001:2015 Certified"
@@ -544,8 +547,8 @@ contactUs shared msgCommand =
                 [ case state.currentPage of
                     0 ->
                         column
-                            [ width fill, height (px 250), Font.light, spacing 25, htmlAttribute <| class "backgroundGrow" ]
-                            [ row [ width fill, alignTop, padding 20 ]
+                            [ width fill, height (px 150), Font.light, htmlAttribute <| class "backgroundGrow" ]
+                            [ row [ width fill, alignTop, padding 5 ]
                                 [ el [ fontSize device Md, centerX ] (text "Nice to meet you! ")
                                 , el [ fontSize device Lg, centerX ] (text "👋")
                                 ]
@@ -661,15 +664,14 @@ contactUs shared msgCommand =
                                         310
 
                                      else
-                                        530
+                                        min (toFloat h * 0.87 |> floor) 530
                                     )
                                 )
                             , Font.light
-                            , spacing 25
                             , htmlAttribute <| class "backgroundGrow"
                             , htmlAttribute <| class "gciScroll"
                             ]
-                            [ row [ width fill, alignTop ]
+                            [ row [ width fill, alignTop, padding 10 ]
                                 [ if state.messageError then
                                     el [ fontSize device Md, centerX, Font.color warning ] (text "Use your words please!")
 
@@ -685,7 +687,7 @@ contactUs shared msgCommand =
                                             200
 
                                          else
-                                            415
+                                            min (toFloat h * 0.72 |> floor) 415
                                         )
                                     )
                                 , alignTop
