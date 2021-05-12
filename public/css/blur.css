@@ -243,9 +243,18 @@
 
 .letterSpacing {
   letter-spacing: normal;
-  transition: letter-spacing 0.3s ease-in-out;
+  transition: letter-spacing 1.3s ease-in-out;
 }
 
 .letterSpacing:hover {
     letter-spacing: 3px;
 }
+
+.cornerClipTopLeft {
+    clip-path: polygon(0px 0px, 80px 0px, 80px 3px, 3px 3px, 3px 80px, 0px 80px);
+}
+/* Need to calculate the pixels
+.cornerClipBottomRight {
+    clip-path: polygon(0px 0px, 80px 0px, 80px 3px, 3px 3px, 3px 80px, 0px 80px);
+}
+*/

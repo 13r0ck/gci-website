@@ -8,13 +8,14 @@ import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region
 import Gen.Params.Whoweare exposing (Params)
-import Html exposing (div, iframe)
+import Html exposing (br, div, iframe)
 import Html.Attributes exposing (attribute, class, id, property, src, style)
 import Json.Encode as Encode
 import Page
-import Palette exposing (FontSize(..), fontSize, gciBlue, maxWidth, white)
+import Palette exposing (FontSize(..), black, fontSize, gciBlue, maxWidth, white)
+import Ports exposing (disableScrolling)
 import Request
-import Shared exposing (ael, contactUs, footer, navbar)
+import Shared exposing (Temp, ael, contactUs, footer, navbar)
 import Simple.Animation as Animation exposing (Animation)
 import Simple.Animation.Animated as Animated
 import Simple.Animation.Property as P
@@ -87,10 +88,10 @@ update storage msg model =
             ( model, cmd storage )
 
         OpenVimeo ->
-            ( { model | showVimeo = True }, Cmd.none )
+            ( { model | showVimeo = True }, disableScrolling True )
 
         CloseVimeo ->
-            ( { model | showVimeo = False }, Cmd.none )
+            ( { model | showVimeo = False }, disableScrolling False )
 
         SimpleBtnHover id ->
             ( { model | simpleBtnHoverTracker = List.indexedMap (setHovered id) model.simpleBtnHoverTracker }, Cmd.none )
@@ -123,6 +124,9 @@ view shared model =
 
         device =
             shared.temp.device.class
+
+        isPhone =
+            device == Phone
     in
     { title = "GCI - Authorized Reverse Engineering IC Solutions for Obsolescence and High Temperature Environments"
     , attributes =
@@ -144,17 +148,31 @@ view shared model =
         ]
     , element =
         column [ width fill, Region.mainContent, clip ]
-            [ column [ width (fill |> maximum maxWidth), centerX, spacing 25 ]
-                [ head shared model.simpleBtnHoverTracker
+            [ column [ width (fill |> maximum maxWidth), centerX, spacing 100 ]
+                [ head shared model
+                , column
+                    [ paddingXY
+                        (if isPhone then
+                            10
+
+                         else
+                            toFloat w * 0.2 |> round
+                        )
+                        0
+                    ]
+                    [ mainText shared.temp ]
                 ]
             , footer shared Footer
             ]
     }
 
 
-head : Shared.Model -> List SimpleBtn -> Element Msg
-head shared simpleBtns =
+head : Shared.Model -> Model -> Element Msg
+head shared model =
     let
+        simpleBtns =
+            model.simpleBtnHoverTracker
+
         h =
             shared.temp.height
 
@@ -164,6 +182,9 @@ head shared simpleBtns =
         device =
             shared.temp.device.class
 
+        isPhone =
+            device == Phone
+
         scaleByHeight =
             w // h <= 16 // 9
 
@@ -172,6 +193,7 @@ head shared simpleBtns =
                 [ width shrink
                 , height fill
                 , centerX
+                , transparent model.showVimeo
                 ]
                 (row
                     [ Border.rounded 1000
@@ -198,7 +220,7 @@ head shared simpleBtns =
                     (if item.hovered then
                         [ ael
                             (Animation.fromTo
-                                { duration = 200
+                                { duration = 300
                                 , options = []
                                 }
                                 [ P.opacity 0, P.x 10 ]
@@ -235,6 +257,22 @@ head shared simpleBtns =
     in
     Input.button
         [ width fill
+        , inFront
+            (column
+                [ fontSize device XXlg
+                , Font.color white
+                , Font.extraBold
+                , alignBottom
+                , padding
+                    (if isPhone then
+                        3
+
+                     else
+                        min 150 (toFloat w * 0.1) |> floor
+                    )
+                ]
+                [ text "We Stop", text "Electronic", text "Obsolescence" ]
+            )
         , inFront (row [ centerX, centerY ] (List.map playBtn (List.filter (\a -> a.id == 0) simpleBtns)))
         ]
         { onPress = Just OpenVimeo
@@ -328,6 +366,39 @@ vimeo shared =
                 )
             ]
         )
+
+
+mainText : Temp -> Element Msg
+mainText temp =
+    let
+        device =
+            temp.device.class
+
+        isPhone =
+            device == Phone
+
+        w =
+            temp.width
+    in
+    column
+        [ width fill
+        , spacing 25
+        , padding 25
+        , width fill
+        , inFront
+            (el [ htmlAttribute <| class "cornerClipTopLeft", width fill, height fill, Background.color black ]
+                --, inFront (el [htmlAttribute <| class "cornerClipBottomRight", width fill, height fill, Background.color black]
+                none
+            )
+        ]
+        [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Xlg ] [ text "Heading 1" ]
+        , paragraph [ spacing 10, fontSize device Sm, Font.light ]
+            [ text "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Blandit cursus risus at ultrices mi tempus imperdiet. Ultricies lacus sed turpis tincidunt id aliquet risus feugiat. Vulputate sapien nec sagittis aliquam malesuada bibendum arcu vitae."
+            , html <| br [] []
+            , html <| br [] []
+            , text "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Pellentesque elit ullamcorper dignissim cras. Et netus et malesuada fames ac turpis egestas integer."
+            ]
+        ]
 
 
 setHovered : Int -> Int -> { a | hovered : Bool } -> { a | hovered : Bool }
