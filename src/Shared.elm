@@ -406,6 +406,7 @@ navbar shared msgCommand =
            , Font.family [ Font.sansSerif ]
            , fontSize device Xsm
            , Region.navigation
+           , Background.color white
            , shadow { offset = ( 0, 0 ), size = 0.15, blur = 5, color = black }
            ]
          )
@@ -1019,7 +1020,7 @@ footer shared msgCommand =
                         row
                             [ spacing 5
                             , paddingXY 5 5
-                            , mouseOver [ Font.color (rgb 255 165 0) ]
+                            , mouseOver [ Font.color (rgb255 144 0 255) ]
                             ]
                             [ image [ width (px 20) ] { src = "https://regaltechsupport.com/img/favicon.ico", description = "Regal Tech Support, LLC Logo" }
                             , text "Website made by Regal Tech Support"

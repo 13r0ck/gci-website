@@ -10,6 +10,7 @@ type FontSize
     | Md
     | Lg
     | Xlg
+    | XXlg
 
 
 fontSize : DeviceClass -> FontSize -> Attr decorative msg
@@ -33,6 +34,9 @@ fontSize device size =
                     Xlg ->
                         45
 
+                    XXlg ->
+                        45
+
             Tablet ->
                 case size of
                     Xsm ->
@@ -49,6 +53,9 @@ fontSize device size =
 
                     Xlg ->
                         45
+
+                    XXlg ->
+                        60
 
             Desktop ->
                 case size of
@@ -67,6 +74,9 @@ fontSize device size =
                     Xlg ->
                         50
 
+                    XXlg ->
+                        80
+
             BigDesktop ->
                 case size of
                     Xsm ->
@@ -83,6 +93,9 @@ fontSize device size =
 
                     Xlg ->
                         50
+
+                    XXlg ->
+                        80
         )
 
 
