@@ -210,6 +210,9 @@
 .backgroundGrow {
     transition: height 0.2s linear;
 }
+.backgroundStretch {
+    transition: width 0.3s linear;
+}
 
 
 /* Works on Firefox */
