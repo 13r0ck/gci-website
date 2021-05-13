@@ -1,4 +1,4 @@
-module Pages.Home_ exposing (Model, Msg, page)
+module Pages.Home_ exposing (Model, Msg, page, AnimationState, When(..), onScreenItemtoCmd, updateElement)
 
 import Browser.Dom exposing (Viewport)
 import Browser.Events exposing (Visibility(..), onResize, onVisibilityChange)
@@ -13,7 +13,7 @@ import Element.Input as Input
 import Element.Region as Region
 import Email as Email
 import Gen.Params.Home_ exposing (Params)
-import Html exposing (a, br, video)
+import Html exposing (a, br, video, wbr)
 import Html.Attributes exposing (alt, attribute, autoplay, class, id, loop, src)
 import Html.Events
 import Json.Decode as Decode
@@ -561,6 +561,28 @@ shouldAnimate id model =
 
 point_down : Bool -> Element msg
 point_down scrolled =
+    let
+        bounce =
+            el
+                [ Background.color white
+                , padding 20
+                , Border.rounded 20
+                , Border.shadow { blur = 8, color = rgba 0 0 0 0.5, offset = ( -5, 8 ), size = 1 }
+                ]
+            (ael
+                (Animation.steps
+                    { startAt = [ P.y -10 ]
+                    , options = [ Animation.loop, Animation.easeInOutQuad ]
+                    }
+                    [ Animation.step 550 [ P.y 10 ]
+                    , Animation.step 700 [ P.y -10 ]
+                    ]
+                )
+                []
+                (image [ width (px 40), height (px 40) ] { src = "/img/down_arrow.svg", description = "down arrow" })
+             --link [ width (px 40), height (px 40) ] { url = "/#testimonials", label = image [ width fill, height fill ] { src = "/img/down_arrow.svg", description = "down arrow" } }
+            )
+    in
     acol
         (if scrolled then
             Animation.fromTo
@@ -578,22 +600,11 @@ point_down scrolled =
         , height (px 150)
         ]
         [ row [ height (px 50) ] []
-        , ael
-            (Animation.steps
-                { startAt = [ P.y 0 ]
-                , options = [ Animation.loop, Animation.easeInOutQuad ]
-                }
-                [ Animation.step 550 [ P.y 20 ]
-                , Animation.step 700 [ P.y 0 ]
-                ]
-            )
-            []
-            (if scrolled then
-                image [ width (px 40), height (px 40) ] { src = "/img/down_arrow.svg", description = "down arrow" }
-
-             else
-                link [ width (px 40), height (px 40) ] { url = "/#testimonials", label = image [ width fill, height fill ] { src = "/img/down_arrow.svg", description = "down arrow" } }
-            )
+        , if scrolled then
+            bounce
+          else
+            link []
+                { url = "/#testimonials", label = bounce }
         ]
 
 
@@ -669,7 +680,7 @@ head temp =
                     []
 
         videoHeight =
-            ceiling <| toFloat h * 0.75
+            h
 
         scaleByHeight =
             w // videoHeight <= 16 // 9
@@ -794,7 +805,7 @@ testimonials ts viewNum animateSelf temp =
                 , rounded 10
                 , clip
                 , centerX
-                , Border.shadow { blur = 8, color = rgb 0.8 0.8 0.9, offset = ( -5, 8 ), size = 1 }
+                , Border.shadow { blur = 8, color = rgba 0 0 0 0.2, offset = ( -5, 8 ), size = 1 }
                 , transparent (not animateSelf)
                 ]
                 [ row [ Background.image t.img, height (px 200), width fill ] []
@@ -998,6 +1009,15 @@ boxes w animateSelf content temp =
         device =
             temp.device.class
 
+        isPhone =
+            device == Phone
+
+        isTablet =
+            device == Tablet
+
+        isMobile =
+            isPhone || isTablet
+
         maxW =
             min w maxWidth
 
@@ -1079,7 +1099,25 @@ boxes w animateSelf content temp =
             , fontSize device Lg
             , Font.extraLight
             ]
-            (paragraph [ Font.center ] [ text "What do we do? Great Technology." ])
+            (paragraph [ Font.center ]
+                [ text "What do we do? "
+                , html <|
+                    if isMobile then
+                        br [] []
+
+                    else
+                        wbr [] []
+                , text
+                    ((if isPhone then
+                        "Tap"
+
+                      else
+                        "Click"
+                     )
+                        ++ " below to find out more."
+                    )
+                ]
+            )
         , el [ width (px (eachWidth * (temp.width // eachWidth))), centerX ] (wrappedRow [ centerX ] (List.map box (List.indexedMap Tuple.pair content)))
         , paragraph [ centerX, Font.light, Font.center, fontSize device Md, padding 20 ] [ text "GCI provides solutions for otherwise obsolite electronic systems. Keeping assets fully operational for many decades in the future." ]
         ]
