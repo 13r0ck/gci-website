@@ -1,4 +1,4 @@
-module Pages.Home_ exposing (Model, Msg, page, AnimationState, When(..), onScreenItemtoCmd, updateElement)
+module Pages.Home_ exposing (AnimationState, Model, Msg, When(..), onScreenItemtoCmd, page, updateElement)
 
 import Browser.Dom exposing (Viewport)
 import Browser.Events exposing (Visibility(..), onResize, onVisibilityChange)
@@ -52,7 +52,6 @@ type alias Model =
     { viewPort : Viewport
     , getMouse : Bool
     , swipingState : SwipingState
-    , hideNavbar : Bool
     , userVisible : Bool
     , showContactUs : Bool
     , testimonial_viewNum : Int
@@ -144,7 +143,6 @@ init temp =
     ( { viewPort = emptyViewport
       , getMouse = False
       , swipingState = Swiper.initialSwipingState
-      , hideNavbar = False
       , userVisible = True
       , showContactUs = False
       , testimonial_viewNum = 1
@@ -173,7 +171,7 @@ init temp =
             , BoxesItem "Oil and Gas High Temp Electronics" "/oil" "img/oil1.png" "/img/oil2.png" False "point_idle"
             ]
       }
-    , Task.perform GotViewport Browser.Dom.getViewport
+    , Cmd.none
     )
 
 
@@ -182,9 +180,7 @@ init temp =
 
 
 type Msg
-    = GotViewport Viewport
-    | GetViewport
-    | Scrolled Int
+    = Scrolled Int
     | TestimonialSwiped Swiper.SwipeEvent
     | TestimonialLeft
     | TestimonialRight
@@ -205,27 +201,13 @@ type Msg
 update : Storage -> Msg -> Model -> ( Model, Cmd Msg )
 update storage msg model =
     case msg of
-        GotViewport viewport ->
-            ( { model
-                | hideNavbar =
-                    if model.hideNavbar then
-                        viewport.viewport.y >= model.viewPort.viewport.y
-
-                    else
-                        viewport.viewport.y > model.viewPort.viewport.y
-                , viewPort = viewport
-              }
+        Scrolled _ ->
+            ( model
             , Cmd.batch
                 (List.map animationTrackerToCmd (List.filter (\( _, v ) -> v.shouldAnimate == False) (Dict.toList model.animationTracker))
                     ++ List.map (\i -> onScreenItemtoCmd i.id) model.onScreenTracker
                 )
             )
-
-        Scrolled _ ->
-            ( model, Task.perform GotViewport Browser.Dom.getViewport )
-
-        GetViewport ->
-            ( model, Task.perform GotViewport Browser.Dom.getViewport )
 
         GotElement id element ->
             case element of
@@ -376,21 +358,18 @@ subscriptions model =
                         (Decode.field "movementY" Decode.int)
                     )
                 , recvScroll Scrolled
-                , onResize (\_ _ -> GetViewport)
                 ]
 
         else
             Sub.batch
                 [ onVisibilityChange (\v -> VisibilityChanged v)
                 , recvScroll Scrolled
-                , onResize (\_ _ -> GetViewport)
                 ]
 
     else
         Sub.batch
             [ onVisibilityChange (\v -> VisibilityChanged v)
             , recvScroll Scrolled
-            , onResize (\_ _ -> GetViewport)
             ]
 
 
@@ -569,19 +548,19 @@ point_down scrolled =
                 , Border.rounded 20
                 , Border.shadow { blur = 8, color = rgba 0 0 0 0.5, offset = ( -5, 8 ), size = 1 }
                 ]
-            (ael
-                (Animation.steps
-                    { startAt = [ P.y -10 ]
-                    , options = [ Animation.loop, Animation.easeInOutQuad ]
-                    }
-                    [ Animation.step 550 [ P.y 10 ]
-                    , Animation.step 700 [ P.y -10 ]
-                    ]
+                (ael
+                    (Animation.steps
+                        { startAt = [ P.y -10 ]
+                        , options = [ Animation.loop, Animation.easeInOutQuad ]
+                        }
+                        [ Animation.step 550 [ P.y 10 ]
+                        , Animation.step 700 [ P.y -10 ]
+                        ]
+                    )
+                    []
+                    (image [ width (px 40), height (px 40) ] { src = "/img/down_arrow.svg", description = "down arrow" })
+                 --link [ width (px 40), height (px 40) ] { url = "/#testimonials", label = image [ width fill, height fill ] { src = "/img/down_arrow.svg", description = "down arrow" } }
                 )
-                []
-                (image [ width (px 40), height (px 40) ] { src = "/img/down_arrow.svg", description = "down arrow" })
-             --link [ width (px 40), height (px 40) ] { url = "/#testimonials", label = image [ width fill, height fill ] { src = "/img/down_arrow.svg", description = "down arrow" } }
-            )
     in
     acol
         (if scrolled then
@@ -602,6 +581,7 @@ point_down scrolled =
         [ row [ height (px 50) ] []
         , if scrolled then
             bounce
+
           else
             link []
                 { url = "/#testimonials", label = bounce }

@@ -349,7 +349,7 @@ navbar shared msgCommand =
 
         logo =
             link [ height fill, Background.color white ]
-                { url = "/#home"
+                { url = "/"
                 , label =
                     el
                         [ height fill
