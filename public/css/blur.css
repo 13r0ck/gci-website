@@ -250,11 +250,88 @@
     letter-spacing: 3px;
 }
 
-.cornerClipTopLeft {
-    clip-path: polygon(0px 0px, 80px 0px, 80px 3px, 3px 3px, 3px 80px, 0px 80px);
+.clip_top {
+    clip-path: polygon(0px 0px, 90px 0px, 90px 3px, 3px 3px, 3px 90px, 0px 90px);
 }
-/* Need to calculate the pixels
-.cornerClipBottomRight {
-    clip-path: polygon(0px 0px, 80px 0px, 80px 3px, 3px 3px, 3px 80px, 0px 80px);
+
+.clip_bottom {
+    clip-path: polygon( 87px 0px
+                      , 90px 0px
+                      , 90px 90px
+                      , 0px 90px
+                      , 0px 87px
+                      , 87px 87px);
 }
-*/
+
+.animate_clip_bottom {
+  animation: animateClipBottom 2s forwards;
+  -webkit-animation: animateClipBottom 2s forwards;
+}
+
+@keyframes animateClipBottom {
+  0% {
+    clip-path: polygon( 87px 0px
+                      , 90px 0px
+                      , 90px 90px
+                      , 0px 90px
+                      , 0px 87px
+                      , 87px 87px);
+  }
+  50% {
+    clip-path: polygon( calc(100% - 3px) 0px
+                      , 100% 0%
+                      , 100% 90px
+                      , calc(100% - 80px) 90px
+                      , calc(100% - 80px) 87px
+                      , calc(100% - 3px) 87px);
+  }
+  100% {
+    clip-path: polygon( calc(100% - 3px) calc(100% - 90px)
+                      , 100% calc(100% - 90px)
+                      , 100% 100%
+                      , calc(100% - 90px) 100%
+                      , calc(100% - 90px) calc(100% - 3px)
+                      , calc(100% - 3px) calc(100% - 3px));
+  }
+}
+
+.animate_clip_cover {
+  animation: animateClipCover 2s forwards;
+  -webkit-animation: animateClipCover 2s forwards;
+}
+
+.clip_cover {
+    clip-path: polygon( 100% 0%
+                      , 90px 0px
+                      , 90px 90px
+                      , 0% 90px
+                      , 0% 100%
+                      , 100% 100%);
+}
+
+@keyframes animateClipCover {
+  0% {
+    clip-path: polygon( 100% 0%
+                      , 90px 0px
+                      , 90px 90px
+                      , 0% 90px
+                      , 0% 100%
+                      , 100% 100%);
+  }
+  50% {
+    clip-path: polygon( 100% 0%
+                      , 100% 0px
+                      , 100% 90px
+                      , 0% 90px
+                      , 0% 100%
+                      , 100% 100%);
+  }
+  100% {
+    clip-path: polygon( 100% 0%
+                      , 100% 0px
+                      , 100% 100%
+                      , 0% 100%
+                      , 0% 100%
+                      , 100% 100%);
+  }
+}
