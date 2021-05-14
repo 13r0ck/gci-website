@@ -554,15 +554,14 @@ contactUs shared msgCommand =
                     0 ->
                         column
                             [ width fill, height (px 150), Font.light, htmlAttribute <| class "backgroundGrow" ]
-                            [ row [ width fill, alignTop, padding 5 ]
+                            [ row [ width fill, alignTop, padding 10 ]
                                 [ el [ fontSize device Md, centerX ] (text "Nice to meet you! ")
-                                , el [ fontSize device Lg, centerX ] (text "👋")
                                 ]
                             , if state.nameError then
                                 el [ fontSize device Sm, centerX, Font.color warning ] (text "Please tell us who you are.")
 
                               else
-                                el [ fontSize device Sm, centerX ] (text "Can we get a name?")
+                                el [ fontSize device Sm, centerX, padding 10 ] (text "Can we get a name?")
                             , Input.text
                                 [ rounded 100
                                 , width (px (min 400 w))
@@ -713,9 +712,7 @@ contactUs shared msgCommand =
                                     Just
                                         (Input.placeholder []
                                             (paragraph []
-                                                [ text "Hopefully you need High Tech solutions."
-                                                , html <| br [] []
-                                                , text "Last time we did interior painting it didn't end well ..."
+                                                [ text "Type message here."
                                                 ]
                                             )
                                         )
@@ -727,9 +724,8 @@ contactUs shared msgCommand =
                     3 ->
                         column
                             [ width fill, height (px 100), Font.light, htmlAttribute <| class "backgroundGrow" ]
-                            [ row [ width fill, alignTop ]
+                            [ row [ width fill, alignTop, centerY, padding 10 ]
                                 [ el [ fontSize device Md, centerX, centerY ] (text "Sent!")
-                                , image [ width (px 150), centerX, centerY, padding 10 ] { src = "/img/f16-sticker.png", description = "F-16 sticker" }
                                 ]
                             , el [ fontSize device Sm, centerX ] (paragraph [ Font.center ] [ text "We will reach back out to ", html <| br [] [], text (Maybe.withDefault "you" state.email ++ " soon!") ])
                             ]
@@ -835,14 +831,14 @@ contactUs shared msgCommand =
                             0
 
                          else
-                            20
+                            5
                         )
                     , alignRight
                     ]
                     [ Input.button
                         [ alignRight
                         , Font.family [ Font.typeface "icons" ]
-                        , fontSize device Xlg
+                        , fontSize device Md
                         , pointer
                         , Font.color
                             (if isDesktop || isBigDesktop then
