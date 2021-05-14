@@ -26,3 +26,6 @@ port load : (Json.Value -> msg) -> Sub msg
 
 
 port onUrlChange : () -> Cmd msg
+
+
+port showNav : (Bool -> msg) -> Sub msg

@@ -29,7 +29,7 @@ import Html.Attributes exposing (alt, attribute, autoplay, class, classList, id,
 import Html.Events
 import Json.Decode as Json
 import Palette exposing (FontSize(..), black, fontSize, gciBlue, gciBlueLight, maxWidth, warning, white)
-import Ports exposing (disableScrolling, recvScroll)
+import Ports exposing (disableScrolling, recvScroll, showNav)
 import Request exposing (Request)
 import Simple.Animation as Animation exposing (Animation)
 import Simple.Animation.Animated as Animated
@@ -136,6 +136,7 @@ type Msg
     | Scrolled Int
     | GotYear Int
     | WindowResized Int Int
+    | ShowNav Bool
 
 
 update : Request -> Msg -> Model -> ( Model, Cmd Msg )
@@ -179,6 +180,9 @@ update _ msg model =
                 disableScrolling False
             )
 
+        ShowNav _ ->
+            ( { model | temp = model.temp |> (\t -> { t | navbarDisplay = Enter }) }, Cmd.none )
+
 
 subscriptions : Request -> Model -> Sub Msg
 subscriptions _ _ =
@@ -186,6 +190,7 @@ subscriptions _ _ =
         [ Storage.onChange StorageUpdated
         , recvScroll Scrolled
         , Browser.Events.onResize WindowResized
+        , showNav ShowNav
         ]
 
 
@@ -349,7 +354,7 @@ navbar shared msgCommand =
 
         logo =
             link [ height fill, Background.color white ]
-                { url = "/"
+                { url = "/#home"
                 , label =
                     el
                         [ height fill
