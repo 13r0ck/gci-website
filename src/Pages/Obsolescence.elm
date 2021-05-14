@@ -1,7 +1,6 @@
 module Pages.Obsolescence exposing (Model, Msg, page)
 
 import Browser.Dom exposing (Viewport)
-import Debug exposing (toString)
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
@@ -216,7 +215,7 @@ view shared model =
                     paragraph [ width fill, fontSize device Sm ] [ text item.text ]
             in
             acol
-                (if shouldAnimate (toString item.id) model then
+                (if shouldAnimate (String.fromInt item.id) model then
                     Animation.fromTo
                         { duration = 500
                         , options = []
@@ -227,7 +226,7 @@ view shared model =
                  else
                     Animation.empty
                 )
-                [ width fill, height fill, spacing 20, htmlAttribute <| id (toString item.id), transparent (not (shouldAnimate (toString item.id) model)) ]
+                [ width fill, height fill, spacing 20, htmlAttribute <| id (String.fromInt item.id), transparent (not (shouldAnimate (String.fromInt item.id) model)) ]
                 [ el [ Region.heading 3, Font.extraLight, fontSize device Lg ] (text item.title)
                 , (if isMobile then
                     column
@@ -378,6 +377,9 @@ head shared model =
     in
     Input.button
         [ width fill
+        , height (px h)
+        , clip
+        , inFront (el [ width fill, height fill, Background.color (rgba 0 0 0 0.25) ] none)
         , inFront
             (column
                 [ fontSize device XXlg
@@ -392,7 +394,7 @@ head shared model =
                         min 150 (toFloat w * 0.1) |> floor
                     )
                 ]
-                [ text "We Stop", text "Electronic", text "Obsolescence" ]
+                [ text "We Stop", text "Electronic", text "Obsolescence." ]
             )
         , inFront (row [ centerX, centerY ] (List.map playBtn (List.filter (\a -> a.id == 0) simpleBtns)))
         ]
@@ -508,6 +510,7 @@ mainText temp animateSelf =
     column
         [ width fill
         , spacing 25
+        , htmlAttribute <| id "mainText"
         , padding 25
         , width fill
         , inFront
@@ -548,7 +551,7 @@ mainText temp animateSelf =
             )
         ]
         [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Xlg ] [ text "Heading 1" ]
-        , paragraph [ spacing 10, fontSize device Sm, Font.light, htmlAttribute <| id "mainText" ]
+        , paragraph [ spacing 10, fontSize device Sm, Font.light ]
             [ text "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Blandit cursus risus at ultrices mi tempus imperdiet. Ultricies lacus sed turpis tincidunt id aliquet risus feugiat. Vulputate sapien nec sagittis aliquam malesuada bibendum arcu vitae."
             , html <| br [] []
             , html <| br [] []

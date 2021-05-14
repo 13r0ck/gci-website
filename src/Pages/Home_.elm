@@ -1,4 +1,4 @@
-module Pages.Home_ exposing (AnimationState, Model, Msg, When(..), onScreenItemtoCmd, page, updateElement)
+module Pages.Home_ exposing (Model, Msg, page, AnimationState, When(..), onScreenItemtoCmd, updateElement)
 
 import Browser.Dom exposing (Viewport)
 import Browser.Events exposing (Visibility(..), onResize, onVisibilityChange)
@@ -149,7 +149,7 @@ init temp =
       , animationTracker =
             Dict.fromList
                 [ ( "gciBar", AnimationState Middle False )
-                , ( "whatwedo", AnimationState (PercentOfViewport 40) False )
+                , ( "whatwedo", AnimationState (PercentOfViewport 30) False )
                 , ( "grayQuote", AnimationState (PercentOfViewport 50) False )
                 , ( "testimonials", AnimationState Middle False )
                 , ( "cleanRoom", AnimationState (PercentOfViewport 40) False )
@@ -169,9 +169,10 @@ init temp =
             [ BoxesItem "Electronic Obsolescence Solutions" "/obsolescence" "/img/plane1.png" "/img/plane2.png" False "point_idle"
             , BoxesItem "Electronic Systems" "/systems" "/img/circuit1.png" "/img/circuit2.png" False "point_idle"
             , BoxesItem "Oil and Gas High Temp Electronics" "/oil" "img/oil1.png" "/img/oil2.png" False "point_idle"
+            , BoxesItem "Research & Dev" "/oil" "img/oil1.png" "/img/oil2.png" False "point_idle"
             ]
       }
-    , Cmd.none
+    , controlVideo True
     )
 
 

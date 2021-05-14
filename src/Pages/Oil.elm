@@ -1,7 +1,6 @@
 module Pages.Oil exposing (Model, Msg, page)
 
 import Browser.Dom exposing (Viewport)
-import Debug exposing (toString)
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
@@ -85,9 +84,9 @@ init =
                 , ( "3", AnimationState (PercentOfViewport 40) False )
                 ]
       , subTexts =
-            [ SubText 1 "Sub text" "/img/subtext1.jpg" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
-            , SubText 2 "Sub text" "/img/subtext2.jpg" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
-            , SubText 3 "Sub text" "/img/subtext3.jpg" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
+            [ SubText 1 "Sub text" "/img/subtext4.jpg" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
+            , SubText 2 "Sub text" "/img/subtext5.jpg" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
+            , SubText 3 "Sub text" "/img/subtext6.jpg" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
             ]
       }
     , Cmd.none
@@ -216,7 +215,7 @@ view shared model =
                     paragraph [ width fill, fontSize device Sm ] [ text item.text ]
             in
             acol
-                (if shouldAnimate (toString item.id) model then
+                (if shouldAnimate (String.fromInt item.id) model then
                     Animation.fromTo
                         { duration = 500
                         , options = []
@@ -227,7 +226,7 @@ view shared model =
                  else
                     Animation.empty
                 )
-                [ width fill, height fill, spacing 20, htmlAttribute <| id (toString item.id), transparent (not (shouldAnimate (toString item.id) model)) ]
+                [ width fill, height fill, spacing 20, htmlAttribute <| id (String.fromInt item.id), transparent (not (shouldAnimate (String.fromInt item.id) model)) ]
                 [ el [ Region.heading 3, Font.extraLight, fontSize device Lg ] (text item.title)
                 , (if isMobile then
                     column
@@ -250,13 +249,6 @@ view shared model =
         , inFront
             (if shared.storage.openContactUs then
                 contactUs shared ContactUs
-
-             else
-                none
-            )
-        , inFront
-            (if model.showVimeo then
-                vimeo shared
 
              else
                 none
@@ -305,79 +297,12 @@ head shared model =
 
         isPhone =
             device == Phone
-
-        scaleByHeight =
-            w // h <= 16 // 9
-
-        playBtn item =
-            el
-                [ width shrink
-                , height fill
-                , centerX
-                , transparent model.showVimeo
-                ]
-                (row
-                    [ Border.rounded 1000
-                    , width
-                        (px
-                            (if item.hovered then
-                                300
-
-                             else
-                                120
-                            )
-                        )
-                    , height (px 120)
-                    , centerX
-                    , centerY
-                    , Border.shadow { blur = 20, color = rgba 0 0 0 0.7, offset = ( 0, 0 ), size = 1 }
-                    , Background.color gciBlue
-                    , Font.color white
-                    , fontSize device Xlg
-                    , htmlAttribute <| class "backgroundStretch"
-                    , Events.onMouseEnter (SimpleBtnHover 0)
-                    , Events.onMouseLeave (SimpleBtnUnHover 0)
-                    ]
-                    (if item.hovered then
-                        [ ael
-                            (Animation.fromTo
-                                { duration = 300
-                                , options = []
-                                }
-                                [ P.opacity 0, P.x 10 ]
-                                [ P.opacity 100, P.x 0 ]
-                            )
-                            [ Font.bold, centerX, padding 10 ]
-                            (text "Play")
-                        , ael
-                            (Animation.fromTo
-                                { duration = 300
-                                , options = []
-                                }
-                                [ P.x -70 ]
-                                [ P.x 0 ]
-                            )
-                            [ Font.family [ Font.typeface "icons" ], centerX ]
-                            (text "\u{E801}")
-                        ]
-
-                     else
-                        [ ael
-                            (Animation.fromTo
-                                { duration = 300
-                                , options = []
-                                }
-                                [ P.x 50 ]
-                                [ P.x 0 ]
-                            )
-                            [ Font.family [ Font.typeface "icons" ], centerX ]
-                            (text "\u{E801}")
-                        ]
-                    )
-                )
     in
-    Input.button
+    image
         [ width fill
+        , height (px h)
+        , clip
+        , inFront (el [ width fill, height fill, Background.color (rgba 0 0 0 0.25) ] none)
         , inFront
             (column
                 [ fontSize device XXlg
@@ -392,105 +317,10 @@ head shared model =
                         min 150 (toFloat w * 0.1) |> floor
                     )
                 ]
-                [ text "We Stop", text "Electronic", text "Obsolescence" ]
-            )
-        , inFront (row [ centerX, centerY ] (List.map playBtn (List.filter (\a -> a.id == 0) simpleBtns)))
-        ]
-        { onPress = Just OpenVimeo
-        , label =
-            image
-                [ centerX
-                , if scaleByHeight then
-                    height (px h)
-
-                  else
-                    width (px w)
-                ]
-                { src = "/img/bourbon_street_video.jpg", description = "Click or tap to play Global circuit innovation's company video" }
-        }
-
-
-vimeo : Shared.Model -> Element Msg
-vimeo shared =
-    let
-        w =
-            shared.temp.width
-
-        h =
-            shared.temp.height
-
-        videoWidth =
-            let
-                scale =
-                    if isPhone then
-                        0.95
-
-                    else
-                        0.75
-            in
-            if h > ((9 * (toFloat w * scale)) / 16 |> round) then
-                toFloat w * scale |> floor
-
-            else
-                (16 * (toFloat h * 0.9)) / 9 |> round
-
-        device =
-            shared.temp.device.class
-
-        isPhone =
-            device == Phone
-    in
-    el
-        [ width fill
-        , height fill
-        , htmlAttribute <| class "point_enter_down_long"
-        , behindContent
-            (link [ width fill, height fill ]
-                { url = "/obsolescence#mainText"
-                , label =
-                    el
-                        [ width fill
-                        , height fill
-                        , Background.gradient
-                            { angle = degrees 165
-                            , steps = [ rgba255 87 83 78 0.7, rgba255 17 24 39 0.9 ]
-                            }
-                        , Events.onClick CloseVimeo
-                        ]
-                        none
-                }
+                [ text "Not", text "Farts", text "Real Engineering." ]
             )
         ]
-        (column
-            [ width (px videoWidth)
-            , centerX
-            , centerY
-            , Border.rounded 10
-            , clip
-            , Border.shadow { blur = 20, color = rgba 0 0 0 0.5, offset = ( 0, 0 ), size = 1 }
-            ]
-            [ el [ width fill, height fill, centerX, centerY ]
-                (html <|
-                    div
-                        [ style "padding" "56.25% 0 0 0"
-                        , style "position" "relative"
-                        ]
-                        [ iframe
-                            [ style "position" "absolute"
-                            , style "top" "0"
-                            , style "left" "0"
-                            , style "width" "100%"
-                            , style "height" "100%"
-                            , attribute "frameborder" "0"
-                            , attribute "allow" "autoplay; fullscreen; picture-in-picture"
-                            , property "allowfullscreen" (Encode.bool True)
-                            , src "https://player.vimeo.com/video/322836491?autoplay=1&color=1d376c&title=0&byline=0&portrait=0"
-                            ]
-                            []
-                        ]
-                )
-            ]
-        )
+        { src = "/img/oil_head.jpg", description = "Click or tap to play Global circuit innovation's company video" }
 
 
 mainText : Temp -> Bool -> Element Msg
