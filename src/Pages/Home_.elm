@@ -11,7 +11,6 @@ import Element.Events as EE
 import Element.Font as Font exposing (center)
 import Element.Input as Input
 import Element.Region as Region
-import Email as Email
 import Gen.Params.Home_ exposing (Params)
 import Html exposing (a, br, video, wbr)
 import Html.Attributes exposing (alt, attribute, autoplay, class, id, loop, src)
