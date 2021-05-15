@@ -320,7 +320,7 @@ head shared model =
                 [ text "We Build", text "Complex", text "Electronic Systems." ]
             )
         ]
-        { src = "/img/bourbon_street_video2.jpg", description = "Click or tap to play Global circuit innovation's company video" }
+        { src = "/img/bourbon_street_video2.jpg", description = "Photo of circuit manufacturing." }
 
 
 mainText : Temp -> Bool -> Element Msg
