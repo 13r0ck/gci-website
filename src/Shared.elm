@@ -555,7 +555,7 @@ contactUs shared msgCommand =
                         column
                             [ width fill, height (px 150), Font.light, htmlAttribute <| class "backgroundGrow" ]
                             [ row [ width fill, alignTop, padding 10 ]
-                                [ el [ fontSize device Md, centerX ] (text "Nice to meet you! ")
+                                [ el [ fontSize device Md, centerX ] (text "Welcome to GCI!")
                                 ]
                             , if state.nameError then
                                 el [ fontSize device Sm, centerX, Font.color warning ] (text "Please tell us who you are.")
@@ -857,6 +857,8 @@ contactUs shared msgCommand =
                 [ width fill
                 , height (fillPortion 3)
                 , clip
+
+                --, inFront (el [alignBottom, Font.color (rgb 1 1 1 ), centerX, Font.bold] (text "Cage: 7DGP6  |  Duns: 80126549"))
                 ]
                 { src = "/img/building.png", description = "Picutre of GCI's building" }
             , el [ width fill, height (fillPortion 5) ] contactDialog
@@ -1004,7 +1006,7 @@ footer shared msgCommand =
                   )
                     [ spacing 15, width fill ]
                     [ el [ width fill ] (el [ centerX ] (text ("©" ++ String.fromInt year ++ " Global Circuit Innovations, Inc.")))
-                    , el [ width fill ] (link [ mouseOver [ Font.color gciBlue ], centerX ] { url = "#", label = text "Accesability" })
+                    , el [ width fill ] (link [ mouseOver [ Font.color gciBlue ], centerX ] { url = "#", label = text "Accessibility" })
                     , el [ width fill ] (link [ mouseOver [ Font.color gciBlue ], centerX ] { url = "#", label = text "Sitemap" })
                     , el [ width fill ] (link [ mouseOver [ Font.color gciBlue ], centerX ] { url = "#", label = text "Terms and Conditions" })
                     , el [ width fill ] (link [ mouseOver [ Font.color gciBlue ], centerX ] { url = "#", label = text "Privacy" })

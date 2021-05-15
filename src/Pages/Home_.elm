@@ -48,8 +48,7 @@ page shared req =
 
 
 type alias Model =
-    { viewPort : Viewport
-    , getMouse : Bool
+    { getMouse : Bool
     , swipingState : SwipingState
     , userVisible : Bool
     , showContactUs : Bool
@@ -125,22 +124,7 @@ type Direction
 
 init : Temp -> ( Model, Cmd Msg )
 init temp =
-    let
-        emptyViewport =
-            { scene =
-                { width = 0
-                , height = 0
-                }
-            , viewport =
-                { x = 0
-                , y = 0
-                , width = temp.width |> toFloat
-                , height = temp.height |> toFloat
-                }
-            }
-    in
-    ( { viewPort = emptyViewport
-      , getMouse = False
+    ( { getMouse = False
       , swipingState = Swiper.initialSwipingState
       , userVisible = True
       , showContactUs = False
@@ -168,7 +152,7 @@ init temp =
             [ BoxesItem "Electronic Obsolescence Solutions" "/obsolescence" "/img/plane1.png" "/img/plane2.png" False "point_idle"
             , BoxesItem "Electronic Systems" "/systems" "/img/circuit1.png" "/img/circuit2.png" False "point_idle"
             , BoxesItem "Oil and Gas High Temp Electronics" "/oil" "img/oil1.png" "/img/oil2.png" False "point_idle"
-            , BoxesItem "Research & Dev" "/oil" "img/oil1.png" "/img/oil2.png" False "point_idle"
+            , BoxesItem "Research and Development" "/oil" "img/oil1.png" "/img/oil2.png" False "point_idle"
             ]
       }
     , controlVideo True
@@ -379,13 +363,6 @@ subscriptions model =
 
 view : Shared.Model -> Model -> View Msg
 view shared model =
-    let
-        current_width =
-            model.viewPort.viewport.width |> ceiling
-
-        current_height =
-            model.viewPort.viewport.height |> ceiling
-    in
     { title = "GCI - Authorized Reverse Engineering IC Solutions for Obsolescence and High Temperature Environments"
     , attributes =
         [ inFront (navbar shared NavBar)
@@ -404,8 +381,8 @@ view shared model =
                 [ head shared.temp
                 , innovations (shouldAnimate "testimonials" model) shared.temp
                 , testimonials model.testimonials model.testimonial_viewNum (shouldAnimate "testimonials" model) shared.temp
-                , grayQuote current_width (shouldAnimate "grayQuote" model) shared.temp
-                , boxes current_width (shouldAnimate "whatwedo" model) model.boxes shared.temp
+                , grayQuote (shouldAnimate "grayQuote" model) shared.temp
+                , boxes (shouldAnimate "whatwedo" model) model.boxes shared.temp
                 , cleanRoom (shouldAnimate "cleanRoom" model) model.simpleBtnHoverTracker shared.temp
                 ]
             , footer shared Footer
@@ -714,16 +691,11 @@ innovations animateSelf temp =
         ]
         [ paragraph
             [ centerX
-            , Font.extraLight
+            , Font.light
             , fontSize device Xlg
             , Font.center
             ]
-            [ text "Our Innovations are Your Solutions" ]
-        , if not isDesktop then
-            none
-
-          else
-            paragraph [ centerX, Font.medium, padding 10, Font.center ] [ text "We don't just do stuff, we do stuff really good. Like super good. We are very cool. Pinky Promise." ]
+            [ text "Our Innovations are Your Solutions." ]
         ]
 
 
@@ -818,8 +790,8 @@ testimonials ts viewNum animateSelf temp =
                         [ P.opacity 0, P.y 10 ]
                         [ P.opacity 100, P.y 0 ]
                 )
-                []
-                (Input.button [ centerX ]
+                [ centerX ]
+                (Input.button []
                     { onPress =
                         if viewNum == 0 then
                             Nothing
@@ -858,8 +830,8 @@ testimonials ts viewNum animateSelf temp =
                         [ P.opacity 0, P.y 10 ]
                         [ P.opacity 100, P.y 0 ]
                 )
-                []
-                (Input.button [ centerX ]
+                [ centerX ]
+                (Input.button []
                     { onPress =
                         if viewNum + numberToShow >= List.length ts then
                             Nothing
@@ -983,8 +955,8 @@ cleanRoom animateSelf simpleBtns temp =
         ]
 
 
-boxes : Int -> Bool -> List BoxesItem -> Temp -> Element Msg
-boxes w animateSelf content temp =
+boxes : Bool -> List BoxesItem -> Temp -> Element Msg
+boxes animateSelf content temp =
     let
         device =
             temp.device.class
@@ -997,6 +969,9 @@ boxes w animateSelf content temp =
 
         isMobile =
             isPhone || isTablet
+
+        w =
+            temp.width
 
         maxW =
             min w maxWidth
@@ -1099,15 +1074,18 @@ boxes w animateSelf content temp =
                 ]
             )
         , el [ width (px (eachWidth * (temp.width // eachWidth))), centerX ] (wrappedRow [ centerX ] (List.map box (List.indexedMap Tuple.pair content)))
-        , paragraph [ centerX, Font.light, Font.center, fontSize device Md, padding 20 ] [ text "GCI provides solutions for otherwise obsolite electronic systems. Keeping assets fully operational for many decades in the future." ]
+        , paragraph [ centerX, Font.light, Font.center, fontSize device Md, padding 30, width (fill |> maximum 800) ] [ text "GCI provides solutions for otherwise obsolete electronic systems. Keeping assets fully operational for many decades in the future." ]
         ]
 
 
-grayQuote : Int -> Bool -> Temp -> Element msg
-grayQuote w animateSelf temp =
+grayQuote : Bool -> Temp -> Element msg
+grayQuote animateSelf temp =
     let
         device =
             temp.device.class
+
+        w =
+            temp.width
 
         isPhone =
             device == Phone
@@ -1132,7 +1110,7 @@ grayQuote w animateSelf temp =
         , height fill
         , centerX
         , paddingXY 0 100
-        , Background.gradient { angle = degrees 180, steps = [ white, rgb255 214 218 219 ] }
+        , Background.gradient { angle = degrees 180, steps = [ white, white, rgb255 214 218 219 ] }
         , htmlAttribute <| id "grayQuote"
         ]
         [ ael
@@ -1153,7 +1131,7 @@ grayQuote w animateSelf temp =
                 , Font.alignLeft
                 , Font.extraLight
                 , fontSize device Xlg
-                , Font.color (rgb255 95 106 144)
+                , Font.color (rgb255 85 96 134)
                 , transparent (not animateSelf)
                 ]
                 [ text "Broad Expertise in Electronic Systems." ]
@@ -1176,11 +1154,14 @@ grayQuote w animateSelf temp =
                 , centerX
                 , centerY
                 , Font.light
-                , Font.color (rgb255 95 106 144)
+                , Font.color (rgb255 85 96 134)
                 , fontSize device Md
                 , transparent (not animateSelf)
-                , paddingXY dynamicPadding 30
+                , paddingXY dynamicPadding 40
                 ]
-                [ text "Global Circuit Innovation's expertise has a range of digital and analog security over many decades. This knowledge base is applied to develop electronic obsolescence solutions for legacy systems. Our device physics skills and experience enables us to provide environmental hardening for extremely high temperature applications." ]
+                [ text "Global Circuit Innovation's expertise has a range of digital and analog security over many decades. This knowledge base is applied to develop electronic obsolescence solutions for legacy systems. Our device physics skills and experience enables us to provide environmental hardening for extremely high temperature applications."
+                , html <| br [] []
+                , el [ Font.bold, fontSize device Xsm ] (text "Cage: 7DGP6 | Duns: 80126549")
+                ]
             )
         ]
