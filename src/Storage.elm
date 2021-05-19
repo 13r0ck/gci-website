@@ -30,7 +30,7 @@ import Json.Decode.Pipeline exposing (hardcoded, optional, required)
 import Json.Encode as E exposing (bool, int, list, object, string)
 import PhoneNumber
 import PhoneNumber.Countries exposing (countryUS)
-import Ports exposing (disableScrolling, load, save, setPhoneInputCursor)
+import Ports exposing (disableScrolling, load, save)
 
 
 
@@ -336,8 +336,7 @@ contactMessage newMessage storage =
 contactPhone : String -> Storage -> Cmd msg
 contactPhone newPhone storage =
     if storage.contactDialogState.phoneError then
-        Cmd.batch
-            [ { storage
+             { storage
                 | contactDialogState =
                     storage.contactDialogState
                         |> (\s ->
@@ -359,17 +358,9 @@ contactPhone newPhone storage =
               }
                 |> toJson
                 |> save
-            , case storage.contactDialogState.phone of
-                Just p ->
-                    setPhoneCursor p newPhone
-
-                Nothing ->
-                    Cmd.none
-            ]
 
     else
-        Cmd.batch
-            [ { storage
+             { storage
                 | contactDialogState =
                     storage.contactDialogState
                         |> (\s ->
@@ -390,13 +381,7 @@ contactPhone newPhone storage =
               }
                 |> toJson
                 |> save
-            , case storage.contactDialogState.phone of
-                Just p ->
-                    setPhoneCursor p newPhone
-
-                Nothing ->
-                    Cmd.none
-            ]
+            
 
 
 contactEmail : String -> Storage -> Cmd msg
@@ -464,87 +449,6 @@ prettyPhoneNumber number =
         _ ->
             "+1 (" ++ String.left 3 clean ++ ")  " ++ String.slice 3 6 clean ++ " - " ++ String.slice 6 10 clean
 
-
-setPhoneCursor : String -> String -> Cmd msg
-setPhoneCursor oldPhone newPhone =
-    let
-        parse val =
-            String.toList (String.filter isDigit (String.replace "+1" "" val))
-
-        index a =
-            a |> Tuple.first
-
-        one a =
-            a |> Tuple.second |> Tuple.first
-
-        two a =
-            a |> Tuple.second |> Tuple.second
-    in
-    -- creates List (index, (oldDigit, newDigit)) and filters for first change returning that number
-    -- the first difference is what matters, so we just take the head and return the modified index
-    case
-        List.head
-            (List.filterMap
-                (\a ->
-                    if not (one a == two a) then
-                        Just (index a)
-
-                    else
-                        Nothing
-                )
-                (List.indexedMap Tuple.pair (List.map2 Tuple.pair (parse oldPhone) (parse newPhone)))
-            )
-    of
-        Just i ->
-            if String.length oldPhone > String.length newPhone then
-                setPhoneInputCursor
-                    (case i of
-                        0 ->
-                            4
-
-                        1 ->
-                            5
-
-                        2 ->
-                            6
-
-                        3 ->
-                            10
-
-                        4 ->
-                            11
-
-                        5 ->
-                            12
-
-                        n ->
-                            n + 10
-                    )
-
-            else
-                setPhoneInputCursor
-                    (case i of
-                        0 ->
-                            5
-
-                        1 ->
-                            6
-
-                        2 ->
-                            10
-
-                        3 ->
-                            11
-
-                        4 ->
-                            12
-
-                        n ->
-                            n + 11
-                    )
-
-        Nothing ->
-            Cmd.none
 
 
 validUSNumber : String -> Bool

@@ -12,10 +12,13 @@ app.ports.controlVideo.subscribe((message) => {
   });
 });
 
-app.ports.setPhoneInputCursor.subscribe((pos) => {
-  var phoneInput = document.getElementById("phoneInput");
-  phoneInput.focus();
-  phoneInput.setSelectionRange(pos, pos);
+app.ports.setCursor.subscribe((pos) => {
+  try {
+    var input = document.activeElement;
+    console.log(pos)
+    input.focus();
+    input.setSelectionRange(pos, pos);
+  } catch {}
 });
 
 var winX = null;
