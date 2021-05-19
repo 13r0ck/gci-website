@@ -20,7 +20,7 @@ import Page
 import Palette exposing (FontSize(..), black, fontSize, gciBlue, gciBlueLight, maxWidth, warning, white)
 import PhoneNumber
 import PhoneNumber.Countries exposing (countryUS)
-import Ports exposing (controlVideo, recvScroll, setPhoneInputCursor)
+import Ports exposing (controlVideo, recvScroll)
 import Request
 import Shared exposing (Temp, acol, ael, arow, contactUs, footer, navbar)
 import Simple.Animation as Animation exposing (Animation)

@@ -29,11 +29,13 @@ import Html.Attributes exposing (alt, attribute, autoplay, class, classList, id,
 import Html.Events
 import Json.Decode as Json
 import Palette exposing (FontSize(..), black, fontSize, gciBlue, gciBlueLight, maxWidth, warning, white)
-import Ports exposing (disableScrolling, recvScroll, showNav)
+import Ports exposing (disableScrolling, recvScroll, showNav, setCursor)
 import Request exposing (Request)
 import Simple.Animation as Animation exposing (Animation)
 import Simple.Animation.Animated as Animated
 import Simple.Animation.Property as P
+import Char exposing (isDigit)
+import Process
 import Storage as Storage
     exposing
         ( Address
@@ -137,6 +139,7 @@ type Msg
     | GotYear Int
     | WindowResized Int Int
     | ShowNav Bool
+    | MoveCursor ContactDialogState ContactDialogState ()
 
 
 update : Request -> Msg -> Model -> ( Model, Cmd Msg )
@@ -172,16 +175,40 @@ update _ msg model =
             ( { model | temp = model.temp |> (\t -> { t | currentYear = year }) }, Cmd.none )
 
         StorageUpdated storage ->
+            let
+                ds =
+                    if storage.openContactUs then
+                        disableScrolling True
+                    else
+                        disableScrolling False
+            in
             ( { model | storage = storage }
+            , Cmd.batch [Task.perform (MoveCursor model.storage.contactDialogState storage.contactDialogState) (Process.sleep 20), ds]
+            )
+            {-}
             , if storage.openContactUs then
                 disableScrolling True
 
               else
                 disableScrolling False
             )
+            -}
 
         ShowNav _ ->
             ( { model | temp = model.temp |> (\t -> { t | navbarDisplay = Enter }) }, Cmd.none )
+        MoveCursor old new _ ->
+            (model
+            , if not( old.phone == new.phone )then
+                setPhoneCursor (Maybe.withDefault "" old.phone) (Maybe.withDefault "" new.phone)
+              else if not(old.name == new.name) then
+                calcCursor (Maybe.withDefault "" old.name) (Maybe.withDefault "" new.name)
+              else if not(old.email == new.email) then
+                calcCursor (Maybe.withDefault "" old.email) (Maybe.withDefault "" new.email)
+              else if not(old.message == new.message) then
+                calcCursor (Maybe.withDefault "" old.message) (Maybe.withDefault "" new.message)
+              else 
+                Cmd.none
+            )
 
 
 subscriptions : Request -> Model -> Sub Msg
@@ -1067,3 +1094,119 @@ classifyDevice window =
         else
             Landscape
     }
+calcCursor : String -> String -> Cmd msg
+calcCursor oldS newS =
+    let
+        parse val =
+            String.toList (String.filter isDigit (String.replace "+1" "" val))
+
+        index a =
+            a |> Tuple.first
+
+        one a =
+            a |> Tuple.second |> Tuple.first
+
+        two a =
+            a |> Tuple.second |> Tuple.second
+    in
+    -- creates List (index, (oldDigit, newDigit)) and filters for first change returning that number
+    -- the first difference is what matters, so we just take the head and return the modified index
+    case
+        List.head
+            (List.filterMap
+                (\a ->
+                    if not (one a == two a) then
+                        Just (index a)
+
+                    else
+                        Nothing
+                )
+                (List.indexedMap Tuple.pair (List.map2 Tuple.pair (String.toList oldS) (String.toList newS)))
+            )
+    of
+        Just i ->
+            setCursor (if ((String.length oldS) > (String.length newS)) then i else i + 1)
+        Nothing ->
+            Cmd.none
+
+
+setPhoneCursor : String -> String -> Cmd msg
+setPhoneCursor oldPhone newPhone =
+    let
+        parse val =
+            String.toList (String.filter isDigit (String.replace "+1" "" val))
+
+        index a =
+            a |> Tuple.first
+
+        one a =
+            a |> Tuple.second |> Tuple.first
+
+        two a =
+            a |> Tuple.second |> Tuple.second
+    in
+    -- creates List (index, (oldDigit, newDigit)) and filters for first change returning that number
+    -- the first difference is what matters, so we just take the head and return the modified index
+    case
+        List.head
+            (List.filterMap
+                (\a ->
+                    if not (one a == two a) then
+                        Just (index a)
+
+                    else
+                        Nothing
+                )
+                (List.indexedMap Tuple.pair (List.map2 Tuple.pair (parse oldPhone) (parse newPhone)))
+            )
+    of
+        Just i ->
+            if String.length oldPhone > String.length newPhone then
+                setCursor
+                    (case i of
+                        0 ->
+                            4
+
+                        1 ->
+                            5
+
+                        2 ->
+                            6
+
+                        3 ->
+                            10
+
+                        4 ->
+                            11
+
+                        5 ->
+                            12
+
+                        n ->
+                            n + 10
+                    )
+
+            else
+                setCursor
+                    (case i of
+                        0 ->
+                            5
+
+                        1 ->
+                            6
+
+                        2 ->
+                            10
+
+                        3 ->
+                            11
+
+                        4 ->
+                            12
+
+                        n ->
+                            n + 11
+                    )
+
+        Nothing ->
+            Cmd.none
