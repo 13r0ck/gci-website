@@ -4,6 +4,7 @@ import Browser.Dom exposing (Viewport)
 import Browser.Events exposing (Visibility(..), onResize, onVisibilityChange)
 import Char exposing (isDigit)
 import Dict exposing (Dict)
+import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border exposing (innerShadow, rounded, shadow, widthEach)
@@ -35,7 +36,7 @@ import View exposing (View)
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
-    Page.element
+    Page.advanced
         { init = init shared.temp
         , update = update shared.storage
         , view = view shared
@@ -122,7 +123,7 @@ type Direction
     | Right
 
 
-init : Temp -> ( Model, Cmd Msg )
+init : Temp -> ( Model, Effect Msg )
 init temp =
     ( { getMouse = False
       , swipingState = Swiper.initialSwipingState
@@ -155,7 +156,7 @@ init temp =
             , BoxesItem "Research and Development" "/oil" "img/oil1.png" "/img/oil2.png" False "point_idle"
             ]
       }
-    , controlVideo True
+    , controlVideo True |> Effect.fromCmd
     )
 
 
@@ -171,7 +172,6 @@ type Msg
     | GotMouse Direction
     | GotElement String (Result Browser.Dom.Error Browser.Dom.Element)
     | GotOnScreenItem String (Result Browser.Dom.Error Browser.Dom.Element)
-    | NavBar (Storage -> Cmd Msg)
     | Footer (Storage -> Cmd Msg)
     | ContactUs (String -> Storage -> Cmd Msg) String
     | OpenContactUs
@@ -180,14 +180,15 @@ type Msg
     | SimpleBtnHover Int
     | SimpleBtnUnHover Int
     | VisibilityChanged Visibility
+    | Shared Shared.Msg
 
 
-update : Storage -> Msg -> Model -> ( Model, Cmd Msg )
+update : Storage -> Msg -> Model -> ( Model, Effect Msg )
 update storage msg model =
     case msg of
         Scrolled _ ->
             ( model
-            , Cmd.batch
+            , Effect.batch
                 (List.map animationTrackerToCmd (List.filter (\( _, v ) -> v.shouldAnimate == False) (Dict.toList model.animationTracker))
                     ++ List.map (\i -> onScreenItemtoCmd i.id) model.onScreenTracker
                 )
@@ -196,62 +197,59 @@ update storage msg model =
         GotElement id element ->
             case element of
                 Ok e ->
-                    ( { model | animationTracker = Dict.fromList (List.map (updateElement id e) (Dict.toList model.animationTracker)) }, Cmd.none )
+                    ( { model | animationTracker = Dict.fromList (List.map (updateElement id e) (Dict.toList model.animationTracker)) }, Effect.none )
 
                 Err _ ->
-                    ( model, Cmd.none )
+                    ( model, Effect.none )
 
         GotOnScreenItem id element ->
             case element of
                 Ok e ->
                     ( { model | onScreenTracker = List.map (updateOnScreenElement id e) model.onScreenTracker }
                     , if isOnScreen "earthVideo" (List.map (updateOnScreenElement id e) model.onScreenTracker) then
-                        controlVideo True
+                        controlVideo True |> Effect.fromCmd
                         -- Play
 
                       else
-                        controlVideo False
+                        controlVideo False |> Effect.fromCmd
                       -- Pause
                     )
 
                 Err _ ->
-                    ( model, Cmd.none )
+                    ( model, Effect.none )
 
         VisibilityChanged visibility ->
             if visibility == Visible then
-                ( { model | userVisible = True }, controlVideo True )
+                ( { model | userVisible = True }, controlVideo True |> Effect.fromCmd )
                 -- Play
 
             else
-                ( { model | userVisible = False }, controlVideo False )
+                ( { model | userVisible = False }, controlVideo False |> Effect.fromCmd )
 
         -- Pause
-        NavBar cmd ->
-            ( model, cmd storage )
-
         Footer cmd ->
-            ( model, cmd storage )
+            ( model, cmd storage |> Effect.fromCmd )
 
         ContactUs cmd str ->
-            ( model, cmd str storage )
+            ( model, cmd str storage |> Effect.fromCmd )
 
         OpenContactUs ->
-            ( model, Storage.setContactUs "True" storage )
+            ( model, Storage.setContactUs "True" storage |> Effect.fromCmd )
 
         BoxHover id ->
-            ( { model | boxes = List.indexedMap (setHovered id) model.boxes, getMouse = True }, Cmd.none )
+            ( { model | boxes = List.indexedMap (setHovered id) model.boxes, getMouse = True }, Effect.none )
 
         BoxUnHover id ->
-            ( { model | boxes = List.indexedMap (setUnHovered id) model.boxes, getMouse = True }, Cmd.none )
+            ( { model | boxes = List.indexedMap (setUnHovered id) model.boxes, getMouse = True }, Effect.none )
 
         SimpleBtnHover id ->
-            ( { model | simpleBtnHoverTracker = List.indexedMap (setHovered id) model.simpleBtnHoverTracker }, Cmd.none )
+            ( { model | simpleBtnHoverTracker = List.indexedMap (setHovered id) model.simpleBtnHoverTracker }, Effect.none )
 
         SimpleBtnUnHover id ->
-            ( { model | simpleBtnHoverTracker = List.indexedMap (setUnHovered id) model.simpleBtnHoverTracker }, Cmd.none )
+            ( { model | simpleBtnHoverTracker = List.indexedMap (setUnHovered id) model.simpleBtnHoverTracker }, Effect.none )
 
         GotMouse direction ->
-            ( { model | getMouse = False, boxes = List.map (updateBoxes direction) model.boxes }, Cmd.none )
+            ( { model | getMouse = False, boxes = List.map (updateBoxes direction) model.boxes }, Effect.none )
 
         TestimonialLeft ->
             ( { model
@@ -262,7 +260,7 @@ update storage msg model =
                     else
                         model.testimonial_viewNum
               }
-            , Cmd.none
+            , Effect.none
             )
 
         TestimonialRight ->
@@ -274,7 +272,7 @@ update storage msg model =
                     else
                         model.testimonial_viewNum
               }
-            , Cmd.none
+            , Effect.none
             )
 
         TestimonialSwiped event ->
@@ -292,7 +290,7 @@ update storage msg model =
                             model.testimonial_viewNum
                     , swipingState = Tuple.first (Swiper.hasSwipedLeft event model.swipingState)
                   }
-                , Cmd.none
+                , Effect.none
                 )
 
             else if test Swiper.hasSwipedRight then
@@ -305,11 +303,14 @@ update storage msg model =
                             model.testimonial_viewNum
                     , swipingState = Tuple.first (Swiper.hasSwipedRight event model.swipingState)
                   }
-                , Cmd.none
+                , Effect.none
                 )
 
             else
-                ( { model | swipingState = Tuple.first (Swiper.hasSwipedDown event model.swipingState) }, Cmd.none )
+                ( { model | swipingState = Tuple.first (Swiper.hasSwipedDown event model.swipingState) }, Effect.none )
+
+        Shared message ->
+            ( model, message |> Effect.fromShared )
 
 
 
@@ -365,7 +366,7 @@ view : Shared.Model -> Model -> View Msg
 view shared model =
     { title = "GCI - Authorized Reverse Engineering IC Solutions for Obsolescence and High Temperature Environments"
     , attributes =
-        [ inFront (navbar shared NavBar)
+        [ inFront (map (\m -> Shared m) (navbar shared))
         , inFront (point_down (shouldAnimate "testimonials" model))
         , inFront
             (if shared.storage.openContactUs then
@@ -423,14 +424,14 @@ updateElement id element ( k, v ) =
         ( k, v )
 
 
-animationTrackerToCmd : ( String, AnimationState ) -> Cmd Msg
+animationTrackerToCmd : ( String, AnimationState ) -> Effect Msg
 animationTrackerToCmd ( k, _ ) =
-    Task.attempt (GotElement k) (Browser.Dom.getElement k)
+    Task.attempt (GotElement k) (Browser.Dom.getElement k) |> Effect.fromCmd
 
 
-onScreenItemtoCmd : String -> Cmd Msg
+onScreenItemtoCmd : String -> Effect Msg
 onScreenItemtoCmd id =
-    Task.attempt (GotOnScreenItem id) (Browser.Dom.getElement id)
+    Task.attempt (GotOnScreenItem id) (Browser.Dom.getElement id) |> Effect.fromCmd
 
 
 updateBoxes : Direction -> BoxesItem -> BoxesItem

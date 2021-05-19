@@ -1,7 +1,7 @@
 module Shared exposing
     ( Flags
     , Model
-    , Msg
+    , Msg(..)
     , Temp
     , acol
     , ael
@@ -16,7 +16,7 @@ module Shared exposing
 
 import Browser.Events
 import Browser.Navigation as Nav
-import Debug exposing (todo)
+import Char exposing (isDigit)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border exposing (innerShadow, rounded, shadow)
@@ -29,13 +29,13 @@ import Html.Attributes exposing (alt, attribute, autoplay, class, classList, id,
 import Html.Events
 import Json.Decode as Json
 import Palette exposing (FontSize(..), black, fontSize, gciBlue, gciBlueLight, maxWidth, warning, white)
-import Ports exposing (disableScrolling, recvScroll, showNav, setCursor)
+import Ports exposing (disableScrolling, recvScroll, setCursor, showNav)
+import Process
 import Request exposing (Request)
+import Set exposing (Set)
 import Simple.Animation as Animation exposing (Animation)
 import Simple.Animation.Animated as Animated
 import Simple.Animation.Property as P
-import Char exposing (isDigit)
-import Process
 import Storage as Storage
     exposing
         ( Address
@@ -46,7 +46,6 @@ import Storage as Storage
         , Storage
         , changeUrl
         , contactUsNext
-        , navBtnHover
         , navBtnUnHover
         , setContactUs
         , toggleMobileNav
@@ -78,6 +77,10 @@ type alias Temp =
     , device : Device
     , width : Int
     , height : Int
+    , contactDialogState : ContactDialogState
+    , showMobileNav : Bool
+    , showContactUs : Bool
+    , navHoverTracker : List NavItem
     }
 
 
@@ -100,12 +103,22 @@ type alias SocialMediaItem =
 
 init : Request -> Flags -> ( Model, Cmd Msg )
 init _ flags =
-    ( { storage =
+    let
+        store =
             Storage.fromJson flags.storage
+    in
+    ( { storage =
+            store
                 |> (\f -> Storage Storage.init.navHoverTracker f.openContactUs f.contactDialogState False)
       , temp =
             { scrolledDistance = 0
             , navbarDisplay = Show
+            , navHoverTracker =
+                [ NavItem "WHO WE ARE" "#" False (Url "/whoweare")
+                , NavItem "WHAT WE DO" "#" False (Url "/#whatwedo")
+                , NavItem "NEWSROOM" "#" False (Url "/newsroom")
+                , NavItem "CONTACT US" "#" False (SetContactUs True)
+                ]
             , address =
                 Address
                     "4815 List Drive, Suite 109"
@@ -127,6 +140,9 @@ init _ flags =
             , device = classifyDevice { width = flags.width, height = flags.height }
             , width = flags.width
             , height = flags.height
+            , contactDialogState = store.contactDialogState
+            , showMobileNav = False
+            , showContactUs = False
             }
       }
     , Task.perform GotYear currentYear
@@ -139,7 +155,11 @@ type Msg
     | GotYear Int
     | WindowResized Int Int
     | ShowNav Bool
+    | ShowContactUs Bool
     | MoveCursor ContactDialogState ContactDialogState ()
+    | NavBtnHover Int
+    | NavBtnUnHover Int
+    | ToggleMobileNav
 
 
 update : Request -> Msg -> Model -> ( Model, Cmd Msg )
@@ -179,36 +199,54 @@ update _ msg model =
                 ds =
                     if storage.openContactUs then
                         disableScrolling True
+
                     else
                         disableScrolling False
             in
             ( { model | storage = storage }
-            , Cmd.batch [Task.perform (MoveCursor model.storage.contactDialogState storage.contactDialogState) (Process.sleep 20), ds]
+            , Cmd.batch [ Task.perform (MoveCursor model.storage.contactDialogState storage.contactDialogState) (Process.sleep 20), ds ]
             )
-            {-}
-            , if storage.openContactUs then
-                disableScrolling True
 
-              else
-                disableScrolling False
-            )
-            -}
+        {- }
+           , if storage.openContactUs then
+               disableScrolling True
 
+             else
+               disableScrolling False
+           )
+        -}
         ShowNav _ ->
             ( { model | temp = model.temp |> (\t -> { t | navbarDisplay = Enter }) }, Cmd.none )
+
         MoveCursor old new _ ->
-            (model
-            , if not( old.phone == new.phone )then
+            ( model
+            , if not (old.phone == new.phone) then
                 setPhoneCursor (Maybe.withDefault "" old.phone) (Maybe.withDefault "" new.phone)
-              else if not(old.name == new.name) then
+
+              else if not (old.name == new.name) then
                 calcCursor (Maybe.withDefault "" old.name) (Maybe.withDefault "" new.name)
-              else if not(old.email == new.email) then
+
+              else if not (old.email == new.email) then
                 calcCursor (Maybe.withDefault "" old.email) (Maybe.withDefault "" new.email)
-              else if not(old.message == new.message) then
+
+              else if not (old.message == new.message) then
                 calcCursor (Maybe.withDefault "" old.message) (Maybe.withDefault "" new.message)
-              else 
+
+              else
                 Cmd.none
             )
+
+        ShowContactUs b ->
+            ( { model | temp = model.temp |> (\t -> { t | showContactUs = b }) }, Cmd.none )
+
+        ToggleMobileNav ->
+            ( { model | temp = model.temp |> (\t -> { t | showMobileNav = not t.showMobileNav }) }, Cmd.none )
+
+        NavBtnHover id ->
+            ( { model | temp = model.temp |> (\t -> { t | navHoverTracker = List.indexedMap (setHovered id) t.navHoverTracker }) }, Cmd.none )
+
+        NavBtnUnHover _ ->
+            ( { model | temp = model.temp |> (\t -> { t | navHoverTracker = List.map (\i -> { i | hovered = False }) t.navHoverTracker }) }, Cmd.none )
 
 
 subscriptions : Request -> Model -> Sub Msg
@@ -258,11 +296,11 @@ currentYear =
     Task.map2 Time.toYear Time.here Time.now
 
 
-navbar : Model -> ((Storage -> Cmd msg) -> b) -> Element b
-navbar shared msgCommand =
+navbar : Model -> Element Msg
+navbar shared =
     let
         animationTracker =
-            shared.storage.navHoverTracker
+            shared.temp.navHoverTracker
 
         display =
             shared.temp.navbarDisplay
@@ -301,18 +339,7 @@ navbar shared msgCommand =
 
                 SetContactUs b ->
                     Input.button attr
-                        { onPress =
-                            Just
-                                (msgCommand
-                                    (setContactUs
-                                        (if b then
-                                            "True"
-
-                                         else
-                                            "False"
-                                        )
-                                    )
-                                )
+                        { onPress = Just (ShowContactUs True)
                         , label = text item.name
                         }
 
@@ -347,27 +374,12 @@ navbar shared msgCommand =
                         [ el [ centerX, centerY, Font.color white ] (text item.name) ]
                     )
                 , if shouldOnClick then
-                    Events.onClick
-                        (msgCommand
-                            (case item.onClick of
-                                Url s ->
-                                    changeUrl s
-
-                                SetContactUs b ->
-                                    setContactUs
-                                        (if b then
-                                            "True"
-
-                                         else
-                                            "False"
-                                        )
-                            )
-                        )
+                    Events.onClick (ShowContactUs True)
 
                   else
                     pointer
-                , Events.onMouseEnter (msgCommand (navBtnHover id))
-                , Events.onMouseLeave (msgCommand (navBtnUnHover id))
+                , Events.onMouseEnter (NavBtnHover id)
+                , Events.onMouseLeave (NavBtnUnHover id)
                 ]
                 []
 
@@ -516,7 +528,7 @@ navbar shared msgCommand =
                     [ el [ height fill ] logo
                     , if device == Tablet then
                         Input.button [ height fill, alignRight, centerY ]
-                            { onPress = Just (msgCommand (setContactUs "True"))
+                            { onPress = Just (ShowContactUs True)
                             , label =
                                 image [ height (px 50) ]
                                     { src =
@@ -532,7 +544,7 @@ navbar shared msgCommand =
                       else
                         none
                     , Input.button [ alignRight ]
-                        { onPress = Just (msgCommand (toggleMobileNav ""))
+                        { onPress = Just ToggleMobileNav
                         , label =
                             html <|
                                 div [ classList [ ( "hamburger", True ), ( "hamburger--collapse", True ), ( "is-active", shared.storage.mobileNav ) ] ]
@@ -1094,6 +1106,8 @@ classifyDevice window =
         else
             Landscape
     }
+
+
 calcCursor : String -> String -> Cmd msg
 calcCursor oldS newS =
     let
@@ -1125,7 +1139,14 @@ calcCursor oldS newS =
             )
     of
         Just i ->
-            setCursor (if ((String.length oldS) > (String.length newS)) then i else i + 1)
+            setCursor
+                (if String.length oldS > String.length newS then
+                    i
+
+                 else
+                    i + 1
+                )
+
         Nothing ->
             Cmd.none
 
@@ -1210,3 +1231,12 @@ setPhoneCursor oldPhone newPhone =
 
         Nothing ->
             Cmd.none
+
+
+setHovered : Int -> Int -> { a | hovered : Bool } -> { a | hovered : Bool }
+setHovered id i data =
+    if id == i then
+        { data | hovered = True }
+
+    else
+        { data | hovered = False }
