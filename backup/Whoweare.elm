@@ -400,86 +400,107 @@ leadership shared leaders leadersPerRow =
 
         cardHeight =
             500
+
         cardSpacing =
             50
 
         leader l =
             el [ width fill ]
-                ( column
-                [ width (px cardWidth)
-                , height (px cardHeight)
-                , Border.rounded 20
-                , centerX
-                , clip
-                , Border.shadow { blur = 10, color = rgba 0 0 0 0.3, offset = ( -5, 5 ), size = 5 }
-                , Background.color white
-                , Events.onClick (Leader l.id)
-                , Events.onMouseEnter (Leader l.id)
-                , Events.onMouseLeave (Leader l.id)
-                ]
-                [ image [ htmlAttribute <| class "animateTransform", width fill, height (px ((toFloat cardHeight) * (2.0/3.0) |> round)) ] {src = l.image, description = l.name}
-                , el ([ htmlAttribute <| class "animateTransform", height (px ((toFloat cardHeight) * (1.0/3.0) |> round)), width fill, Background.color white
-                , Border.shadow { blur = 3, color = rgba 0 0 0 0.2, offset = ( 0, 0 ), size = 1 }
-                ] ++ (if l.flip then [moveUp cardHeight
-                ] else []))
-                    (column [centerX, centerY, spacing 20]
-                    [ el [centerX, fontSize device Md, Font.light, Font.underline ] (text l.name)
-                    , el [centerX, fontSize device Xsm, Font.color (rgb 0.2 0.2 0.3)] (text l.job)
-                    ])
-                , el ([width fill,htmlAttribute <| class "animateTransform", height (px cardHeight), Background.color white] ++ (if l.flip then [moveUp cardHeight] else []))
-                    ( paragraph [Font.alignLeft, fontSize device Xsm, padding 20]
-                        [text l.story]
-                    )
-                ]
+                (column
+                    [ width (px cardWidth)
+                    , height (px cardHeight)
+                    , Border.rounded 20
+                    , centerX
+                    , clip
+                    , Border.shadow { blur = 10, color = rgba 0 0 0 0.3, offset = ( -5, 5 ), size = 5 }
+                    , Background.color white
+                    , Events.onClick (Leader l.id)
+                    , Events.onMouseEnter (Leader l.id)
+                    , Events.onMouseLeave (Leader l.id)
+                    ]
+                    [ image [ htmlAttribute <| class "animateTransform", width fill, height (px (toFloat cardHeight * (2.0 / 3.0) |> round)) ] { src = l.image, description = l.name }
+                    , el
+                        ([ htmlAttribute <| class "animateTransform"
+                         , height (px (toFloat cardHeight * (1.0 / 3.0) |> round))
+                         , width fill
+                         , Background.color white
+                         , Border.shadow { blur = 3, color = rgba 0 0 0 0.2, offset = ( 0, 0 ), size = 1 }
+                         ]
+                            ++ (if l.flip then
+                                    [ moveUp cardHeight
+                                    ]
+
+                                else
+                                    []
+                               )
+                        )
+                        (column [ centerX, centerY, spacing 20 ]
+                            [ el [ centerX, fontSize device Md, Font.light, Font.underline ] (text l.name)
+                            , el [ centerX, fontSize device Xsm, Font.color (rgb 0.2 0.2 0.3) ] (text l.job)
+                            ]
+                        )
+                    , el
+                        ([ width fill, htmlAttribute <| class "animateTransform", height (px cardHeight), Background.color white ]
+                            ++ (if l.flip then
+                                    [ moveUp cardHeight ]
+
+                                else
+                                    []
+                               )
+                        )
+                        (paragraph [ Font.alignLeft, fontSize device Xsm, padding 20 ]
+                            [ text l.story ]
+                        )
+                    ]
                 )
 
-            {- un comment for flip
-                (el [ htmlAttribute <| class "flip-card", centerX]
-                    (column
-                        [ htmlAttribute <| class "flip-card-inner"
-                        , width (px cardWidth)
-                        , height (px cardHeight)
-                        ]
-                        [ el
-                            [ htmlAttribute <| class "flip-card-back"
-                            , Border.shadow { blur = 10, color = rgba 0 0 0 0.3, offset = ( -5, 5 ), size = 5 }
-                            , Border.rounded 20
-                            ]
-                            (el [Background.color white, clip, height (px cardHeight), width (px cardWidth), Border.rounded 20]
-                                ( paragraph [Font.alignLeft, fontSize device Xsm, padding 20]
-                                    [text l.story]
-                                )
-                                )
-                        , el
-                            [ htmlAttribute <| class "flip-card-front"
-                            , moveUp cardHeight
-                            , Border.rounded 20
-                            , Border.shadow { blur = 10, color = rgba 0 0 0 0.3, offset = ( -5, 5 ), size = 5 }
-                            ]
-                        ( column
-                        [ width (px cardWidth)
-                        , height (px cardHeight)
-                        , Border.rounded 20
-                        , clip
-                        , centerX
-                        , Border.shadow { blur = 10, color = rgba 0 0 0 0.3, offset = ( -5, 5 ), size = 5 }
-                        , Background.color white
-                        , Events.onClick (Leader l.id)
-                        --, Events.onMouseEnter (Leader l.id)
-                        --, Events.onMouseLeave (Leader l.id)
-                        ]
-                        [ el [ Background.image l.image, width fill, height (fillPortion 2) ] none
-                        , el [ height fill, width fill]
-                            (column [centerX, centerY, spacing 20]
-                            [ el [centerX, fontSize device Md, Font.light, Font.underline ] (text l.name)
-                            , el [centerX, fontSize device Xsm, Font.color (rgb 0.2 0.2 0.3)] (text l.job)
-                            ])
-                        ]
-                        )
-                                    ]
-                                )
-                            )
-                            -}
+        {- un comment for flip
+           (el [ htmlAttribute <| class "flip-card", centerX]
+               (column
+                   [ htmlAttribute <| class "flip-card-inner"
+                   , width (px cardWidth)
+                   , height (px cardHeight)
+                   ]
+                   [ el
+                       [ htmlAttribute <| class "flip-card-back"
+                       , Border.shadow { blur = 10, color = rgba 0 0 0 0.3, offset = ( -5, 5 ), size = 5 }
+                       , Border.rounded 20
+                       ]
+                       (el [Background.color white, clip, height (px cardHeight), width (px cardWidth), Border.rounded 20]
+                           ( paragraph [Font.alignLeft, fontSize device Xsm, padding 20]
+                               [text l.story]
+                           )
+                           )
+                   , el
+                       [ htmlAttribute <| class "flip-card-front"
+                       , moveUp cardHeight
+                       , Border.rounded 20
+                       , Border.shadow { blur = 10, color = rgba 0 0 0 0.3, offset = ( -5, 5 ), size = 5 }
+                       ]
+                   ( column
+                   [ width (px cardWidth)
+                   , height (px cardHeight)
+                   , Border.rounded 20
+                   , clip
+                   , centerX
+                   , Border.shadow { blur = 10, color = rgba 0 0 0 0.3, offset = ( -5, 5 ), size = 5 }
+                   , Background.color white
+                   , Events.onClick (Leader l.id)
+                   --, Events.onMouseEnter (Leader l.id)
+                   --, Events.onMouseLeave (Leader l.id)
+                   ]
+                   [ el [ Background.image l.image, width fill, height (fillPortion 2) ] none
+                   , el [ height fill, width fill]
+                       (column [centerX, centerY, spacing 20]
+                       [ el [centerX, fontSize device Md, Font.light, Font.underline ] (text l.name)
+                       , el [centerX, fontSize device Xsm, Font.color (rgb 0.2 0.2 0.3)] (text l.job)
+                       ])
+                   ]
+                   )
+                               ]
+                           )
+                       )
+        -}
     in
     column
         [ width fill
@@ -490,7 +511,11 @@ leadership shared leaders leadersPerRow =
         ]
         [ column
             [ spacing 3
-            , (if isPhone then (paddingXY 20 20) else padding 55)
+            , if isPhone then
+                paddingXY 20 20
+
+              else
+                padding 55
             , centerX
             , Background.color (rgba 1 1 1 0)
             , Background.color white
@@ -500,7 +525,7 @@ leadership shared leaders leadersPerRow =
             [ el [ Font.bold, fontSize device Xsm, Font.center, centerX, Font.color (rgb 0.2 0.2 0.3) ] (text "Global Circuit Innovations")
             , el [ Font.extraLight, Font.letterSpacing 5, Font.center, centerX, Font.underline, fontSize device Xlg ] (text "Leadership")
             ]
-        , el [ width (px (min ((toFloat w) * 0.8 |> round) (leadersPerRow * cardWidth + (leadersPerRow * cardSpacing)))), centerX ]
+        , el [ width (px (min (toFloat w * 0.8 |> round) (leadersPerRow * cardWidth + (leadersPerRow * cardSpacing)))), centerX ]
             (wrappedRow [ centerX, spacing cardSpacing ] (List.map leader leaders))
         ]
 

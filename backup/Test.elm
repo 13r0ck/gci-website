@@ -6,7 +6,6 @@ import Page
 import Request
 import Shared
 import View exposing (View)
-import Page
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg

@@ -14,7 +14,6 @@ module Storage exposing
     , contactUsNext
     , fromJson
     , init
-    , navBtnHover
     , navBtnUnHover
     , onChange
     , setContactUs
@@ -231,13 +230,6 @@ init =
 -- Updating storage
 
 
-navBtnHover : Int -> Storage -> Cmd msg
-navBtnHover id storage =
-    { storage | navHoverTracker = List.indexedMap (setHovered id) storage.navHoverTracker }
-        |> toJson
-        |> save
-
-
 navBtnUnHover : Int -> Storage -> Cmd msg
 navBtnUnHover id storage =
     { storage | navHoverTracker = List.indexedMap (setUnHovered id) storage.navHoverTracker }
@@ -336,52 +328,51 @@ contactMessage newMessage storage =
 contactPhone : String -> Storage -> Cmd msg
 contactPhone newPhone storage =
     if storage.contactDialogState.phoneError then
-             { storage
-                | contactDialogState =
-                    storage.contactDialogState
-                        |> (\s ->
-                                { s
-                                    | phone =
-                                        Just
-                                            (if newPhone == "+1 ( " then
-                                                ""
+        { storage
+            | contactDialogState =
+                storage.contactDialogState
+                    |> (\s ->
+                            { s
+                                | phone =
+                                    Just
+                                        (if newPhone == "+1 ( " then
+                                            ""
 
-                                             else if String.length newPhone < String.length (Maybe.withDefault newPhone s.phone) then
-                                                newPhone
+                                         else if String.length newPhone < String.length (Maybe.withDefault newPhone s.phone) then
+                                            newPhone
 
-                                             else
-                                                prettyPhoneNumber newPhone
-                                            )
-                                    , phoneError = not (validUSNumber (String.right 10 (String.filter isDigit (prettyPhoneNumber newPhone))))
-                                }
-                           )
-              }
-                |> toJson
-                |> save
+                                         else
+                                            prettyPhoneNumber newPhone
+                                        )
+                                , phoneError = not (validUSNumber (String.right 10 (String.filter isDigit (prettyPhoneNumber newPhone))))
+                            }
+                       )
+        }
+            |> toJson
+            |> save
 
     else
-             { storage
-                | contactDialogState =
-                    storage.contactDialogState
-                        |> (\s ->
-                                { s
-                                    | phone =
-                                        Just
-                                            (if newPhone == "+1 ( " then
-                                                ""
+        { storage
+            | contactDialogState =
+                storage.contactDialogState
+                    |> (\s ->
+                            { s
+                                | phone =
+                                    Just
+                                        (if newPhone == "+1 ( " then
+                                            ""
 
-                                             else if String.length newPhone < String.length (Maybe.withDefault newPhone s.phone) then
-                                                newPhone
+                                         else if String.length newPhone < String.length (Maybe.withDefault newPhone s.phone) then
+                                            newPhone
 
-                                             else
-                                                prettyPhoneNumber newPhone
-                                            )
-                                }
-                           )
-              }
-                |> toJson
-                |> save
-            
+                                         else
+                                            prettyPhoneNumber newPhone
+                                        )
+                            }
+                       )
+        }
+            |> toJson
+            |> save
 
 
 contactEmail : String -> Storage -> Cmd msg
@@ -450,7 +441,6 @@ prettyPhoneNumber number =
             "+1 (" ++ String.left 3 clean ++ ")  " ++ String.slice 3 6 clean ++ " - " ++ String.slice 6 10 clean
 
 
-
 validUSNumber : String -> Bool
 validUSNumber number =
     if number == "" then
@@ -463,15 +453,6 @@ validUSNumber number =
             , types = PhoneNumber.anyType
             }
             number
-
-
-setHovered : Int -> Int -> { a | hovered : Bool } -> { a | hovered : Bool }
-setHovered id i data =
-    if id == i then
-        { data | hovered = True }
-
-    else
-        { data | hovered = False }
 
 
 setUnHovered : Int -> Int -> { a | hovered : Bool } -> { a | hovered : Bool }
