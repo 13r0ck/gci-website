@@ -2,7 +2,6 @@ module Shared exposing
     ( Flags
     , Model
     , Msg(..)
-    , Temp
     , acol
     , ael
     , arow
@@ -10,6 +9,7 @@ module Shared exposing
     , footer
     , init
     , navbar
+    , setPhoneCursor
     , subscriptions
     , update
     )
@@ -24,11 +24,14 @@ import Element.Events as Events
 import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region
+import Email as Email
 import Html exposing (a, br, div, span, video)
 import Html.Attributes exposing (alt, attribute, autoplay, class, classList, id, loop, src)
 import Html.Events
 import Json.Decode as Json
 import Palette exposing (FontSize(..), black, fontSize, gciBlue, gciBlueLight, maxWidth, warning, white)
+import PhoneNumber
+import PhoneNumber.Countries exposing (countryUS)
 import Ports exposing (disableScrolling, recvScroll, setCursor, showNav)
 import Process
 import Request exposing (Request)
@@ -43,12 +46,6 @@ import Storage as Storage
         , ContactDialogState
         , NavBarDisplay(..)
         , NavItem
-        , Storage
-        , changeUrl
-        , contactUsNext
-        , navBtnUnHover
-        , setContactUs
-        , toggleMobileNav
         )
 import Task
 import Time
@@ -57,17 +54,12 @@ import Time
 type alias Flags =
     { width : Int
     , height : Int
+    , year : Int
     , storage : Json.Value
     }
 
 
 type alias Model =
-    { storage : Storage
-    , temp : Temp
-    }
-
-
-type alias Temp =
     { scrolledDistance : Int
     , navbarDisplay : NavBarDisplay
     , address : Address
@@ -79,7 +71,6 @@ type alias Temp =
     , height : Int
     , contactDialogState : ContactDialogState
     , showMobileNav : Bool
-    , showContactUs : Bool
     , navHoverTracker : List NavItem
     }
 
@@ -107,155 +98,82 @@ init _ flags =
         store =
             Storage.fromJson flags.storage
     in
-    ( { storage =
-            store
-                |> (\f -> Storage Storage.init.navHoverTracker f.openContactUs f.contactDialogState False)
-      , temp =
-            { scrolledDistance = 0
-            , navbarDisplay = Show
-            , navHoverTracker =
-                [ NavItem "WHO WE ARE" "#" False (Url "/whoweare")
-                , NavItem "WHAT WE DO" "#" False (Url "/#whatwedo")
-                , NavItem "NEWSROOM" "#" False (Url "/newsroom")
-                , NavItem "CONTACT US" "#" False (SetContactUs True)
-                ]
-            , address =
-                Address
-                    "4815 List Drive, Suite 109"
-                    "Colorado Springs, CO 80919"
-                    "+1 (719) 573 - 6777"
-                    "tel:+17195736777"
-                    "info@gci-global.com"
-                    "mailto:support@gci-global.com"
-            , socialMedia =
-                [ SocialMediaItem "\u{F09A}" (rgb255 59 89 152) "#"
-                , SocialMediaItem "\u{F099}" (rgb255 29 161 242) "https://twitter.com/dieextraction"
-                , SocialMediaItem "\u{F30C}" (rgb255 0 119 181) "https://www.linkedin.com/company/4804252"
-                ]
-            , certifications =
-                [ CertificationItem "/img/platinum_certified-v2_white.svg" "AS9100:2016 - ISO 9001:2015 Certified"
-                , CertificationItem "/img/ANAB-certified_white.svg" "AS9100:2016 - ISO 9001:2015 Certified"
-                ]
-            , currentYear = 0
-            , device = classifyDevice { width = flags.width, height = flags.height }
-            , width = flags.width
-            , height = flags.height
-            , contactDialogState = store.contactDialogState
-            , showMobileNav = False
-            , showContactUs = False
-            }
+    ( { scrolledDistance = 0
+      , navbarDisplay = Show
+      , navHoverTracker =
+            [ NavItem "WHO WE ARE" "#" False (Url "/whoweare")
+            , NavItem "WHAT WE DO" "#" False (Url "/#whatwedo")
+            , NavItem "NEWSROOM" "#" False (Url "/newsroom")
+            , NavItem "CONTACT US" "#" False (SetContactUs True)
+            ]
+      , address =
+            Address
+                "4815 List Drive, Suite 109"
+                "Colorado Springs, CO 80919"
+                "+1 (719) 573 - 6777"
+                "tel:+17195736777"
+                "info@gci-global.com"
+                "mailto:info@gci-global.com"
+      , socialMedia =
+            [ SocialMediaItem "\u{F09A}" (rgb255 59 89 152) "#"
+            , SocialMediaItem "\u{F099}" (rgb255 29 161 242) "https://twitter.com/dieextraction"
+            , SocialMediaItem "\u{F30C}" (rgb255 0 119 181) "https://www.linkedin.com/company/4804252"
+            ]
+      , certifications =
+            [ CertificationItem "/img/platinum_certified-v2_white.svg" "AS9100:2016 - ISO 9001:2015 Certified"
+            , CertificationItem "/img/ANAB-certified_white.svg" "AS9100:2016 - ISO 9001:2015 Certified"
+            ]
+      , currentYear = flags.year
+      , device = classifyDevice { width = flags.width, height = flags.height }
+      , width = flags.width
+      , height = flags.height
+      , contactDialogState = store
+      , showMobileNav = False
       }
-    , Task.perform GotYear currentYear
+    , Cmd.none
     )
 
 
 type Msg
-    = StorageUpdated Storage
-    | Scrolled Int
-    | GotYear Int
-    | WindowResized Int Int
-    | ShowNav Bool
-    | ShowContactUs Bool
-    | MoveCursor ContactDialogState ContactDialogState ()
-    | NavBtnHover Int
-    | NavBtnUnHover Int
-    | ToggleMobileNav
+    = ShowNav Bool
+    | UpdateModel Model
 
 
 update : Request -> Msg -> Model -> ( Model, Cmd Msg )
 update _ msg model =
     case msg of
-        WindowResized w h ->
-            ( { model | temp = model.temp |> (\t -> { t | device = classifyDevice { width = w, height = h }, width = w, height = h }) }, Cmd.none )
-
-        Scrolled distance ->
-            ( { model
-                | temp =
-                    model.temp
-                        |> (\t ->
-                                { t
-                                    | scrolledDistance = distance
-                                    , navbarDisplay =
-                                        if abs (distance - model.temp.scrolledDistance) > 10 then
-                                            if distance > model.temp.scrolledDistance then
-                                                Hide
-
-                                            else
-                                                Enter
-
-                                        else
-                                            t.navbarDisplay
-                                }
-                           )
-              }
-            , Cmd.none
-            )
-
-        GotYear year ->
-            ( { model | temp = model.temp |> (\t -> { t | currentYear = year }) }, Cmd.none )
-
-        StorageUpdated storage ->
-            let
-                ds =
-                    if storage.openContactUs then
-                        disableScrolling True
-
-                    else
-                        disableScrolling False
-            in
-            ( { model | storage = storage }
-            , Cmd.batch [ Task.perform (MoveCursor model.storage.contactDialogState storage.contactDialogState) (Process.sleep 20), ds ]
-            )
-
-        {- }
-           , if storage.openContactUs then
-               disableScrolling True
-
-             else
-               disableScrolling False
-           )
-        -}
         ShowNav _ ->
-            ( { model | temp = model.temp |> (\t -> { t | navbarDisplay = Enter }) }, Cmd.none )
+            ( { model | navbarDisplay = Enter }, Cmd.none )
 
-        MoveCursor old new _ ->
-            ( model
-            , if not (old.phone == new.phone) then
-                setPhoneCursor (Maybe.withDefault "" old.phone) (Maybe.withDefault "" new.phone)
+        UpdateModel newModel ->
+            let
+                oldPhone =
+                    model.contactDialogState.phone
 
-              else if not (old.name == new.name) then
-                calcCursor (Maybe.withDefault "" old.name) (Maybe.withDefault "" new.name)
+                newPhone =
+                    newModel.contactDialogState.phone
+            in
+            if not (oldPhone == newPhone) then
+                ( newModel
+                , setPhoneCursor (Maybe.withDefault "" oldPhone) (Maybe.withDefault "" newPhone)
+                )
 
-              else if not (old.email == new.email) then
-                calcCursor (Maybe.withDefault "" old.email) (Maybe.withDefault "" new.email)
+            else if newModel.contactDialogState.showContactUs && not model.contactDialogState.showContactUs then
+                ( newModel, disableScrolling True )
 
-              else if not (old.message == new.message) then
-                calcCursor (Maybe.withDefault "" old.message) (Maybe.withDefault "" new.message)
+            else if not newModel.contactDialogState.showContactUs && model.contactDialogState.showContactUs then
+                ( newModel, disableScrolling False )
 
-              else
-                Cmd.none
-            )
-
-        ShowContactUs b ->
-            ( { model | temp = model.temp |> (\t -> { t | showContactUs = b }) }, Cmd.none )
-
-        ToggleMobileNav ->
-            ( { model | temp = model.temp |> (\t -> { t | showMobileNav = not t.showMobileNav }) }, Cmd.none )
-
-        NavBtnHover id ->
-            ( { model | temp = model.temp |> (\t -> { t | navHoverTracker = List.indexedMap (setHovered id) t.navHoverTracker }) }, Cmd.none )
-
-        NavBtnUnHover _ ->
-            ( { model | temp = model.temp |> (\t -> { t | navHoverTracker = List.map (\i -> { i | hovered = False }) t.navHoverTracker }) }, Cmd.none )
+            else
+                ( newModel, Cmd.none )
 
 
 subscriptions : Request -> Model -> Sub Msg
 subscriptions _ _ =
     Sub.batch
-        [ Storage.onChange StorageUpdated
-        , recvScroll Scrolled
-        , Browser.Events.onResize WindowResized
-        , showNav ShowNav
+        [ showNav ShowNav
+
+        --, Browser.Events.onResize WindowResized
         ]
 
 
@@ -296,17 +214,17 @@ currentYear =
     Task.map2 Time.toYear Time.here Time.now
 
 
-navbar : Model -> Element Msg
-navbar shared =
+navbar : Model -> (Model -> b) -> Element b
+navbar shared message =
     let
         animationTracker =
-            shared.temp.navHoverTracker
+            shared.navHoverTracker
 
         display =
-            shared.temp.navbarDisplay
+            shared.navbarDisplay
 
         device =
-            shared.temp.device.class
+            shared.device.class
 
         isDesktop =
             device == Desktop
@@ -319,7 +237,7 @@ navbar shared =
                 Url s ->
                     link [] { url = s, label = navbarBtn ( id, item ) False }
 
-                setContactUs ->
+                _ ->
                     navbarBtn ( id, item ) True
 
         mobileNavBtn item =
@@ -339,7 +257,7 @@ navbar shared =
 
                 SetContactUs b ->
                     Input.button attr
-                        { onPress = Just (ShowContactUs True)
+                        { onPress = Just (message (setContactUs shared True))
                         , label = text item.name
                         }
 
@@ -374,12 +292,12 @@ navbar shared =
                         [ el [ centerX, centerY, Font.color white ] (text item.name) ]
                     )
                 , if shouldOnClick then
-                    Events.onClick (ShowContactUs True)
+                    Events.onClick (message (setContactUs shared True))
 
                   else
                     pointer
-                , Events.onMouseEnter (NavBtnHover id)
-                , Events.onMouseLeave (NavBtnUnHover id)
+                , Events.onMouseEnter (message (navBtnHover shared id))
+                , Events.onMouseLeave (message (navBtnUnHover shared id))
                 ]
                 []
 
@@ -413,7 +331,7 @@ navbar shared =
                             , centerY
                             ]
                             { src =
-                                if shared.temp.width < 350 then
+                                if shared.width < 350 then
                                     "/img/logo_sans_text.svg"
 
                                 else
@@ -444,7 +362,7 @@ navbar shared =
                     [ P.y -100 ]
                     [ P.y 0 ]
         )
-        (( shared.storage.mobileNav
+        (( shared.showMobileNav
          , [ width fill
            , height shrink
            , Font.family [ Font.sansSerif ]
@@ -462,7 +380,7 @@ navbar shared =
                                 , height fill
                                 , below
                                     (ael
-                                        (if shared.storage.mobileNav then
+                                        (if shared.showMobileNav then
                                             Animation.fromTo
                                                 { duration = 500
                                                 , options = []
@@ -528,11 +446,11 @@ navbar shared =
                     [ el [ height fill ] logo
                     , if device == Tablet then
                         Input.button [ height fill, alignRight, centerY ]
-                            { onPress = Just (ShowContactUs True)
+                            { onPress = Just (message (setContactUs shared True))
                             , label =
                                 image [ height (px 50) ]
                                     { src =
-                                        if shared.storage.openContactUs then
+                                        if shared.contactDialogState.showContactUs then
                                             "/img/email-open.svg"
 
                                         else
@@ -544,10 +462,10 @@ navbar shared =
                       else
                         none
                     , Input.button [ alignRight ]
-                        { onPress = Just ToggleMobileNav
+                        { onPress = Just (message (toggleMobileNav shared))
                         , label =
                             html <|
-                                div [ classList [ ( "hamburger", True ), ( "hamburger--collapse", True ), ( "is-active", shared.storage.mobileNav ) ] ]
+                                div [ classList [ ( "hamburger", True ), ( "hamburger--collapse", True ), ( "is-active", shared.showMobileNav ) ] ]
                                     [ div [ class "hamburger-box" ]
                                         [ div [ class "hamburger-inner" ] []
                                         ]
@@ -557,17 +475,17 @@ navbar shared =
         ]
 
 
-contactUs : Model -> ((String -> Storage -> Cmd msg) -> String -> b) -> Element b
-contactUs shared msgCommand =
+contactUs : Model -> (Model -> b) -> Element b
+contactUs shared message =
     let
         state =
-            shared.storage.contactDialogState
+            shared.contactDialogState
 
         address =
-            shared.temp.address
+            shared.address
 
         device =
-            shared.temp.device.class
+            shared.device.class
 
         isDesktop =
             device == Desktop
@@ -579,10 +497,10 @@ contactUs shared msgCommand =
             device == Phone
 
         w =
-            shared.temp.width
+            shared.width
 
         h =
-            shared.temp.height
+            shared.height
 
         break =
             html <| br [] []
@@ -606,7 +524,7 @@ contactUs shared msgCommand =
                                 , width (px (min 400 w))
                                 , centerX
                                 , centerY
-                                , onEnter (msgCommand Storage.contactUsNext "")
+                                , onEnter (message (contactUsNext shared))
                                 , Border.color
                                     (if state.nameError then
                                         warning
@@ -617,8 +535,8 @@ contactUs shared msgCommand =
                                 , Border.width 2
                                 , Font.center
                                 ]
-                                { onChange = msgCommand Storage.contactName
-                                , text = Maybe.withDefault "" state.name
+                                { onChange = \s -> message (contactName shared s)
+                                , text = state.name
                                 , placeholder = Just (Input.placeholder [ Font.center ] (text "First & Last"))
                                 , label = Input.labelHidden "Name"
                                 }
@@ -629,7 +547,7 @@ contactUs shared msgCommand =
                             [ width fill, height (px 300), padding 30, Font.light, spacing 25, htmlAttribute <| class "backgroundGrow" ]
                             [ row [ width fill, alignTop ]
                                 [ paragraph [ fontSize device Md, centerX, Font.center ]
-                                    [ case String.trim (Maybe.withDefault "" state.name) of
+                                    [ case String.trim state.name of
                                         "" ->
                                             text "Thanks for reaching out!"
 
@@ -660,7 +578,7 @@ contactUs shared msgCommand =
                                 , width (px (min w 400))
                                 , centerX
                                 , Font.center
-                                , onEnter (msgCommand Storage.contactUsNext "")
+                                , onEnter (message (contactUsNext shared))
                                 , Border.color
                                     (if state.emailError then
                                         warning
@@ -670,7 +588,7 @@ contactUs shared msgCommand =
                                     )
                                 , Border.width 2
                                 ]
-                                { onChange = msgCommand Storage.contactEmail
+                                { onChange = \s -> message (contactEmail shared s)
                                 , text = Maybe.withDefault "" state.email
                                 , placeholder = Just (Input.placeholder [ Font.center ] (text "name@exmaple.com"))
                                 , label = Input.labelHidden "Email"
@@ -680,7 +598,7 @@ contactUs shared msgCommand =
                                 , width (px (min w 400))
                                 , centerX
                                 , Font.center
-                                , onEnter (msgCommand Storage.contactUsNext "")
+                                , onEnter (message (contactUsNext shared))
                                 , htmlAttribute <| id "phoneInput"
                                 , Border.color
                                     (if state.phoneError then
@@ -691,7 +609,7 @@ contactUs shared msgCommand =
                                     )
                                 , Border.width 2
                                 ]
-                                { onChange = msgCommand Storage.contactPhone
+                                { onChange = \s -> message (contactPhone shared s)
                                 , text = Maybe.withDefault "" state.phone
                                 , placeholder = Just (Input.placeholder [ Font.center ] (text "(123) 456 - 7890"))
                                 , label = Input.labelHidden "Phone Number"
@@ -745,7 +663,7 @@ contactUs shared msgCommand =
                                     )
                                 , Border.width 2
                                 ]
-                                { onChange = msgCommand Storage.contactMessage
+                                { onChange = \s -> message (contactMsg shared s)
                                 , text = Maybe.withDefault "" state.message
                                 , placeholder =
                                     Just
@@ -783,7 +701,7 @@ contactUs shared msgCommand =
                             , Border.width 2
                             , mouseOver [ Border.color gciBlueLight, Font.color gciBlueLight ]
                             ]
-                            { onPress = Just (msgCommand Storage.contactUsBack ""), label = text "Back" }
+                            { onPress = Just (message (contactUsBack shared)), label = text "Back" }
                         , Input.button
                             [ alignBottom
                             , alignRight
@@ -796,7 +714,7 @@ contactUs shared msgCommand =
                             , mouseOver [ Border.color gciBlueLight, Background.color gciBlueLight ]
                             , Border.width 2
                             ]
-                            { onPress = Just (msgCommand Storage.contactUsNext ""), label = text "Next" }
+                            { onPress = Just (message (contactUsNext shared)), label = text "Next" }
                         ]
 
                      else
@@ -812,7 +730,7 @@ contactUs shared msgCommand =
                             , mouseOver [ Border.color gciBlueLight, Background.color gciBlueLight ]
                             , Border.width 2
                             ]
-                            { onPress = Just (msgCommand Storage.setContactUs "False"), label = text "Close" }
+                            { onPress = Just (message (setContactUs shared False)), label = text "Close" }
                         ]
                     )
                 , paragraph
@@ -845,7 +763,7 @@ contactUs shared msgCommand =
                     { angle = degrees 165
                     , steps = [ rgba255 87 83 78 0.7, rgba255 17 24 39 0.9 ]
                     }
-                , Events.onClick (msgCommand Storage.setContactUs "False")
+                , Events.onClick (message (setContactUs shared False))
                 ]
                 none
             )
@@ -888,7 +806,7 @@ contactUs shared msgCommand =
                             )
                         , mouseOver [ Font.color warning ]
                         ]
-                        { onPress = Just (msgCommand Storage.setContactUs "False"), label = text "\u{E800}" }
+                        { onPress = Just (message (setContactUs shared False)), label = text "\u{E800}" }
                     ]
                 )
             ]
@@ -922,26 +840,26 @@ onEnter msg =
         )
 
 
-footer : Model -> ((Storage -> Cmd msg) -> b) -> Element b
-footer shared msgCommand =
+footer : Model -> (Model -> b) -> Element b
+footer shared message =
     let
         certifications =
-            shared.temp.certifications
+            shared.certifications
 
         address =
-            shared.temp.address
+            shared.address
 
         navbtns =
-            shared.storage.navHoverTracker
+            shared.navHoverTracker
 
         socials =
-            shared.temp.socialMedia
+            shared.socialMedia
 
         year =
-            shared.temp.currentYear
+            shared.currentYear
 
         device =
-            shared.temp.device.class
+            shared.device.class
 
         isPhone =
             device == Phone
@@ -953,7 +871,7 @@ footer shared msgCommand =
             device == BigDesktop
 
         w =
-            shared.temp.width
+            shared.width
 
         footerNavBtn item =
             let
@@ -971,21 +889,11 @@ footer shared msgCommand =
                 SetContactUs b ->
                     Input.button attr
                         { onPress =
-                            Just
-                                (msgCommand
-                                    (setContactUs
-                                        (if b then
-                                            "True"
-
-                                         else
-                                            "False"
-                                        )
-                                    )
-                                )
+                            Just (message (setContactUs shared True))
                         , label = text item.name
                         }
 
-        footerSocailBtn item =
+        footerSocialBtn item =
             newTabLink
                 [ Font.family [ Font.typeface "icons" ]
                 , mouseOver [ Font.color item.hoverColor ]
@@ -999,7 +907,7 @@ footer shared msgCommand =
 
         footerCertification item =
             el
-                (if shared.temp.width < 1000 then
+                (if shared.width < 1000 then
                     [ width fill ]
 
                  else
@@ -1016,17 +924,17 @@ footer shared msgCommand =
         , Border.widthEach { top = 8, bottom = 0, left = 0, right = 0 }
         ]
         (column
-            [ Font.color white, centerX, width (fill |> minimum shared.temp.width), clip ]
-            [ wrappedRow [ padding 20, spacing 40, centerX, width (minimum shared.temp.width fill) ]
+            [ Font.color white, centerX, width (fill |> minimum shared.width), clip ]
+            [ wrappedRow [ padding 20, spacing 40, centerX, width (minimum shared.width fill) ]
                 (List.map footerCertification certifications)
             , if isDesktop || isBigDesktop then
                 row [ Font.bold, fontSize device Xsm, centerX ]
-                    (List.map footerNavBtn navbtns ++ spacer :: List.map footerSocailBtn socials)
+                    (List.map footerNavBtn navbtns ++ spacer :: List.map footerSocialBtn socials)
 
               else
                 column [ width fill, Font.bold, fontSize device Sm, spacing 10 ]
                     [ wrappedRow [ width (minimum w fill) ] (List.map (\btn -> el [ width fill ] (footerNavBtn btn)) navbtns)
-                    , row [ centerX, fontSize device Md ] (List.map footerSocailBtn socials)
+                    , row [ centerX, fontSize device Md ] (List.map footerSocialBtn socials)
                     ]
             , el [ width fill, Border.widthEach { top = 1, bottom = 1, left = 0, right = 0 } ]
                 (wrappedRow [ centerX, width shrink, fontSize device Xsm, padding 20 ]
@@ -1044,25 +952,28 @@ footer shared msgCommand =
                     wrappedRow
                   )
                     [ spacing 15, width fill ]
-                    [ el [ width fill ] (el [ centerX ] (text ("©" ++ String.fromInt year ++ " Global Circuit Innovations, Inc.")))
-                    , el [ width fill ] (link [ mouseOver [ Font.color gciBlue ], centerX ] { url = "#", label = text "Accessibility" })
-                    , el [ width fill ] (link [ mouseOver [ Font.color gciBlue ], centerX ] { url = "#", label = text "Sitemap" })
-                    , el [ width fill ] (link [ mouseOver [ Font.color gciBlue ], centerX ] { url = "#", label = text "Terms and Conditions" })
-                    , el [ width fill ] (link [ mouseOver [ Font.color gciBlue ], centerX ] { url = "#", label = text "Privacy" })
-                    , el [ width fill ]
+                    [ el [ padding 2, width fill ] (el [ centerX ] (text ("©" ++ String.fromInt year ++ " Global Circuit Innovations, Inc.")))
+                    , el [ padding 2, width fill, mouseOver [ Font.color gciBlue ] ] (link [ centerX ] { url = "#", label = text "Accessibility" })
+                    , el [ padding 2, width fill, mouseOver [ Font.color gciBlue ] ] (link [ centerX ] { url = "#", label = text "Sitemap" })
+                    , el [ padding 2, width fill, mouseOver [ Font.color gciBlue ] ] (link [ centerX ] { url = "#", label = text "Terms and Conditions" })
+                    , el [ padding 2, width fill, mouseOver [ Font.color gciBlue ] ] (link [ centerX ] { url = "#", label = text "Privacy" })
+                    , el [ padding 2, width fill, mouseOver [ Font.color gciBlue ] ]
                         (download [ mouseOver [ Font.color gciBlue ], pointer, centerX ]
                             { url = "/download/press.zip"
                             , label = text "Press Materials"
                             }
                         )
                     ]
-                , newTabLink [ centerX ]
+                , newTabLink
+                    [ padding 5
+                    , centerX
+                    , mouseOver [ Font.color (rgb255 144 0 255) ]
+                    ]
                     { url = "https://regaltechsupport.com"
                     , label =
                         row
                             [ spacing 5
                             , paddingXY 5 5
-                            , mouseOver [ Font.color (rgb255 144 0 255) ]
                             ]
                             [ image [ width (px 20) ] { src = "https://regaltechsupport.com/img/favicon.ico", description = "Regal Tech Support, LLC Logo" }
                             , text "Website made by Regal Tech Support"
@@ -1240,3 +1151,201 @@ setHovered id i data =
 
     else
         { data | hovered = False }
+
+
+validUSNumber : String -> Bool
+validUSNumber number =
+    if number == "" then
+        True
+
+    else
+        PhoneNumber.valid
+            { defaultCountry = countryUS
+            , otherCountries = []
+            , types = PhoneNumber.anyType
+            }
+            number
+
+
+prettyPhoneNumber : String -> String
+prettyPhoneNumber number =
+    let
+        clean =
+            String.filter isDigit (String.replace "+1" "" number)
+    in
+    case String.length clean of
+        0 ->
+            "+1 ("
+
+        1 ->
+            "+1 (" ++ clean
+
+        2 ->
+            "+1 (" ++ clean
+
+        3 ->
+            "+1 (" ++ clean ++ ")  "
+
+        4 ->
+            "+1 (" ++ String.left 3 clean ++ ")  " ++ String.right 1 clean
+
+        5 ->
+            "+1 (" ++ String.left 3 clean ++ ")  " ++ String.right 2 clean
+
+        _ ->
+            "+1 (" ++ String.left 3 clean ++ ")  " ++ String.slice 3 6 clean ++ " - " ++ String.slice 6 10 clean
+
+
+setContactUs : Model -> Bool -> Model
+setContactUs model b =
+    { model | contactDialogState = model.contactDialogState |> (\c -> { c | showContactUs = b }) }
+
+
+toggleMobileNav : Model -> Model
+toggleMobileNav model =
+    { model | showMobileNav = not model.showMobileNav }
+
+
+contactUsBack : Model -> Model
+contactUsBack model =
+    if model.contactDialogState.currentPage == 0 then
+        { model | navHoverTracker = List.map (\b -> { b | hovered = False }) model.navHoverTracker, contactDialogState = model.contactDialogState |> (\c -> { c | showContactUs = False }) }
+
+    else
+        { model | contactDialogState = model.contactDialogState |> (\s -> { s | currentPage = s.currentPage - 1 }) }
+
+
+contactEmail : Model -> String -> Model
+contactEmail model newEmail =
+    if model.contactDialogState.emailError then
+        { model
+            | contactDialogState =
+                model.contactDialogState
+                    |> (\s ->
+                            { s
+                                | email = Just (String.trim newEmail)
+                                , emailError = not (Email.isValid newEmail)
+                            }
+                       )
+        }
+
+    else
+        { model | contactDialogState = model.contactDialogState |> (\s -> { s | email = Just (String.trim newEmail) }) }
+
+
+contactMsg : Model -> String -> Model
+contactMsg model newMessage =
+    if model.contactDialogState.messageError then
+        { model | contactDialogState = model.contactDialogState |> (\s -> { s | message = Just newMessage, messageError = newMessage == "" }) }
+
+    else
+        { model | contactDialogState = model.contactDialogState |> (\s -> { s | message = Just newMessage }) }
+
+
+contactName : Model -> String -> Model
+contactName model newName =
+    if model.contactDialogState.nameError then
+        { model | contactDialogState = model.contactDialogState |> (\s -> { s | name = newName, nameError = newName == "" }) }
+
+    else
+        { model | contactDialogState = model.contactDialogState |> (\s -> { s | name = newName }) }
+
+
+contactUsNext : Model -> Model
+contactUsNext model =
+    case model.contactDialogState.currentPage of
+        0 ->
+            if not (String.trim model.contactDialogState.name == "") then
+                { model
+                    | contactDialogState =
+                        model.contactDialogState
+                            |> (\s ->
+                                    { s
+                                        | currentPage = s.currentPage + 1
+                                        , nameError = False
+                                        , name = String.trim s.name
+                                    }
+                               )
+                }
+
+            else
+                { model | contactDialogState = model.contactDialogState |> (\s -> { s | nameError = True, name = s.name }) }
+
+        1 ->
+            if Email.isValid (Maybe.withDefault "" model.contactDialogState.email) && validUSNumber (String.right 10 (String.filter isDigit (Maybe.withDefault "" model.contactDialogState.phone))) then
+                { model | contactDialogState = model.contactDialogState |> (\s -> { s | currentPage = s.currentPage + 1, phoneError = False, emailError = False }) }
+
+            else if not (Email.isValid (Maybe.withDefault "" model.contactDialogState.email)) then
+                { model | contactDialogState = model.contactDialogState |> (\s -> { s | emailError = True, phoneError = False }) }
+
+            else if not (validUSNumber (String.right 10 (String.filter isDigit (Maybe.withDefault "" model.contactDialogState.phone)))) then
+                { model | contactDialogState = model.contactDialogState |> (\s -> { s | phoneError = True }) }
+
+            else
+                { model | contactDialogState = model.contactDialogState |> (\s -> { s | currentPage = s.currentPage + 1, phoneError = False, emailError = False }) }
+
+        2 ->
+            if Maybe.withDefault "" model.contactDialogState.message == "" then
+                { model | contactDialogState = model.contactDialogState |> (\s -> { s | messageError = True }) }
+
+            else
+                { model | contactDialogState = model.contactDialogState |> (\s -> { s | currentPage = s.currentPage + 1, messageError = False }) }
+
+        _ ->
+            { model | contactDialogState = model.contactDialogState |> (\s -> { s | currentPage = s.currentPage + 1 }) }
+
+
+navBtnHover : Model -> Int -> Model
+navBtnHover model id =
+    { model | navHoverTracker = List.indexedMap (setHovered id) model.navHoverTracker }
+
+
+navBtnUnHover : Model -> Int -> Model
+navBtnUnHover model id =
+    { model | navHoverTracker = List.map (\i -> { i | hovered = False }) model.navHoverTracker }
+
+
+contactPhone : Model -> String -> Model
+contactPhone model newPhone =
+    if model.contactDialogState.phoneError then
+        { model
+            | contactDialogState =
+                model.contactDialogState
+                    |> (\s ->
+                            { s
+                                | phone =
+                                    Just
+                                        (if newPhone == "+1 ( " then
+                                            ""
+
+                                         else if String.length newPhone < String.length (Maybe.withDefault newPhone s.phone) then
+                                            newPhone
+
+                                         else
+                                            prettyPhoneNumber newPhone
+                                        )
+                                , phoneError = not (validUSNumber (String.right 10 (String.filter isDigit (prettyPhoneNumber newPhone))))
+                            }
+                       )
+        }
+
+    else
+        { model
+            | contactDialogState =
+                model.contactDialogState
+                    |> (\s ->
+                            { s
+                                | phone =
+                                    Just
+                                        (if newPhone == "+1 ( " then
+                                            ""
+
+                                         else if String.length newPhone < String.length (Maybe.withDefault newPhone s.phone) then
+                                            newPhone
+
+                                         else
+                                            prettyPhoneNumber newPhone
+                                        )
+                            }
+                       )
+        }

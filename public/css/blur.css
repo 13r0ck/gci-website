@@ -295,8 +295,8 @@
 }
 
 .animate_clip_bottom {
-  animation: animateClipBottom 2s forwards;
-  -webkit-animation: animateClipBottom 2s forwards;
+  animation: animateClipBottom 1.5s forwards;
+  -webkit-animation: animateClipBottom 1.5s forwards;
 }
 
 @keyframes animateClipBottom {
@@ -327,8 +327,8 @@
 }
 
 .animate_clip_cover {
-  animation: animateClipCover 2s forwards;
-  -webkit-animation: animateClipCover 2s forwards;
+  animation: animateClipCover 1.5s forwards;
+  -webkit-animation: animateClipCover 1.5s forwards;
 }
 
 .clip_cover {

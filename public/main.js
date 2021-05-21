@@ -1,5 +1,5 @@
 const app = Elm.Main.init({
-  flags: { width: window.innerWidth, height: window.innerHeight, storage: JSON.parse(localStorage.getItem("storage")) },
+  flags: { width: window.innerWidth, height: window.innerHeight, year : ( new Date().getFullYear()), storage: JSON.parse(localStorage.getItem("storage")) },
 });
 
 app.ports.controlVideo.subscribe((message) => {
@@ -55,7 +55,7 @@ window.addEventListener("scroll", function (event) {
 //storage
 app.ports.save.subscribe((storage) => {
   localStorage.setItem("storage", JSON.stringify(storage));
-  app.ports.load.send(storage);
+  //app.ports.load.send(storage);
 });
 
 // Handle smoothly scrolling to links
@@ -63,7 +63,7 @@ const scrollToHash = () => {
   const BREAKPOINT_XL = 1920;
   //const NAVBAR_HEIGHT_PX = window.innerWidth > BREAKPOINT_XL ? 127 : 102;
   const element = window.location.hash && document.querySelector(window.location.hash);
-  localStorage.setItem("storage", localStorage.getItem("storage").replace('"mobileNav":true', '"mobileNav":false'));
+  //localStorage.setItem("storage", localStorage.getItem("storage").replace('"mobileNav":true', '"mobileNav":false'));
   if (element) {
       // element.scrollIntoView({ behavior: 'smooth' })
       window.scroll({ behavior: "smooth", top: window.pageYOffset + element.getBoundingClientRect().top /*- NAVBAR_HEIGHT_PX*/ });
