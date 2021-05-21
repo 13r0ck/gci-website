@@ -70,8 +70,6 @@ const scrollToHash = () => {
   } else {
       window.scroll({ behavior: "auto", top: 0 });
   }
-  //app.ports.load.send(JSON.parse(localStorage.getItem("storage")));
-  if (!element) {app.ports.showNav.send(true)};
 };
 
 app.ports.onUrlChange.subscribe((_) => {

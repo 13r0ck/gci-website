@@ -102,7 +102,7 @@ init shared =
             , Leadership 6 False "Dustin Morgan" "Business Development" "dustin .morgan@gci-global.com" "(719) 573 - 6777 x107" "/img/dustin.webp" "Dustin Morgan joined GCI in 2016 as the Director of Marketing. She holds a B.A. in Communications from the University of Colorado, Boulder and a M.A. in International Development from the Josef Korbel School of International Studies at the University of Denver.  Ms. Morgan has over 20 years of experience in both marketing and program management.  She previously worked for Central Bancorp in Colorado Springs where she was tasked with the design, creation, and management of a new business venture, Johnny Martin's Car Central.  Ms. Morgan served as the Executive Director in this role.  Ms. Morgan currently manages DoD contract programs and is Director of Business Development."
             ]
       , leadersPerRow = 3
-      , localShared = shared
+      , localShared = { shared | navbarDisplay = Enter }
       }
     , Effect.none
     )

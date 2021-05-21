@@ -16,12 +16,13 @@ import Gen.Params.Home_ exposing (Params)
 import Html exposing (a, br, video, wbr)
 import Html.Attributes exposing (alt, attribute, autoplay, class, id, loop, src)
 import Html.Events
+import Http exposing (Error(..))
 import Json.Decode as Decode
 import Page
 import Palette exposing (FontSize(..), black, fontSize, gciBlue, gciBlueLight, maxWidth, warning, white)
 import PhoneNumber
 import PhoneNumber.Countries exposing (countryUS)
-import Ports exposing (controlVideo, recvScroll)
+import Ports exposing (controlVideo, recvScroll, showNav)
 import Request
 import Shared exposing (Msg(..), acol, ael, arow, contactUs, footer, navbar)
 import Simple.Animation as Animation exposing (Animation)
@@ -158,7 +159,7 @@ init shared =
             , BoxesItem "Oil and Gas High Temp Electronics" "/oil" "img/oil1.png" "/img/oil2.png" False "point_idle"
             , BoxesItem "Research and Development" "/dev" "img/oil1.png" "/img/oil2.png" False "point_idle"
             ]
-      , localShared = shared
+      , localShared = { shared | navbarDisplay = Enter }
       }
     , controlVideo True |> Effect.fromCmd
     )
@@ -197,7 +198,7 @@ update shared msg model =
                                 { l
                                     | scrolledDistance = distance
                                     , navbarDisplay =
-                                        if abs (distance - l.scrolledDistance) > 10 then
+                                        if abs (distance - l.scrolledDistance) > 3 then
                                             if distance > l.scrolledDistance then
                                                 Hide
 
@@ -379,6 +380,8 @@ subscriptions model =
                     )
                 , recvScroll Scrolled
                 , Browser.Events.onResize WindowResized
+
+                --, Browser.Events.onResize WindowResized
                 ]
 
         else

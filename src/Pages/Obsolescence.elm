@@ -92,7 +92,7 @@ init shared =
             , SubText 2 "Sub text" "/img/subtext2.jpg" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
             , SubText 3 "Sub text" "/img/subtext3.jpg" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
             ]
-      , localShared = shared
+      , localShared = { shared | navbarDisplay = Enter }
       }
     , Effect.none
     )

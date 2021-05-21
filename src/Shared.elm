@@ -135,16 +135,12 @@ init _ flags =
 
 
 type Msg
-    = ShowNav Bool
-    | UpdateModel Model
+    = UpdateModel Model
 
 
 update : Request -> Msg -> Model -> ( Model, Cmd Msg )
 update _ msg model =
     case msg of
-        ShowNav _ ->
-            ( { model | navbarDisplay = Enter }, Cmd.none )
-
         UpdateModel newModel ->
             let
                 oldPhone =
@@ -170,11 +166,7 @@ update _ msg model =
 
 subscriptions : Request -> Model -> Sub Msg
 subscriptions _ _ =
-    Sub.batch
-        [ showNav ShowNav
-
-        --, Browser.Events.onResize WindowResized
-        ]
+    Sub.none
 
 
 
@@ -953,10 +945,8 @@ footer shared message =
                   )
                     [ spacing 15, width fill ]
                     [ el [ padding 2, width fill ] (el [ centerX ] (text ("©" ++ String.fromInt year ++ " Global Circuit Innovations, Inc.")))
-                    , el [ padding 2, width fill, mouseOver [ Font.color gciBlue ] ] (link [ centerX ] { url = "#", label = text "Accessibility" })
-                    , el [ padding 2, width fill, mouseOver [ Font.color gciBlue ] ] (link [ centerX ] { url = "#", label = text "Sitemap" })
-                    , el [ padding 2, width fill, mouseOver [ Font.color gciBlue ] ] (link [ centerX ] { url = "#", label = text "Terms and Conditions" })
-                    , el [ padding 2, width fill, mouseOver [ Font.color gciBlue ] ] (link [ centerX ] { url = "#", label = text "Privacy" })
+                    , el [ padding 2, width fill, mouseOver [ Font.color gciBlue ] ] (link [ centerX ] { url = "/sitemap.xml", label = text "Sitemap" })
+                    , el [ padding 2, width fill, mouseOver [ Font.color gciBlue ] ] (link [ centerX ] { url = "/terms", label = text "Terms and Conditions" })
                     , el [ padding 2, width fill, mouseOver [ Font.color gciBlue ] ]
                         (download [ mouseOver [ Font.color gciBlue ], pointer, centerX ]
                             { url = "/download/press.zip"

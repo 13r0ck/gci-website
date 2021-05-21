@@ -38,7 +38,7 @@ type alias Model =
 
 init : Shared.Model -> ( Model, Effect Msg )
 init shared =
-    ( { localShared = shared }, Effect.none )
+    ( { localShared = { shared | navbarDisplay = Enter } }, Effect.none )
 
 
 
