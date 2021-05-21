@@ -1,4 +1,4 @@
-module Pages.Home_ exposing (AnimationState, Model, Msg, When(..), onScreenItemtoCmd, page, updateElement)
+module Pages.Home_ exposing (Model, Msg, page, AnimationState, When(..), onScreenItemtoCmd, updateElement)
 
 import Browser.Dom exposing (Viewport)
 import Browser.Events exposing (Visibility(..), onResize, onVisibilityChange)
