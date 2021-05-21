@@ -4,6 +4,7 @@ import Browser.Dom exposing (Viewport)
 import Browser.Events exposing (Visibility(..), onResize, onVisibilityChange)
 import Char exposing (isDigit)
 import Dict exposing (Dict)
+import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border exposing (innerShadow, rounded, shadow, widthEach)
@@ -20,13 +21,13 @@ import Page
 import Palette exposing (FontSize(..), black, fontSize, gciBlue, gciBlueLight, maxWidth, warning, white)
 import PhoneNumber
 import PhoneNumber.Countries exposing (countryUS)
-import Ports exposing (controlVideo, recvScroll, setPhoneInputCursor)
+import Ports exposing (controlVideo, recvScroll)
 import Request
-import Shared exposing (Temp, acol, ael, arow, contactUs, footer, navbar)
+import Shared exposing (Msg(..), acol, ael, arow, contactUs, footer, navbar)
 import Simple.Animation as Animation exposing (Animation)
 import Simple.Animation.Animated as Animated
 import Simple.Animation.Property as P
-import Storage exposing (Address, ContactDialogState, NavBarDisplay(..), Storage)
+import Storage exposing (Address, ContactDialogState, NavBarDisplay(..))
 import Swiper exposing (SwipingState)
 import Task
 import Time exposing (..)
@@ -35,9 +36,9 @@ import View exposing (View)
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
-    Page.element
-        { init = init shared.temp
-        , update = update shared.storage
+    Page.advanced
+        { init = init shared
+        , update = update shared
         , view = view shared
         , subscriptions = subscriptions
         }
@@ -58,6 +59,8 @@ type alias Model =
     , simpleBtnHoverTracker : List SimpleBtn
     , testimonials : List Testimonial
     , boxes : List BoxesItem
+    , name : String
+    , localShared : Shared.Model
     }
 
 
@@ -122,12 +125,13 @@ type Direction
     | Right
 
 
-init : Temp -> ( Model, Cmd Msg )
-init temp =
+init : Shared.Model -> ( Model, Effect Msg )
+init shared =
     ( { getMouse = False
       , swipingState = Swiper.initialSwipingState
       , userVisible = True
       , showContactUs = False
+      , name = ""
       , testimonial_viewNum = 1
       , animationTracker =
             Dict.fromList
@@ -152,10 +156,11 @@ init temp =
             [ BoxesItem "Electronic Obsolescence Solutions" "/obsolescence" "/img/plane1.png" "/img/plane2.png" False "point_idle"
             , BoxesItem "Electronic Systems" "/systems" "/img/circuit1.png" "/img/circuit2.png" False "point_idle"
             , BoxesItem "Oil and Gas High Temp Electronics" "/oil" "img/oil1.png" "/img/oil2.png" False "point_idle"
-            , BoxesItem "Research and Development" "/oil" "img/oil1.png" "/img/oil2.png" False "point_idle"
+            , BoxesItem "Research and Development" "/dev" "img/oil1.png" "/img/oil2.png" False "point_idle"
             ]
+      , localShared = shared
       }
-    , controlVideo True
+    , controlVideo True |> Effect.fromCmd
     )
 
 
@@ -171,23 +176,40 @@ type Msg
     | GotMouse Direction
     | GotElement String (Result Browser.Dom.Error Browser.Dom.Element)
     | GotOnScreenItem String (Result Browser.Dom.Error Browser.Dom.Element)
-    | NavBar (Storage -> Cmd Msg)
-    | Footer (Storage -> Cmd Msg)
-    | ContactUs (String -> Storage -> Cmd Msg) String
     | OpenContactUs
     | BoxHover Int
     | BoxUnHover Int
     | SimpleBtnHover Int
     | SimpleBtnUnHover Int
     | VisibilityChanged Visibility
+    | ModifyLocalShared Shared.Model
+    | WindowResized Int Int
 
 
-update : Storage -> Msg -> Model -> ( Model, Cmd Msg )
-update storage msg model =
+update : Shared.Model -> Msg -> Model -> ( Model, Effect Msg )
+update shared msg model =
     case msg of
-        Scrolled _ ->
-            ( model
-            , Cmd.batch
+        Scrolled distance ->
+            ( { model
+                | localShared =
+                    model.localShared
+                        |> (\l ->
+                                { l
+                                    | scrolledDistance = distance
+                                    , navbarDisplay =
+                                        if abs (distance - l.scrolledDistance) > 10 then
+                                            if distance > l.scrolledDistance then
+                                                Hide
+
+                                            else
+                                                Enter
+
+                                        else
+                                            l.navbarDisplay
+                                }
+                           )
+              }
+            , Effect.batch
                 (List.map animationTrackerToCmd (List.filter (\( _, v ) -> v.shouldAnimate == False) (Dict.toList model.animationTracker))
                     ++ List.map (\i -> onScreenItemtoCmd i.id) model.onScreenTracker
                 )
@@ -196,62 +218,50 @@ update storage msg model =
         GotElement id element ->
             case element of
                 Ok e ->
-                    ( { model | animationTracker = Dict.fromList (List.map (updateElement id e) (Dict.toList model.animationTracker)) }, Cmd.none )
+                    ( { model | animationTracker = Dict.fromList (List.map (updateElement id e) (Dict.toList model.animationTracker)) }, Effect.none )
 
                 Err _ ->
-                    ( model, Cmd.none )
+                    ( model, Effect.none )
 
         GotOnScreenItem id element ->
             case element of
                 Ok e ->
                     ( { model | onScreenTracker = List.map (updateOnScreenElement id e) model.onScreenTracker }
                     , if isOnScreen "earthVideo" (List.map (updateOnScreenElement id e) model.onScreenTracker) then
-                        controlVideo True
+                        controlVideo True |> Effect.fromCmd
                         -- Play
 
                       else
-                        controlVideo False
+                        controlVideo False |> Effect.fromCmd
                       -- Pause
                     )
 
                 Err _ ->
-                    ( model, Cmd.none )
+                    ( model, Effect.none )
 
         VisibilityChanged visibility ->
             if visibility == Visible then
-                ( { model | userVisible = True }, controlVideo True )
+                ( { model | userVisible = True }, controlVideo True |> Effect.fromCmd )
                 -- Play
 
             else
-                ( { model | userVisible = False }, controlVideo False )
+                ( { model | userVisible = False }, controlVideo False |> Effect.fromCmd )
 
         -- Pause
-        NavBar cmd ->
-            ( model, cmd storage )
-
-        Footer cmd ->
-            ( model, cmd storage )
-
-        ContactUs cmd str ->
-            ( model, cmd str storage )
-
-        OpenContactUs ->
-            ( model, Storage.setContactUs "True" storage )
-
         BoxHover id ->
-            ( { model | boxes = List.indexedMap (setHovered id) model.boxes, getMouse = True }, Cmd.none )
+            ( { model | boxes = List.indexedMap (setHovered id) model.boxes, getMouse = True }, Effect.none )
 
         BoxUnHover id ->
-            ( { model | boxes = List.indexedMap (setUnHovered id) model.boxes, getMouse = True }, Cmd.none )
+            ( { model | boxes = List.indexedMap (setUnHovered id) model.boxes, getMouse = True }, Effect.none )
 
         SimpleBtnHover id ->
-            ( { model | simpleBtnHoverTracker = List.indexedMap (setHovered id) model.simpleBtnHoverTracker }, Cmd.none )
+            ( { model | simpleBtnHoverTracker = List.indexedMap (setHovered id) model.simpleBtnHoverTracker }, Effect.none )
 
         SimpleBtnUnHover id ->
-            ( { model | simpleBtnHoverTracker = List.indexedMap (setUnHovered id) model.simpleBtnHoverTracker }, Cmd.none )
+            ( { model | simpleBtnHoverTracker = List.indexedMap (setUnHovered id) model.simpleBtnHoverTracker }, Effect.none )
 
         GotMouse direction ->
-            ( { model | getMouse = False, boxes = List.map (updateBoxes direction) model.boxes }, Cmd.none )
+            ( { model | getMouse = False, boxes = List.map (updateBoxes direction) model.boxes }, Effect.none )
 
         TestimonialLeft ->
             ( { model
@@ -262,7 +272,7 @@ update storage msg model =
                     else
                         model.testimonial_viewNum
               }
-            , Cmd.none
+            , Effect.none
             )
 
         TestimonialRight ->
@@ -274,7 +284,7 @@ update storage msg model =
                     else
                         model.testimonial_viewNum
               }
-            , Cmd.none
+            , Effect.none
             )
 
         TestimonialSwiped event ->
@@ -292,7 +302,7 @@ update storage msg model =
                             model.testimonial_viewNum
                     , swipingState = Tuple.first (Swiper.hasSwipedLeft event model.swipingState)
                   }
-                , Cmd.none
+                , Effect.none
                 )
 
             else if test Swiper.hasSwipedRight then
@@ -305,11 +315,37 @@ update storage msg model =
                             model.testimonial_viewNum
                     , swipingState = Tuple.first (Swiper.hasSwipedRight event model.swipingState)
                   }
-                , Cmd.none
+                , Effect.none
                 )
 
             else
-                ( { model | swipingState = Tuple.first (Swiper.hasSwipedDown event model.swipingState) }, Cmd.none )
+                ( { model | swipingState = Tuple.first (Swiper.hasSwipedDown event model.swipingState) }, Effect.none )
+
+        ModifyLocalShared newSharedState ->
+            ( { model | localShared = newSharedState }
+            , if not (newSharedState.contactDialogState == model.localShared.contactDialogState) then
+                Effect.batch
+                    [ Shared.UpdateModel newSharedState |> Effect.fromShared
+                    , newSharedState.contactDialogState |> Storage.toJson |> Ports.save |> Effect.fromCmd
+                    ]
+
+              else
+                Shared.UpdateModel newSharedState |> Effect.fromShared
+            )
+
+        OpenContactUs ->
+            let
+                withOpen state =
+                    { state | contactDialogState = state.contactDialogState |> (\c -> { c | showContactUs = True }) }
+            in
+            ( { model | localShared = withOpen model.localShared }, Shared.UpdateModel (withOpen model.localShared) |> Effect.fromShared )
+
+        WindowResized w h ->
+            let
+                newModel share =
+                    { share | device = classifyDevice { width = w, height = h }, width = w, height = h }
+            in
+            ( { model | localShared = newModel model.localShared }, Shared.UpdateModel (newModel model.localShared) |> Effect.fromShared )
 
 
 
@@ -342,18 +378,21 @@ subscriptions model =
                         (Decode.field "movementY" Decode.int)
                     )
                 , recvScroll Scrolled
+                , Browser.Events.onResize WindowResized
                 ]
 
         else
             Sub.batch
                 [ onVisibilityChange (\v -> VisibilityChanged v)
                 , recvScroll Scrolled
+                , Browser.Events.onResize WindowResized
                 ]
 
     else
         Sub.batch
             [ onVisibilityChange (\v -> VisibilityChanged v)
             , recvScroll Scrolled
+            , Browser.Events.onResize WindowResized
             ]
 
 
@@ -365,11 +404,11 @@ view : Shared.Model -> Model -> View Msg
 view shared model =
     { title = "GCI - Authorized Reverse Engineering IC Solutions for Obsolescence and High Temperature Environments"
     , attributes =
-        [ inFront (navbar shared NavBar)
+        [ inFront (navbar model.localShared ModifyLocalShared)
         , inFront (point_down (shouldAnimate "testimonials" model))
         , inFront
-            (if shared.storage.openContactUs then
-                contactUs shared ContactUs
+            (if shared.contactDialogState.showContactUs then
+                contactUs model.localShared ModifyLocalShared
 
              else
                 none
@@ -378,14 +417,14 @@ view shared model =
     , element =
         column [ width fill, Region.mainContent, htmlAttribute <| id "home", clip ]
             [ column [ width (fill |> maximum maxWidth), centerX, spacing 25 ]
-                [ head shared.temp
-                , innovations (shouldAnimate "testimonials" model) shared.temp
-                , testimonials model.testimonials model.testimonial_viewNum (shouldAnimate "testimonials" model) shared.temp
-                , grayQuote (shouldAnimate "grayQuote" model) shared.temp
-                , boxes (shouldAnimate "whatwedo" model) model.boxes shared.temp
-                , cleanRoom (shouldAnimate "cleanRoom" model) model.simpleBtnHoverTracker shared.temp
+                [ head shared
+                , innovations (shouldAnimate "testimonials" model) shared
+                , testimonials model.testimonials model.testimonial_viewNum (shouldAnimate "testimonials" model) shared
+                , grayQuote (shouldAnimate "grayQuote" model) shared
+                , boxes (shouldAnimate "whatwedo" model) model.boxes shared
+                , cleanRoom (shouldAnimate "cleanRoom" model) model.simpleBtnHoverTracker shared
                 ]
-            , footer shared Footer
+            , footer shared ModifyLocalShared
             ]
     }
 
@@ -423,14 +462,14 @@ updateElement id element ( k, v ) =
         ( k, v )
 
 
-animationTrackerToCmd : ( String, AnimationState ) -> Cmd Msg
+animationTrackerToCmd : ( String, AnimationState ) -> Effect Msg
 animationTrackerToCmd ( k, _ ) =
-    Task.attempt (GotElement k) (Browser.Dom.getElement k)
+    Task.attempt (GotElement k) (Browser.Dom.getElement k) |> Effect.fromCmd
 
 
-onScreenItemtoCmd : String -> Cmd Msg
+onScreenItemtoCmd : String -> Effect Msg
 onScreenItemtoCmd id =
-    Task.attempt (GotOnScreenItem id) (Browser.Dom.getElement id)
+    Task.attempt (GotOnScreenItem id) (Browser.Dom.getElement id) |> Effect.fromCmd
 
 
 updateBoxes : Direction -> BoxesItem -> BoxesItem
@@ -565,20 +604,20 @@ point_down scrolled =
         ]
 
 
-head : Temp -> Element msg
-head temp =
+head : Shared.Model -> Element msg
+head shared =
     let
         w =
-            temp.width
+            shared.width
 
         h =
-            temp.height
+            shared.height
 
         glassLogo =
             image
                 [ width
                     (px
-                        (if temp.device.class == Phone then
+                        (if shared.device.class == Phone then
                             w * 2
 
                          else
@@ -600,7 +639,7 @@ head temp =
                 ]
                 (image
                     [ width
-                        (if temp.device.class == Phone then
+                        (if shared.device.class == Phone then
                             fill
 
                          else
@@ -609,7 +648,7 @@ head temp =
                     , centerX
                     , centerY
                     , padding
-                        (if temp.device.class == Phone then
+                        (if shared.device.class == Phone then
                             floor (toFloat w * 0.1)
 
                          else
@@ -659,11 +698,11 @@ head temp =
         ]
 
 
-innovations : Bool -> Temp -> Element msg
-innovations animateSelf temp =
+innovations : Bool -> Shared.Model -> Element msg
+innovations animateSelf shared =
     let
         device =
-            temp.device.class
+            shared.device.class
 
         isPhone =
             device == Phone
@@ -699,25 +738,25 @@ innovations animateSelf temp =
         ]
 
 
-testimonials : List Testimonial -> Int -> Bool -> Temp -> Element Msg
-testimonials ts viewNum animateSelf temp =
+testimonials : List Testimonial -> Int -> Bool -> Shared.Model -> Element Msg
+testimonials ts viewNum animateSelf shared =
     let
         numberToShow =
             if isPhone then
                 1
 
             else
-                temp.width // floor (toFloat testimonial_width * 1.2)
+                shared.width // floor (toFloat testimonial_width * 1.2)
 
         testimonial_width =
             if isPhone then
-                toFloat temp.width * 0.7 |> floor
+                toFloat shared.width * 0.7 |> floor
 
             else
                 370
 
         device =
-            temp.device.class
+            shared.device.class
 
         isPhone =
             device == Phone
@@ -866,11 +905,11 @@ onEnter msg =
         )
 
 
-cleanRoom : Bool -> List SimpleBtn -> Temp -> Element Msg
-cleanRoom animateSelf simpleBtns temp =
+cleanRoom : Bool -> List SimpleBtn -> Shared.Model -> Element Msg
+cleanRoom animateSelf simpleBtns shared =
     let
         device =
-            temp.device.class
+            shared.device.class
 
         isPhone =
             device == Phone
@@ -955,11 +994,11 @@ cleanRoom animateSelf simpleBtns temp =
         ]
 
 
-boxes : Bool -> List BoxesItem -> Temp -> Element Msg
-boxes animateSelf content temp =
+boxes : Bool -> List BoxesItem -> Shared.Model -> Element Msg
+boxes animateSelf content shared =
     let
         device =
-            temp.device.class
+            shared.device.class
 
         isPhone =
             device == Phone
@@ -971,7 +1010,7 @@ boxes animateSelf content temp =
             isPhone || isTablet
 
         w =
-            temp.width
+            shared.width
 
         maxW =
             min w maxWidth
@@ -1073,19 +1112,19 @@ boxes animateSelf content temp =
                     )
                 ]
             )
-        , el [ width (px (eachWidth * (temp.width // eachWidth))), centerX ] (wrappedRow [ centerX ] (List.map box (List.indexedMap Tuple.pair content)))
+        , el [ width (px (eachWidth * (shared.width // eachWidth))), centerX ] (wrappedRow [ centerX ] (List.map box (List.indexedMap Tuple.pair content)))
         , paragraph [ centerX, Font.light, Font.center, fontSize device Md, padding 30, width (fill |> maximum 800) ] [ text "GCI provides solutions for otherwise obsolete electronic systems. Keeping assets fully operational for many decades in the future." ]
         ]
 
 
-grayQuote : Bool -> Temp -> Element msg
-grayQuote animateSelf temp =
+grayQuote : Bool -> Shared.Model -> Element msg
+grayQuote animateSelf shared =
     let
         device =
-            temp.device.class
+            shared.device.class
 
         w =
-            temp.width
+            shared.width
 
         isPhone =
             device == Phone
@@ -1095,7 +1134,7 @@ grayQuote animateSelf temp =
                 10
 
             else
-                toFloat (min temp.width maxWidth) * 0.1 |> round
+                toFloat (min shared.width maxWidth) * 0.1 |> round
     in
     column
         [ width

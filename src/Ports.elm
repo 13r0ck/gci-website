@@ -16,7 +16,7 @@ port recvScroll : (Int -> msg) -> Sub msg
 port disableScrolling : Bool -> Cmd msg
 
 
-port setPhoneInputCursor : Int -> Cmd msg
+port setCursor : Int -> Cmd msg
 
 
 port save : Json.Value -> Cmd msg

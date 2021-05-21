@@ -1,7 +1,9 @@
 module Pages.Whoweare exposing (Model, Msg, page)
 
 import Browser.Dom exposing (Viewport)
+import Browser.Events
 import Dict exposing (Dict)
+import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
@@ -18,20 +20,20 @@ import Pages.Home_ exposing (AnimationState, When(..), onScreenItemtoCmd, update
 import Palette exposing (FontSize(..), black, fontSize, gciBlue, maxWidth, warning, white)
 import Ports exposing (disableScrolling, recvScroll)
 import Request
-import Shared exposing (Temp, acol, ael, contactUs, footer, navbar)
+import Shared exposing (acol, ael, contactUs, footer, navbar)
 import Simple.Animation as Animation exposing (Animation)
 import Simple.Animation.Animated as Animated
 import Simple.Animation.Property as P
-import Storage exposing (Storage)
+import Storage exposing (NavBarDisplay(..))
 import Task
 import View exposing (View)
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
-    Page.element
-        { init = init
-        , update = update shared.storage
+    Page.advanced
+        { init = init shared
+        , update = update shared
         , view = view shared
         , subscriptions = subscriptions
         }
@@ -45,6 +47,21 @@ type alias Model =
     { showVimeo : Bool
     , simpleBtnHoverTracker : List SimpleBtn
     , animationTracker : Dict String AnimationState
+    , leadership : List Leadership
+    , leadersPerRow : Int
+    , localShared : Shared.Model
+    }
+
+
+type alias Leadership =
+    { id : Int
+    , flip : Bool
+    , name : String
+    , job : String
+    , email : String
+    , phone : String
+    , image : String
+    , story : String
     }
 
 
@@ -57,8 +74,8 @@ type alias SimpleBtn =
     }
 
 
-init : ( Model, Cmd Msg )
-init =
+init : Shared.Model -> ( Model, Effect Msg )
+init shared =
     ( { showVimeo = False
       , simpleBtnHoverTracker =
             [ SimpleBtn 0 "Play" "#" False (Just OpenVimeo)
@@ -75,8 +92,19 @@ init =
                 , ( "2", AnimationState (PercentOfViewport 40) False )
                 , ( "3", AnimationState (PercentOfViewport 40) False )
                 ]
+      , leadership =
+            [ Leadership 0 False "Erick Spory" "CEO and CTO" "erick.spory@gci-global.com" "(719) 573 - 6777 x104" "/img/erick.webp" "Erick M. Spory spent 22 years at Atmel Corporation in Colorado Springs, CO, ultimately becoming a Senior Principle Failure Analysis Engineer.  During his time at Atmel he worked closely with process, design, device, and packaging engineers to resolve yield issues. He is currently the President and CTO of Global Circuit Innovations, which he co-founded in 2006.   Mr. Spory holds 10 patents and has 9 other patents pending.  These involve Environmentally Hardened Integrated Circuits, Methods for Printing Integrated Circuit Bond Connections, Repackaged Integrated Circuit and Assembly Methods, Extracted Die and Reassembly and Counterfeit Mitigation. Mr. Spory has published numerous papers for a variety of publications, including the International Symposium for Testing and Failure Analysis and International Microelectronics Packaging and Assembly Society (IMAPS). He has presented at over twelve conferences including the Component Obsolescence Group (COG), International Microelectronics Assembly & Packaging (IMAPS) Components for Military and Space Electronics, Surface Mount Technology Association SMTA) Electronics in Harsh Environments, Afnor Obsolescence Organization, and multiple times at the Diminishing Manufacturing Supply and Material Shortages (DMSMS).\n\nMr. Spory has a B.S. in Materials Science Engineering with a Chemical Engineering Minor from Cornell University. Mr. Spory also has a M.S. in Electrical Engineering with a Microelectronics emphasis from the University of Colorado, Colorado Springs (UCCS) and is a current Candidate for a Ph.D. in Electrical Engineering from the University of Colorado."
+            , Leadership 1 False "Jeff Murphy" "VP Operations" "jeff.murphy@gci-global.com" "(719) 573 - 6777 x103" "/img/jeff.webp" "For over 25 years Mr. Murphy has led high performing manufacturing organizations.  From 1991 through 2008, he held various manufacturing management roles in the semiconductor industry working for Cypress Semiconductor and Atmel Corporation. Prior to co-founding GCI, Mr. Murphy led the manufacturing organization for Atmel in Colorado Springs, which was one of the highest volume and lowest cost semiconductor fabrication plants in the United States. His teams have advanced company financial metrics through improved yields, cost reduction/avoidance efforts, and productivity growth utilizing Lean methods. He places significant value on a collaborative approach with customers that ensures expectations are surpassed on a consistent basis. Mr. Murphy received his BBA in Finance and Management from the University of Texas at Austin and holds an MBA from Colorado Christian University."
+            , Leadership 2 False "Tim Barry" "Director of Engineering" "tim.barry@gci-global.com" "(719) 573 - 6777 x101" "/img/tim.webp" "Tim Barry began his career in Colorado Springs at Honeywell as a semiconductor manufacturing process engineer. Subsequently, he worked at Atmel Corp for 19 years in a variety of technical roles including Yield Staff engineer, Sustaining Process and Equipment engineering manager, and Process Engineering manager for a new facility start-up.  Mr. Barry’s Wafer Fabrication Engineering Management responsibilities included overseeing a department containing over 100 technical personnel in a diversified product and technology fabrication facility.  Later he became the Manufacturing Operations and Integration Engineering Manager for Abound Solar in Longmont Colorado. There, he directed an operations team consisting of 13 engineers refining and implementing processes and equipment necessary to support a CdTe PV manufacturing facility. Currently, Mr. Barry is the Director of Engineering at Global Circuit Innovations.  In his role he develops systems and structure for an emerging company engaged in specialty application semiconductors and engineering services.  He provides technical consulting and hands on engineering for key clients in order to solve custom integrated circuit challenges.\n\nTim received his Bachelor of Science in Chemical Engineering at Arizona State University, and his Masters in Business Administration (MBA) from the University of Phoenix."
+            , Leadership 3 False "Brian Mena" "Vice President of Finance" "brian.mena@gci-global.com" "(719) 573 - 6777 x102" "/img/brian.jpg" "Mr. Mena has over 20+ years of corporate strategic financial experience.  He is a results oriented financial professional with a specialty in the development and design of strategic financial planning that supports decision management, critical financial transformation, performance improvement activities, analytics, reporting, and internal control. This entails providing hands-on vision development for end-to-end support, from strategy to execution, that delivers the improvements needed to transform the business to the next level of financial management.  Mr. Mena has worked in various business environments from start-up ventures to distress industries whereby he has directly managed business lines over $1.5B in revenues.  Mr. Mena graduated from the University of Colorado (Boulder & Denver) earning a bachelors and dual masters (M.B.A. & and Masters of Finance)."
+            , Leadership 4 False "Charlie Beebout" "Program Manager" "charlie.beebout@gci-global.com" "(719) 573 - 6777 x110" "/img/charlie.webp" "Mr. Beebout was Director of Engineering at Atmel Corporation for 17 years managing ASICs, FPGAs, EEPROMs, EPROMs, SRAMs, Digital Imaging, Wireless Communication and Cryptographic Security products.\n\nIn this capacity, he had extensive achievements in integrated circuit management positions designing, debugging and manufacturing thousands of IC products for diverse Department of Defense (DoD) applications including satellites, missiles, and aircraft.  His expertise also extended to other industrial and consumer utilizations.\n\nMr. Beebout currently serves as Program Manager for Global Circuit Innovations (GCI) and focuses primarily on integrated circuit obsolescence solutions for the DoD. GCI specializes in die extraction and re-assembly (DER™ and DEER™) for integrated circuit environmental hardening, commercial and military IC obsolescence solutions as well as electroless diamond plating for ultra-high speed sockets (40+ GHz) and Flex design.\n\nMr. Beebout has presented at Diminishing Manufacturing Sources and Material Shortages (DMSMS), Air Worthiness and and Sustainment (AA&S), and the International Microelectronics Packaging and Assembly Society (IMAPS).\n\nMr. Beebout currently has a patent application pending entitled “Environmental Hardening to Extend Operating Lifetimes of Integrated Circuits at Elevated Temperatures” with the USPTO.\n\nMr. Beebout received his BSEE degree from Iowa State University."
+            , Leadership 5 False "Patrick Jenkins" "Program Manager" "patrick.jenkins@gci-global.com" "(719) 573 - 6777 x111" "/img/patrick.webp" "Mr. Jenkins managed technical and operations departments at Intel, Inmos, Atmel, Vitesse, OrganicID, dpiX, and Unipixel over a career of more than 30 years. He has been involved in the development and high-volume manufacturing of ICs in numerous technologies (Microprocessor, DRAM, SRAM, non-volatile/programmable memory, GaAs digital logic) as well as printed ICs, glass flat-panel, and flexible plastic (roll-to-roll) electronics.\n\nMr. Jenkins currently serves as a Program Manager for Global Circuit Innovations (GCI) and focuses primarily on integrated circuit obsolescence solutions for the DoD. The particular emphasis is on solutions for obsolete FPGA/CPLD integrated circuits. GCI specializes in Die Extraction and Re-assembly (DER™ and DEER™) for integrated circuit environmental hardening, commercial and military IC obsolescence solutions as well as electroless diamond plating for ultra high-speed sockets (40+ GHz) and Flex design.\n\nMr. Jenkins has one patent issued. US Patent 7858513 issued 2010 “Fabrication of Self-aligned via Holes in Polymer Thin Films”\n\nMr. Jenkins received his BSChE degree from Caltech."
+            , Leadership 6 False "Dustin Morgan" "Business Development" "dustin .morgan@gci-global.com" "(719) 573 - 6777 x107" "/img/dustin.webp" "Dustin Morgan joined GCI in 2016 as the Director of Marketing. She holds a B.A. in Communications from the University of Colorado, Boulder and a M.A. in International Development from the Josef Korbel School of International Studies at the University of Denver.  Ms. Morgan has over 20 years of experience in both marketing and program management.  She previously worked for Central Bancorp in Colorado Springs where she was tasked with the design, creation, and management of a new business venture, Johnny Martin's Car Central.  Ms. Morgan served as the Executive Director in this role.  Ms. Morgan currently manages DoD contract programs and is Director of Business Development."
+            ]
+      , leadersPerRow = 3
+      , localShared = shared
       }
-    , Cmd.none
+    , Effect.none
     )
 
 
@@ -85,58 +113,109 @@ init =
 
 
 type Msg
-    = NavBar (Storage -> Cmd Msg)
-    | ContactUs (String -> Storage -> Cmd Msg) String
-    | Footer (Storage -> Cmd Msg)
-    | OpenVimeo
+    = OpenVimeo
     | CloseVimeo
     | SimpleBtnHover Int
     | SimpleBtnUnHover Int
     | Scrolled Int
     | GotElement String (Result Browser.Dom.Error Browser.Dom.Element)
     | OpenContactUs
+    | Leader Int
+    | ModifyLocalShared Shared.Model
+    | WindowResized Int Int
 
 
-update : Storage -> Msg -> Model -> ( Model, Cmd Msg )
-update storage msg model =
+update : Shared.Model -> Msg -> Model -> ( Model, Effect Msg )
+update shared msg model =
     case msg of
-        NavBar cmd ->
-            ( model, cmd storage )
-
-        ContactUs cmd str ->
-            ( model, cmd str storage )
-
-        Footer cmd ->
-            ( model, cmd storage )
-
         OpenVimeo ->
-            ( { model | showVimeo = True }, disableScrolling True )
+            ( { model | showVimeo = True }, disableScrolling True |> Effect.fromCmd )
 
         CloseVimeo ->
-            ( { model | showVimeo = False }, disableScrolling False )
+            ( { model | showVimeo = False }, disableScrolling False |> Effect.fromCmd )
 
         SimpleBtnHover id ->
-            ( { model | simpleBtnHoverTracker = List.indexedMap (setHovered id) model.simpleBtnHoverTracker }, Cmd.none )
+            ( { model | simpleBtnHoverTracker = List.indexedMap (setHovered id) model.simpleBtnHoverTracker }, Effect.none )
 
         SimpleBtnUnHover id ->
-            ( { model | simpleBtnHoverTracker = List.indexedMap (setUnHovered id) model.simpleBtnHoverTracker }, Cmd.none )
-
-        Scrolled _ ->
-            ( model
-            , Cmd.batch
-                (List.map animationTrackerToCmd (List.filter (\( _, v ) -> v.shouldAnimate == False) (Dict.toList model.animationTracker)))
-            )
+            ( { model | simpleBtnHoverTracker = List.indexedMap (setUnHovered id) model.simpleBtnHoverTracker }, Effect.none )
 
         GotElement id element ->
             case element of
                 Ok e ->
-                    ( { model | animationTracker = Dict.fromList (List.map (updateElement id e) (Dict.toList model.animationTracker)) }, Cmd.none )
+                    ( { model | animationTracker = Dict.fromList (List.map (updateElement id e) (Dict.toList model.animationTracker)) }, Effect.none )
 
                 Err _ ->
-                    ( model, Cmd.none )
+                    ( model, Effect.none )
+
+        Scrolled distance ->
+            ( { model
+                | localShared =
+                    model.localShared
+                        |> (\l ->
+                                { l
+                                    | scrolledDistance = distance
+                                    , navbarDisplay =
+                                        if abs (distance - l.scrolledDistance) > 10 then
+                                            if distance > l.scrolledDistance then
+                                                Hide
+
+                                            else
+                                                Enter
+
+                                        else
+                                            l.navbarDisplay
+                                }
+                           )
+              }
+            , Effect.batch
+                (List.map animationTrackerToCmd (List.filter (\( _, v ) -> v.shouldAnimate == False) (Dict.toList model.animationTracker)))
+            )
+
+        ModifyLocalShared newSharedState ->
+            ( { model | localShared = newSharedState }
+            , if not (newSharedState.contactDialogState == model.localShared.contactDialogState) then
+                Effect.batch
+                    [ Shared.UpdateModel newSharedState |> Effect.fromShared
+                    , newSharedState.contactDialogState |> Storage.toJson |> Ports.save |> Effect.fromCmd
+                    ]
+
+              else
+                Shared.UpdateModel newSharedState |> Effect.fromShared
+            )
 
         OpenContactUs ->
-            ( model, Storage.setContactUs "True" storage )
+            let
+                withOpen state =
+                    { state | contactDialogState = state.contactDialogState |> (\c -> { c | showContactUs = True }) }
+            in
+            ( { model | localShared = withOpen model.localShared }, Shared.UpdateModel (withOpen model.localShared) |> Effect.fromShared )
+
+        WindowResized w h ->
+            let
+                newModel share =
+                    { share | device = classifyDevice { width = w, height = h }, width = w, height = h }
+            in
+            ( { model | localShared = newModel model.localShared }, Shared.UpdateModel (newModel model.localShared) |> Effect.fromShared )
+
+        Leader id ->
+            ( { model
+                | leadership =
+                    List.map
+                        (\l ->
+                            { l
+                                | flip =
+                                    if l.id == id && l.flip == False then
+                                        True
+
+                                    else
+                                        False
+                            }
+                        )
+                        model.leadership
+              }
+            , Effect.none
+            )
 
 
 
@@ -145,7 +224,10 @@ update storage msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    recvScroll Scrolled
+    Sub.batch
+        [ recvScroll Scrolled
+        , Browser.Events.onResize WindowResized
+        ]
 
 
 
@@ -156,13 +238,13 @@ view : Shared.Model -> Model -> View Msg
 view shared model =
     let
         h =
-            shared.temp.height
+            shared.height
 
         w =
-            shared.temp.width
+            shared.width
 
         device =
-            shared.temp.device.class
+            shared.device.class
 
         isPhone =
             device == Phone
@@ -175,10 +257,10 @@ view shared model =
     in
     { title = "GCI - Authorized Reverse Engineering IC Solutions for Obsolescence and High Temperature Environments"
     , attributes =
-        [ inFront (navbar shared NavBar)
+        [ inFront (navbar model.localShared ModifyLocalShared)
         , inFront
-            (if shared.storage.openContactUs then
-                contactUs shared ContactUs
+            (if shared.contactDialogState.showContactUs then
+                contactUs model.localShared ModifyLocalShared
 
              else
                 none
@@ -200,11 +282,11 @@ view shared model =
                     , width (fill |> maximum maxWidth)
                     , spacing 100
                     ]
-                    [ mainText shared.temp (shouldAnimate "mainText" model) ]
-                , leadership shared
+                    [ mainText shared (shouldAnimate "mainText" model) ]
+                , leadership shared model.leadership model.leadersPerRow
                 , bottomButtons shared (List.filter (\b -> b.id > 0) model.simpleBtnHoverTracker) (shouldAnimate "bottomButtons" model)
                 ]
-            , footer shared Footer
+            , footer model.localShared ModifyLocalShared
             ]
     }
 
@@ -216,13 +298,13 @@ head shared model =
             model.simpleBtnHoverTracker
 
         h =
-            shared.temp.height
+            shared.height
 
         w =
-            shared.temp.width
+            shared.width
 
         device =
-            shared.temp.device.class
+            shared.device.class
 
         isPhone =
             device == Phone
@@ -252,17 +334,17 @@ head shared model =
         { src = "/img/building.jpg", description = "Picture of GCI's head quarters" }
 
 
-mainText : Temp -> Bool -> Element Msg
-mainText temp animateSelf =
+mainText : Shared.Model -> Bool -> Element Msg
+mainText shared animateSelf =
     let
         device =
-            temp.device.class
+            shared.device.class
 
         isPhone =
             device == Phone
 
         w =
-            temp.width
+            shared.width
     in
     column
         [ width fill
@@ -339,35 +421,150 @@ mainText temp animateSelf =
         ]
 
 
-leadership : Shared.Model -> Element Msg
-leadership shared =
+leadership : Shared.Model -> List Leadership -> Int -> Element Msg
+leadership shared leaders leadersPerRow =
     let
         device =
-            shared.temp.device.class
+            shared.device.class
+
+        w =
+            shared.width
+
+        isPhone =
+            device == Phone
+
+        cardWidth =
+            300
+
+        cardHeight =
+            500
+
+        cardSpacing =
+            50
+
+        leader l =
+            el [ width fill ]
+                (column
+                    [ width (px cardWidth)
+                    , height (px cardHeight)
+                    , Border.rounded 20
+                    , centerX
+                    , clip
+                    , Border.shadow { blur = 10, color = rgba 0 0 0 0.3, offset = ( -5, 5 ), size = 5 }
+                    , Background.color white
+                    , Events.onClick (Leader l.id)
+                    , Events.onMouseEnter (Leader l.id)
+                    , Events.onMouseLeave (Leader l.id)
+                    ]
+                    [ image [ htmlAttribute <| class "animateTransform", width fill, height (px (toFloat cardHeight * (2.0 / 3.0) |> round)) ] { src = l.image, description = l.name }
+                    , el
+                        ([ htmlAttribute <| class "animateTransform"
+                         , height (px (toFloat cardHeight * (1.0 / 3.0) |> round))
+                         , width fill
+                         , Background.color white
+                         , Border.shadow { blur = 3, color = rgba 0 0 0 0.2, offset = ( 0, 0 ), size = 1 }
+                         ]
+                            ++ (if l.flip then
+                                    [ moveUp cardHeight
+                                    ]
+
+                                else
+                                    []
+                               )
+                        )
+                        (column [ centerX, centerY, spacing 20 ]
+                            [ el [ centerX, fontSize device Md, Font.light, Font.underline ] (text l.name)
+                            , el [ centerX, fontSize device Xsm, Font.color (rgb 0.2 0.2 0.3) ] (text l.job)
+                            ]
+                        )
+                    , el
+                        ([ width fill, htmlAttribute <| class "animateTransform", height (px cardHeight), Background.color white ]
+                            ++ (if l.flip then
+                                    [ moveUp cardHeight ]
+
+                                else
+                                    []
+                               )
+                        )
+                        (paragraph [ Font.alignLeft, fontSize device Xsm, padding 20 ]
+                            [ text l.story ]
+                        )
+                    ]
+                )
+
+        {- un comment for flip
+           (el [ htmlAttribute <| class "flip-card", centerX]
+               (column
+                   [ htmlAttribute <| class "flip-card-inner"
+                   , width (px cardWidth)
+                   , height (px cardHeight)
+                   ]
+                   [ el
+                       [ htmlAttribute <| class "flip-card-back"
+                       , Border.shadow { blur = 10, color = rgba 0 0 0 0.3, offset = ( -5, 5 ), size = 5 }
+                       , Border.rounded 20
+                       ]
+                       (el [Background.color white, clip, height (px cardHeight), width (px cardWidth), Border.rounded 20]
+                           ( paragraph [Font.alignLeft, fontSize device Xsm, padding 20]
+                               [text l.story]
+                           )
+                           )
+                   , el
+                       [ htmlAttribute <| class "flip-card-front"
+                       , moveUp cardHeight
+                       , Border.rounded 20
+                       , Border.shadow { blur = 10, color = rgba 0 0 0 0.3, offset = ( -5, 5 ), size = 5 }
+                       ]
+                   ( column
+                   [ width (px cardWidth)
+                   , height (px cardHeight)
+                   , Border.rounded 20
+                   , clip
+                   , centerX
+                   , Border.shadow { blur = 10, color = rgba 0 0 0 0.3, offset = ( -5, 5 ), size = 5 }
+                   , Background.color white
+                   , Events.onClick (Leader l.id)
+                   --, Events.onMouseEnter (Leader l.id)
+                   --, Events.onMouseLeave (Leader l.id)
+                   ]
+                   [ el [ Background.image l.image, width fill, height (fillPortion 2) ] none
+                   , el [ height fill, width fill]
+                       (column [centerX, centerY, spacing 20]
+                       [ el [centerX, fontSize device Md, Font.light, Font.underline ] (text l.name)
+                       , el [centerX, fontSize device Xsm, Font.color (rgb 0.2 0.2 0.3)] (text l.job)
+                       ])
+                   ]
+                   )
+                               ]
+                           )
+                       )
+        -}
     in
     column
         [ width fill
         , htmlAttribute <| class "circuit_board"
+        , spacing 50
+        , padding 50
         , Border.innerShadow { blur = 10, color = rgba 0 0 0 0.3, offset = ( -5, 5 ), size = 5 }
         ]
-        [ column [ spacing 3, padding 50, width fill, Background.color (rgba 1 1 1 0) ]
-            [ el [ Font.bold, fontSize device Xsm, Font.center, centerX ] (text "Global Circuit Innovations")
+        [ column
+            [ spacing 3
+            , if isPhone then
+                paddingXY 20 20
+
+              else
+                padding 55
+            , centerX
+            , Background.color (rgba 1 1 1 0)
+            , Background.color white
+            , Border.rounded 20
+            , Border.shadow { blur = 10, color = rgba 0 0 0 0.3, offset = ( -5, 5 ), size = 5 }
+            ]
+            [ el [ Font.bold, fontSize device Xsm, Font.center, centerX, Font.color (rgb 0.2 0.2 0.3) ] (text "Global Circuit Innovations")
             , el [ Font.extraLight, Font.letterSpacing 5, Font.center, centerX, Font.underline, fontSize device Xlg ] (text "Leadership")
             ]
-        , wrappedRow [ centerX ]
-            [ column
-                [ width (px 300)
-                , height (px 300)
-                , Border.rounded 20
-                , clip
-                , centerX
-                , Border.shadow { blur = 10, color = rgba 0 0 0 0.3, offset = ( -5, 5 ), size = 5 }
-                , Background.color white
-                ]
-                [ el [ Background.color warning, width fill, height fill ] none
-                , el [ height fill, width fill ] none
-                ]
-            ]
+        , el [ width (px (min (toFloat w * 0.8 |> round) (leadersPerRow * cardWidth + (leadersPerRow * cardSpacing)))), centerX ]
+            (wrappedRow [ centerX, spacing cardSpacing ] (List.map leader leaders))
         ]
 
 
@@ -375,13 +572,13 @@ bottomButtons : Shared.Model -> List SimpleBtn -> Bool -> Element Msg
 bottomButtons shared btns animateSelf =
     let
         h =
-            shared.temp.height
+            shared.height
 
         w =
-            shared.temp.width
+            shared.width
 
         device =
-            shared.temp.device.class
+            shared.device.class
 
         isPhone =
             device == Phone
@@ -489,9 +686,9 @@ setUnHovered _ _ data =
     { data | hovered = False }
 
 
-animationTrackerToCmd : ( String, AnimationState ) -> Cmd Msg
+animationTrackerToCmd : ( String, AnimationState ) -> Effect Msg
 animationTrackerToCmd ( k, _ ) =
-    Task.attempt (GotElement k) (Browser.Dom.getElement k)
+    Task.attempt (GotElement k) (Browser.Dom.getElement k) |> Effect.fromCmd
 
 
 shouldAnimate : String -> Model -> Bool

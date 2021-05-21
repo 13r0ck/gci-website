@@ -1,5 +1,7 @@
 module Pages.NotFound exposing (Model, Msg, page)
 
+import Browser.Events
+import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
@@ -9,17 +11,18 @@ import Gen.Params.NotFound exposing (Params)
 import Html.Attributes exposing (id)
 import Page
 import Palette exposing (FontSize(..), black, fontSize, gciBlue, gciBlueLight, maxWidth, warning, white)
+import Ports exposing (recvScroll)
 import Request
 import Shared exposing (contactUs, footer, navbar)
-import Storage exposing (Storage)
+import Storage exposing (NavBarDisplay(..))
 import View exposing (View)
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
-    Page.element
-        { init = init
-        , update = update shared.storage
+    Page.advanced
+        { init = init shared
+        , update = update shared
         , view = view shared
         , subscriptions = subscriptions
         }
@@ -30,12 +33,12 @@ page shared req =
 
 
 type alias Model =
-    {}
+    { localShared : Shared.Model }
 
 
-init : ( Model, Cmd Msg )
-init =
-    ( {}, Cmd.none )
+init : Shared.Model -> ( Model, Effect Msg )
+init shared =
+    ( { localShared = shared }, Effect.none )
 
 
 
@@ -43,22 +46,63 @@ init =
 
 
 type Msg
-    = NavBar (Storage -> Cmd Msg)
-    | ContactUs (String -> Storage -> Cmd Msg) String
-    | Footer (Storage -> Cmd Msg)
+    = Scrolled Int
+    | ModifyLocalShared Shared.Model
+    | WindowResized Int Int
+    | OpenContactUs
 
 
-update : Storage -> Msg -> Model -> ( Model, Cmd Msg )
-update storage msg model =
+update : Shared.Model -> Msg -> Model -> ( Model, Effect Msg )
+update shared msg model =
     case msg of
-        NavBar cmd ->
-            ( model, cmd storage )
+        Scrolled distance ->
+            ( { model
+                | localShared =
+                    model.localShared
+                        |> (\l ->
+                                { l
+                                    | scrolledDistance = distance
+                                    , navbarDisplay =
+                                        if abs (distance - l.scrolledDistance) > 10 then
+                                            if distance > l.scrolledDistance then
+                                                Hide
 
-        ContactUs cmd str ->
-            ( model, cmd str storage )
+                                            else
+                                                Enter
 
-        Footer cmd ->
-            ( model, cmd storage )
+                                        else
+                                            l.navbarDisplay
+                                }
+                           )
+              }
+            , Effect.none
+            )
+
+        ModifyLocalShared newSharedState ->
+            ( { model | localShared = newSharedState }
+            , if not (newSharedState.contactDialogState == model.localShared.contactDialogState) then
+                Effect.batch
+                    [ Shared.UpdateModel newSharedState |> Effect.fromShared
+                    , newSharedState.contactDialogState |> Storage.toJson |> Ports.save |> Effect.fromCmd
+                    ]
+
+              else
+                Shared.UpdateModel newSharedState |> Effect.fromShared
+            )
+
+        OpenContactUs ->
+            let
+                withOpen state =
+                    { state | contactDialogState = state.contactDialogState |> (\c -> { c | showContactUs = True }) }
+            in
+            ( { model | localShared = withOpen model.localShared }, Shared.UpdateModel (withOpen model.localShared) |> Effect.fromShared )
+
+        WindowResized w h ->
+            let
+                newModel share =
+                    { share | device = classifyDevice { width = w, height = h }, width = w, height = h }
+            in
+            ( { model | localShared = newModel model.localShared }, Shared.UpdateModel (newModel model.localShared) |> Effect.fromShared )
 
 
 
@@ -67,7 +111,10 @@ update storage msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    Sub.batch
+        [ recvScroll Scrolled
+        , Browser.Events.onResize WindowResized
+        ]
 
 
 
@@ -78,20 +125,20 @@ view : Shared.Model -> Model -> View Msg
 view shared model =
     let
         device =
-            shared.temp.device.class
+            shared.device.class
 
         h =
-            shared.temp.height
+            shared.height
 
         w =
-            shared.temp.width
+            shared.width
     in
     { title = "GCI - Authorized Reverse Engineering IC Solutions for Obsolescence and High Temperature Environments"
     , attributes =
-        [ inFront (navbar shared NavBar)
+        [ inFront (navbar model.localShared ModifyLocalShared)
         , inFront
-            (if shared.storage.openContactUs then
-                contactUs shared ContactUs
+            (if shared.contactDialogState.showContactUs then
+                contactUs model.localShared ModifyLocalShared
 
              else
                 none
@@ -124,6 +171,6 @@ view shared model =
                         { url = "/", label = text "Return to Home" }
                     ]
                 ]
-            , footer shared Footer
+            , footer model.localShared ModifyLocalShared
             ]
     }

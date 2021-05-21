@@ -1,7 +1,9 @@
 module Pages.Obsolescence exposing (Model, Msg, page)
 
 import Browser.Dom exposing (Viewport)
+import Browser.Events
 import Dict exposing (Dict)
+import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
@@ -18,20 +20,20 @@ import Pages.Home_ exposing (AnimationState, When(..), onScreenItemtoCmd, update
 import Palette exposing (FontSize(..), black, fontSize, gciBlue, maxWidth, warning, white)
 import Ports exposing (disableScrolling, recvScroll)
 import Request
-import Shared exposing (Temp, acol, ael, contactUs, footer, navbar)
+import Shared exposing (acol, ael, contactUs, footer, navbar)
 import Simple.Animation as Animation exposing (Animation)
 import Simple.Animation.Animated as Animated
 import Simple.Animation.Property as P
-import Storage exposing (Storage)
+import Storage exposing (NavBarDisplay(..))
 import Task
 import View exposing (View)
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
-    Page.element
-        { init = init
-        , update = update shared.storage
+    Page.advanced
+        { init = init shared
+        , update = update shared
         , view = view shared
         , subscriptions = subscriptions
         }
@@ -46,6 +48,7 @@ type alias Model =
     , simpleBtnHoverTracker : List SimpleBtn
     , animationTracker : Dict String AnimationState
     , subTexts : List SubText
+    , localShared : Shared.Model
     }
 
 
@@ -66,14 +69,15 @@ type alias SimpleBtn =
     }
 
 
-init : ( Model, Cmd Msg )
-init =
+init : Shared.Model -> ( Model, Effect Msg )
+init shared =
     ( { showVimeo = False
       , simpleBtnHoverTracker =
             [ SimpleBtn 0 "Play" "#" False (Just OpenVimeo)
-            , SimpleBtn 1 "What we do" "/#whatwedo" False Nothing
-            , SimpleBtn 2 "Contact Us" "" False (Just OpenContactUs)
-            , SimpleBtn 3 "Technical Papers" "/technical" False Nothing
+            , SimpleBtn 1 "Intellectual property" "/ip" False Nothing
+            , SimpleBtn 2 "What we do" "/#whatwedo" False Nothing
+            , SimpleBtn 3 "Contact Us" "" False (Just OpenContactUs)
+            , SimpleBtn 4 "Technical Papers" "/technical" False Nothing
             ]
       , animationTracker =
             Dict.fromList
@@ -88,8 +92,9 @@ init =
             , SubText 2 "Sub text" "/img/subtext2.jpg" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
             , SubText 3 "Sub text" "/img/subtext3.jpg" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
             ]
+      , localShared = shared
       }
-    , Cmd.none
+    , Effect.none
     )
 
 
@@ -98,58 +103,89 @@ init =
 
 
 type Msg
-    = NavBar (Storage -> Cmd Msg)
-    | ContactUs (String -> Storage -> Cmd Msg) String
-    | Footer (Storage -> Cmd Msg)
-    | OpenVimeo
+    = OpenVimeo
     | CloseVimeo
     | SimpleBtnHover Int
     | SimpleBtnUnHover Int
     | Scrolled Int
     | GotElement String (Result Browser.Dom.Error Browser.Dom.Element)
     | OpenContactUs
+    | WindowResized Int Int
+    | ModifyLocalShared Shared.Model
 
 
-update : Storage -> Msg -> Model -> ( Model, Cmd Msg )
-update storage msg model =
+update : Shared.Model -> Msg -> Model -> ( Model, Effect Msg )
+update shared msg model =
     case msg of
-        NavBar cmd ->
-            ( model, cmd storage )
-
-        ContactUs cmd str ->
-            ( model, cmd str storage )
-
-        Footer cmd ->
-            ( model, cmd storage )
-
         OpenVimeo ->
-            ( { model | showVimeo = True }, disableScrolling True )
+            ( { model | showVimeo = True }, disableScrolling True |> Effect.fromCmd )
 
         CloseVimeo ->
-            ( { model | showVimeo = False }, disableScrolling False )
+            ( { model | showVimeo = False }, disableScrolling False |> Effect.fromCmd )
 
         SimpleBtnHover id ->
-            ( { model | simpleBtnHoverTracker = List.indexedMap (setHovered id) model.simpleBtnHoverTracker }, Cmd.none )
+            ( { model | simpleBtnHoverTracker = List.indexedMap (setHovered id) model.simpleBtnHoverTracker }, Effect.none )
 
         SimpleBtnUnHover id ->
-            ( { model | simpleBtnHoverTracker = List.indexedMap (setUnHovered id) model.simpleBtnHoverTracker }, Cmd.none )
+            ( { model | simpleBtnHoverTracker = List.indexedMap (setUnHovered id) model.simpleBtnHoverTracker }, Effect.none )
 
-        Scrolled _ ->
-            ( model
-            , Cmd.batch
+        Scrolled distance ->
+            ( { model
+                | localShared =
+                    model.localShared
+                        |> (\l ->
+                                { l
+                                    | scrolledDistance = distance
+                                    , navbarDisplay =
+                                        if abs (distance - l.scrolledDistance) > 10 then
+                                            if distance > l.scrolledDistance then
+                                                Hide
+
+                                            else
+                                                Enter
+
+                                        else
+                                            l.navbarDisplay
+                                }
+                           )
+              }
+            , Effect.batch
                 (List.map animationTrackerToCmd (List.filter (\( _, v ) -> v.shouldAnimate == False) (Dict.toList model.animationTracker)))
             )
+
+        ModifyLocalShared newSharedState ->
+            ( { model | localShared = newSharedState }
+            , if not (newSharedState.contactDialogState == model.localShared.contactDialogState) then
+                Effect.batch
+                    [ Shared.UpdateModel newSharedState |> Effect.fromShared
+                    , newSharedState.contactDialogState |> Storage.toJson |> Ports.save |> Effect.fromCmd
+                    ]
+
+              else
+                Shared.UpdateModel newSharedState |> Effect.fromShared
+            )
+
+        OpenContactUs ->
+            let
+                withOpen state =
+                    { state | contactDialogState = state.contactDialogState |> (\c -> { c | showContactUs = True }) }
+            in
+            ( { model | localShared = withOpen model.localShared }, Shared.UpdateModel (withOpen model.localShared) |> Effect.fromShared )
+
+        WindowResized w h ->
+            let
+                newModel share =
+                    { share | device = classifyDevice { width = w, height = h }, width = w, height = h }
+            in
+            ( { model | localShared = newModel model.localShared }, Shared.UpdateModel (newModel model.localShared) |> Effect.fromShared )
 
         GotElement id element ->
             case element of
                 Ok e ->
-                    ( { model | animationTracker = Dict.fromList (List.map (updateElement id e) (Dict.toList model.animationTracker)) }, Cmd.none )
+                    ( { model | animationTracker = Dict.fromList (List.map (updateElement id e) (Dict.toList model.animationTracker)) }, Effect.none )
 
                 Err _ ->
-                    ( model, Cmd.none )
-
-        OpenContactUs ->
-            ( model, Storage.setContactUs "True" storage )
+                    ( model, Effect.none )
 
 
 
@@ -158,7 +194,10 @@ update storage msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    recvScroll Scrolled
+    Sub.batch
+        [ recvScroll Scrolled
+        , Browser.Events.onResize WindowResized
+        ]
 
 
 
@@ -169,13 +208,13 @@ view : Shared.Model -> Model -> View Msg
 view shared model =
     let
         h =
-            shared.temp.height
+            shared.height
 
         w =
-            shared.temp.width
+            shared.width
 
         device =
-            shared.temp.device.class
+            shared.device.class
 
         isPhone =
             device == Phone
@@ -245,10 +284,10 @@ view shared model =
     in
     { title = "GCI - Authorized Reverse Engineering IC Solutions for Obsolescence and High Temperature Environments"
     , attributes =
-        [ inFront (navbar shared NavBar)
+        [ inFront (navbar model.localShared ModifyLocalShared)
         , inFront
-            (if shared.storage.openContactUs then
-                contactUs shared ContactUs
+            (if shared.contactDialogState.showContactUs then
+                contactUs model.localShared ModifyLocalShared
 
              else
                 none
@@ -277,12 +316,12 @@ view shared model =
                     , width (fill |> maximum maxWidth)
                     , spacing 100
                     ]
-                    ([ mainText shared.temp (shouldAnimate "mainText" model) ]
-                        ++ List.map subtext model.subTexts
+                    (mainText shared (shouldAnimate "mainText" model)
+                        :: List.map subtext model.subTexts
                     )
                 , bottomButtons shared (List.filter (\b -> b.id > 0) model.simpleBtnHoverTracker) (shouldAnimate "bottomButtons" model)
                 ]
-            , footer shared Footer
+            , footer model.localShared ModifyLocalShared
             ]
     }
 
@@ -294,13 +333,13 @@ head shared model =
             model.simpleBtnHoverTracker
 
         h =
-            shared.temp.height
+            shared.height
 
         w =
-            shared.temp.width
+            shared.width
 
         device =
-            shared.temp.device.class
+            shared.device.class
 
         isPhone =
             device == Phone
@@ -416,10 +455,10 @@ vimeo : Shared.Model -> Element Msg
 vimeo shared =
     let
         w =
-            shared.temp.width
+            shared.width
 
         h =
-            shared.temp.height
+            shared.height
 
         videoWidth =
             let
@@ -437,7 +476,7 @@ vimeo shared =
                 (16 * (toFloat h * 0.9)) / 9 |> round
 
         device =
-            shared.temp.device.class
+            shared.device.class
 
         isPhone =
             device == Phone
@@ -495,17 +534,17 @@ vimeo shared =
         )
 
 
-mainText : Temp -> Bool -> Element Msg
-mainText temp animateSelf =
+mainText : Shared.Model -> Bool -> Element Msg
+mainText shared animateSelf =
     let
         device =
-            temp.device.class
+            shared.device.class
 
         isPhone =
             device == Phone
 
         w =
-            temp.width
+            shared.width
     in
     column
         [ width fill
@@ -564,13 +603,13 @@ bottomButtons : Shared.Model -> List SimpleBtn -> Bool -> Element Msg
 bottomButtons shared btns animateSelf =
     let
         h =
-            shared.temp.height
+            shared.height
 
         w =
-            shared.temp.width
+            shared.width
 
         device =
-            shared.temp.device.class
+            shared.device.class
 
         isPhone =
             device == Phone
@@ -678,9 +717,9 @@ setUnHovered _ _ data =
     { data | hovered = False }
 
 
-animationTrackerToCmd : ( String, AnimationState ) -> Cmd Msg
+animationTrackerToCmd : ( String, AnimationState ) -> Effect Msg
 animationTrackerToCmd ( k, _ ) =
-    Task.attempt (GotElement k) (Browser.Dom.getElement k)
+    Task.attempt (GotElement k) (Browser.Dom.getElement k) |> Effect.fromCmd
 
 
 shouldAnimate : String -> Model -> Bool

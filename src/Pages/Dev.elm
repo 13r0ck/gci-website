@@ -1,4 +1,4 @@
-module Pages.Oil exposing (Model, Msg, page)
+module Pages.Dev exposing (Model, Msg, page)
 
 import Browser.Dom exposing (Viewport)
 import Dict exposing (Dict)
@@ -10,7 +10,7 @@ import Element.Events as Events
 import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region
-import Gen.Params.Oil exposing (Params)
+import Gen.Params.Dev exposing (Params)
 import Html exposing (br, div, iframe)
 import Html.Attributes exposing (attribute, class, id, property, src, style)
 import Json.Encode as Encode
@@ -352,10 +352,10 @@ head shared model =
                         min 150 (toFloat w * 0.1) |> floor
                     )
                 ]
-                [ text "Not", text "Farts", text "Real Engineering." ]
+                [ text "This", text "is the", text "Development page." ]
             )
         ]
-        { src = "/img/oil_head.jpg", description = "Picture of an Oil rig" }
+        { src = "/img/oil_head.jpg", description = "" }
 
 
 mainText : Shared.Model -> Bool -> Element Msg
