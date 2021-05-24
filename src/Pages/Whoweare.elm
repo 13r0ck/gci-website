@@ -19,6 +19,7 @@ import Page
 import Pages.Home_ exposing (AnimationState, When(..), onScreenItemtoCmd, updateElement)
 import Palette exposing (FontSize(..), black, fontSize, gciBlue, maxWidth, warning, white)
 import Ports exposing (disableScrolling, recvScroll)
+import Process
 import Request
 import Shared exposing (acol, ael, contactUs, footer, navbar)
 import Simple.Animation as Animation exposing (Animation)
@@ -27,7 +28,7 @@ import Simple.Animation.Property as P
 import Storage exposing (NavBarDisplay(..))
 import Task
 import View exposing (View)
-import Process
+
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
@@ -51,12 +52,13 @@ type alias Model =
     , leadersPerRow : Int
     , localShared : Shared.Model
     , hideAirlock : Bool
+    , values : List Value
     }
 
 
 type alias Leadership =
     { id : Int
-    , flip : Bool
+    , active : Bool
     , name : String
     , job : String
     , email : String
@@ -75,8 +77,22 @@ type alias SimpleBtn =
     }
 
 
+type alias Value =
+    { active : Bool
+    , title : String
+    , detailed : String
+    }
+
+
 init : Shared.Model -> ( Model, Effect Msg )
 init shared =
+    let
+        isMobile =
+            device == Phone || device == Tablet
+
+        device =
+            shared.device.class
+    in
     ( { showVimeo = False
       , simpleBtnHoverTracker =
             [ SimpleBtn 0 "Play" "#" False (Just OpenVimeo)
@@ -88,7 +104,18 @@ init shared =
       , animationTracker =
             Dict.fromList
                 [ ( "mainText", AnimationState (PercentOfViewport 40) False )
-                , ( "leadership", AnimationState (PercentOfViewport 20) False )
+                , ( "leadership"
+                  , AnimationState
+                        (PercentOfViewport
+                            (if isMobile then
+                                5
+
+                             else
+                                20
+                            )
+                        )
+                        False
+                  )
                 , ( "bottomButtons", AnimationState (PercentOfViewport 40) False )
                 ]
       , leadership =
@@ -99,6 +126,13 @@ init shared =
             , Leadership 4 False "Charlie Beebout" "Program Manager" "charlie.beebout@gci-global.com" "(719) 573 - 6777 x110" "/img/charlie.webp" "Mr. Beebout was Director of Engineering at Atmel Corporation for 17 years managing ASICs, FPGAs, EEPROMs, EPROMs, SRAMs, Digital Imaging, Wireless Communication and Cryptographic Security products.\n\nIn this capacity, he had extensive achievements in integrated circuit management positions designing, debugging and manufacturing thousands of IC products for diverse Department of Defense (DoD) applications including satellites, missiles, and aircraft.  His expertise also extended to other industrial and consumer utilizations.\n\nMr. Beebout currently serves as Program Manager for Global Circuit Innovations (GCI) and focuses primarily on integrated circuit obsolescence solutions for the DoD. GCI specializes in die extraction and re-assembly (DER™ and DEER™) for integrated circuit environmental hardening, commercial and military IC obsolescence solutions as well as electroless diamond plating for ultra-high speed sockets (40+ GHz) and Flex design.\n\nMr. Beebout has presented at Diminishing Manufacturing Sources and Material Shortages (DMSMS), Air Worthiness and and Sustainment (AA&S), and the International Microelectronics Packaging and Assembly Society (IMAPS).\n\nMr. Beebout currently has a patent application pending entitled “Environmental Hardening to Extend Operating Lifetimes of Integrated Circuits at Elevated Temperatures” with the USPTO.\n\nMr. Beebout received his BSEE degree from Iowa State University."
             , Leadership 5 False "Patrick Jenkins" "Program Manager" "patrick.jenkins@gci-global.com" "(719) 573 - 6777 x111" "/img/patrick.webp" "Mr. Jenkins managed technical and operations departments at Intel, Inmos, Atmel, Vitesse, OrganicID, dpiX, and Unipixel over a career of more than 30 years. He has been involved in the development and high-volume manufacturing of ICs in numerous technologies (Microprocessor, DRAM, SRAM, non-volatile/programmable memory, GaAs digital logic) as well as printed ICs, glass flat-panel, and flexible plastic (roll-to-roll) electronics.\n\nMr. Jenkins currently serves as a Program Manager for Global Circuit Innovations (GCI) and focuses primarily on integrated circuit obsolescence solutions for the DoD. The particular emphasis is on solutions for obsolete FPGA/CPLD integrated circuits. GCI specializes in Die Extraction and Re-assembly (DER™ and DEER™) for integrated circuit environmental hardening, commercial and military IC obsolescence solutions as well as electroless diamond plating for ultra high-speed sockets (40+ GHz) and Flex design.\n\nMr. Jenkins has one patent issued. US Patent 7858513 issued 2010 “Fabrication of Self-aligned via Holes in Polymer Thin Films”\n\nMr. Jenkins received his BSChE degree from Caltech."
             , Leadership 6 False "Dustin Morgan" "Business Development" "dustin .morgan@gci-global.com" "(719) 573 - 6777 x107" "/img/dustin.webp" "Dustin Morgan joined GCI in 2016 as the Director of Marketing. She holds a B.A. in Communications from the University of Colorado, Boulder and a M.A. in International Development from the Josef Korbel School of International Studies at the University of Denver.  Ms. Morgan has over 20 years of experience in both marketing and program management.  She previously worked for Central Bancorp in Colorado Springs where she was tasked with the design, creation, and management of a new business venture, Johnny Martin's Car Central.  Ms. Morgan served as the Executive Director in this role.  Ms. Morgan currently manages DoD contract programs and is Director of Business Development."
+            ]
+      , values =
+            [ Value False "Performance" "Electronics solutions is the foundation for all we do and executional excellence is a core value of our Team."
+            , Value False "Passion" "Passion is at the heart of our company. We are continuously moving forward, innovating, and improving."
+            , Value False "Integrity" "We are honest, open, ethical, and fair. People trust us to adhere to our word."
+            , Value False "Diversity" "We know it takes people with different ideas, interests, and cultural backgrounds to make our company succeed."
+            , Value False "Accountability" "Measuring ourselves against the highest standards of integrity and fiscal responsibility."
             ]
       , leadersPerRow = 3
       , localShared = { shared | navbarDisplay = Enter }
@@ -120,7 +154,10 @@ type Msg
     | Scrolled Int
     | GotElement String (Result Browser.Dom.Error Browser.Dom.Element)
     | OpenContactUs
-    | Leader Int
+    | LeaderActive Int
+    | LeaderDeactive Int
+    | ValueActive Int
+    | ValueDeactive Int
     | ModifyLocalShared Shared.Model
     | WindowResized Int Int
     | HideAirlock ()
@@ -170,7 +207,14 @@ update shared msg model =
                            )
               }
             , Effect.batch
-                (List.map animationTrackerToCmd (List.filter (\( _, v ) -> v.shouldAnimate == False) (Dict.toList model.animationTracker)) ++ (if ((shouldAnimate "leadership" model) && not model.hideAirlock) then [Task.perform HideAirlock (Process.sleep 1000) |> Effect.fromCmd ] else [Effect.none]))
+                (List.map animationTrackerToCmd (List.filter (\( _, v ) -> v.shouldAnimate == False) (Dict.toList model.animationTracker))
+                    ++ (if shouldAnimate "leadership" model && not model.hideAirlock then
+                            [ Task.perform HideAirlock (Process.sleep 1000) |> Effect.fromCmd ]
+
+                        else
+                            [ Effect.none ]
+                       )
+                )
             )
 
         ModifyLocalShared newSharedState ->
@@ -199,26 +243,46 @@ update shared msg model =
             in
             ( { model | localShared = newModel model.localShared }, Shared.UpdateModel (newModel model.localShared) |> Effect.fromShared )
 
-        Leader id ->
+        LeaderActive id ->
             ( { model
                 | leadership =
                     List.map
                         (\l ->
-                            { l
-                                | flip =
-                                    if l.id == id && l.flip == False then
-                                        True
+                            if l.id == id then
+                                { l | active = True }
 
-                                    else
-                                        False
-                            }
+                            else
+                                { l | active = False }
                         )
                         model.leadership
               }
             , Effect.none
             )
+
+        LeaderDeactive _ ->
+            ( { model | leadership = List.map (\l -> { l | active = False }) model.leadership }, Effect.none )
+
+        ValueActive id ->
+            ( { model
+                | values =
+                    List.indexedMap
+                        (\i v ->
+                            if i == id then
+                                { v | active = True }
+
+                            else
+                                { v | active = False }
+                        )
+                        model.values
+              }
+            , Effect.none
+            )
+
+        ValueDeactive _ ->
+            ( { model | values = List.map (\v -> { v | active = False }) model.values }, Effect.none )
+
         HideAirlock _ ->
-            ( {model | hideAirlock = True }, Effect.none)
+            ( { model | hideAirlock = True }, Effect.none )
 
 
 
@@ -285,7 +349,7 @@ view shared model =
                     , width (fill |> maximum maxWidth)
                     , spacing 100
                     ]
-                    [ mainText shared (shouldAnimate "mainText" model) ]
+                    [ mainText shared model.values (shouldAnimate "mainText" model) ]
                 , leadership shared model (shouldAnimate "leadership" model)
                 , bottomButtons shared (List.filter (\b -> b.id > 0) model.simpleBtnHoverTracker) (shouldAnimate "bottomButtons" model)
                 ]
@@ -337,8 +401,8 @@ head shared model =
         { src = "/img/building.jpg", description = "Picture of GCI's head quarters" }
 
 
-mainText : Shared.Model -> Bool -> Element Msg
-mainText shared animateSelf =
+mainText : Shared.Model -> List Value -> Bool -> Element Msg
+mainText shared values animateSelf =
     let
         device =
             shared.device.class
@@ -348,6 +412,30 @@ mainText shared animateSelf =
 
         w =
             shared.width
+
+        value i item =
+            el
+                [ clip
+                , width (fill |> minimum 250)
+                , height (px 250)
+                , Background.color (rgba255 29 55 108 (1.0 - (toFloat (i + 1) * 0.1)))
+                , Events.onClick (ValueActive i)
+                , Events.onMouseEnter (ValueActive i)
+                , Events.onMouseLeave (ValueDeactive i)
+                ]
+                (column
+                    ([ htmlAttribute <| class "animateTransform", fontSize device Sm, width fill, height fill ]
+                        ++ (if item.active then
+                                [ moveUp 250 ]
+
+                            else
+                                []
+                           )
+                    )
+                    [ el [ width fill, height (px 250) ] (el [ centerX, centerY ] (text item.title))
+                    , el [ width fill, height (px 250) ] (paragraph [ width (px 250), centerX, centerY, Font.center ] [ text item.detailed ])
+                    ]
+                )
     in
     column
         [ width fill
@@ -397,35 +485,11 @@ mainText shared animateSelf =
             , html <| br [] []
             , html <| br [] []
             ]
-        , column [width fill]
-            [ el [width fill, padding 20, fontSize device Lg, Font.bold, Font.center, Region.heading 2, Background.color gciBlue, Font.color white] (text "Our Core Beliefs")
-            , wrappedRow [width fill]
-                [ el [width fill, Background.color gciBlue] (text "Performance")
-                ]
+        , column [ width fill ]
+            [ el [ width fill, padding 20, fontSize device Md, Font.bold, Font.center, Region.heading 2, Background.color gciBlue, Font.color white ] (text "Our Core Values")
+            , wrappedRow [ width fill, Font.bold, Font.color white ]
+                (List.indexedMap value values)
             ]
-            {-
-           , el [centerX, fontSize device Md, padding 3, Font.light, Border.widthEach {bottom = 1, top = 0, left = 0, right = 0}] (text "Our Core Beliefs")
-           , paragraph [ spacing 10, fontSize device Sm, Font.light, htmlAttribute <| id "mainText", width fill]
-               [ el [Font.regular] (text "Performance: ")
-               , text "Electronics solutions is the foundation for all we do and executional excellence is a core value of our Team."
-               , html <| br [] []
-               , html <| br [] []
-               , el [Font.regular] (text "Passion: ")
-               , text "Passion is at the heart of our company. We are continuously moving forward, innovating, and improving."
-               , html <| br [] []
-               , html <| br [] []
-               , el [Font.regular] (text "Integrity: ")
-               , text "We are honest, open, ethical, and fair. People trust us to adhere to our word."
-               , html <| br [] []
-               , html <| br [] []
-               , el [Font.regular] (text "Diversity: ")
-               , text "We know it takes people with different ideas, strengths, interests, and cultural backgrounds to make our company succeed. We encourage healthy debate and differences of opinion."
-               , html <| br [] []
-               , html <| br [] []
-               , el [Font.regular] (text "Accountability: ")
-               , text "Measuring ourselves against the highest standards of integrity and fiscal responsibility."
-               ]
-               -}
         ]
 
 
@@ -460,18 +524,17 @@ leadership shared model animateSelf =
             50
 
         zoom =
-                (if animateSelf then
-                    (Animation.steps
-                        { startAt = [ P.scaleXY 0.9 0.9 ]
-                        , options = [ Animation.easeInOutQuad ]
-                        }
-                        [ Animation.step 1000 [ P.scaleXY 0.9 0.9 ]
-                        , Animation.step 500 [ P.scaleXY 1 1]
-                        ]
-                    )
-                else
-                    Animation.empty
-                )
+            if animateSelf then
+                Animation.steps
+                    { startAt = [ P.scaleXY 0.9 0.9 ]
+                    , options = [ Animation.easeInOutQuad ]
+                    }
+                    [ Animation.step 1000 [ P.scaleXY 0.9 0.9 ]
+                    , Animation.step 500 [ P.scaleXY 1 1 ]
+                    ]
+
+            else
+                Animation.empty
 
         leader l =
             ael
@@ -483,10 +546,17 @@ leadership shared model animateSelf =
                     , centerX
                     , clip
                     , Background.color white
-                    , Events.onClick (Leader l.id)
-                    , Events.onMouseEnter (Leader l.id)
-                    , Events.onMouseLeave (Leader l.id)
-                    , htmlAttribute <| class (if animateSelf then "animate_float" else "")
+                    , Events.onClick (LeaderActive l.id)
+                    , Events.onMouseEnter (LeaderActive l.id)
+                    , Events.onMouseLeave (LeaderDeactive l.id)
+                    , htmlAttribute <|
+                        class
+                            (if animateSelf then
+                                "animate_float"
+
+                             else
+                                ""
+                            )
                     ]
                     [ image [ htmlAttribute <| class "animateTransform", width fill, height (px (toFloat cardHeight * (2.0 / 3.0) |> round)) ] { src = l.image, description = l.name }
                     , el
@@ -496,7 +566,7 @@ leadership shared model animateSelf =
                          , Background.color white
                          , Border.shadow { blur = 3, color = rgba 0 0 0 0.2, offset = ( 0, 0 ), size = 1 }
                          ]
-                            ++ (if l.flip then
+                            ++ (if l.active then
                                     [ moveUp cardHeight
                                     ]
 
@@ -511,7 +581,7 @@ leadership shared model animateSelf =
                         )
                     , el
                         ([ width fill, htmlAttribute <| class "animateTransform", height (px cardHeight), Background.color white ]
-                            ++ (if l.flip then
+                            ++ (if l.active then
                                     [ moveUp cardHeight ]
 
                                 else
@@ -524,53 +594,6 @@ leadership shared model animateSelf =
                     ]
                 )
 
-        {- un comment for flip
-           (el [ htmlAttribute <| class "flip-card", centerX]
-               (column
-                   [ htmlAttribute <| class "flip-card-inner"
-                   , width (px cardWidth)
-                   , height (px cardHeight)
-                   ]
-                   [ el
-                       [ htmlAttribute <| class "flip-card-back"
-                       , Border.shadow { blur = 10, color = rgba 0 0 0 0.3, offset = ( -5, 5 ), size = 5 }
-                       , Border.rounded 20
-                       ]
-                       (el [Background.color white, clip, height (px cardHeight), width (px cardWidth), Border.rounded 20]
-                           ( paragraph [Font.alignLeft, fontSize device Xsm, padding 20]
-                               [text l.story]
-                           )
-                           )
-                   , el
-                       [ htmlAttribute <| class "flip-card-front"
-                       , moveUp cardHeight
-                       , Border.rounded 20
-                       , Border.shadow { blur = 10, color = rgba 0 0 0 0.3, offset = ( -5, 5 ), size = 5 }
-                       ]
-                   ( column
-                   [ width (px cardWidth)
-                   , height (px cardHeight)
-                   , Border.rounded 20
-                   , clip
-                   , centerX
-                   , Border.shadow { blur = 10, color = rgba 0 0 0 0.3, offset = ( -5, 5 ), size = 5 }
-                   , Background.color white
-                   , Events.onClick (Leader l.id)
-                   --, Events.onMouseEnter (Leader l.id)
-                   --, Events.onMouseLeave (Leader l.id)
-                   ]
-                   [ el [ Background.image l.image, width fill, height (fillPortion 2) ] none
-                   , el [ height fill, width fill]
-                       (column [centerX, centerY, spacing 20]
-                       [ el [centerX, fontSize device Md, Font.light, Font.underline ] (text l.name)
-                       , el [centerX, fontSize device Xsm, Font.color (rgb 0.2 0.2 0.3)] (text l.job)
-                       ])
-                   ]
-                   )
-                               ]
-                           )
-                       )
-        -}
         airlock =
             Animation.fromTo
                 { duration = 3000
@@ -578,17 +601,19 @@ leadership shared model animateSelf =
                 }
                 [ P.x 0 ]
                 [ P.x (toFloat w) ]
+
         airlock2 =
             Animation.fromTo
                 { duration = 3000
                 , options = []
                 }
                 [ P.x 0 ]
-                [ P.x -((toFloat w)) ]
+                [ P.x -(toFloat w) ]
 
         shadowSettings =
             if animateSelf then
                 { blur = 10, color = rgba 0 0 0 0.3, offset = ( -5, 5 ), size = 5 }
+
             else
                 { blur = 0, color = rgba 0 0 0 0.3, offset = ( 0, 0 ), size = 0 }
     in
@@ -598,29 +623,59 @@ leadership shared model animateSelf =
         , htmlAttribute <| id "leadership"
         , spacing 50
         , padding 50
-        , htmlAttribute <| class "watch_pointer"
-        , inFront (if hideAirlock then (none) else (row [width fill, height fill, htmlAttribute <| class "ignore_pointer"]
-            [ ael (if animateSelf then airlock2 else Animation.empty) [height fill, width fill, Background.color white, Border.shadow shadowSettings] (none)
-            , ael (if animateSelf then airlock else Animation.empty) [height fill, width fill, Background.color white, Border.shadow shadowSettings] (none)
-            ]
-            ))
+        , inFront
+            (if hideAirlock then
+                none
+
+             else
+                row [ width fill, height fill, htmlAttribute <| class "ignore_pointer" ]
+                    [ ael
+                        (if animateSelf then
+                            airlock2
+
+                         else
+                            Animation.empty
+                        )
+                        [ height fill, width fill, Background.color white, Border.shadow shadowSettings ]
+                        none
+                    , ael
+                        (if animateSelf then
+                            airlock
+
+                         else
+                            Animation.empty
+                        )
+                        [ height fill, width fill, Background.color white, Border.shadow shadowSettings ]
+                        none
+                    ]
+            )
         , Border.innerShadow { blur = 10, color = rgba 0 0 0 0.3, offset = ( -5, 5 ), size = 5 }
         ]
         [ el
-            [centerX, htmlAttribute <| class (if animateSelf then "animate_float" else "") ]
-            (acol 
-            zoom
-            [ spacing 3
-            , if isPhone then
-                paddingXY 20 20
+            [ centerX
+            , htmlAttribute <|
+                class
+                    (if animateSelf then
+                        "animate_float"
 
-              else
-                padding 55
-            , Background.color white
+                     else
+                        ""
+                    )
             ]
-            [ el [ Font.bold, fontSize device Xsm, Font.center, centerX, Font.color (rgb 0.2 0.2 0.3) ] (text "Global Circuit Innovations")
-            , el [ Font.extraLight, Font.letterSpacing 5, Font.center, centerX, Font.underline, fontSize device Xlg ] (text "Leadership")
-            ])
+            (acol
+                zoom
+                [ spacing 3
+                , if isPhone then
+                    paddingXY 20 20
+
+                  else
+                    padding 55
+                , Background.color white
+                ]
+                [ el [ Font.bold, fontSize device Xsm, Font.center, centerX, Font.color (rgb 0.2 0.2 0.3) ] (text "Global Circuit Innovations")
+                , el [ Font.extraLight, Font.letterSpacing 5, Font.center, centerX, Font.underline, fontSize device Xlg ] (text "Leadership")
+                ]
+            )
         , el [ width (px (min (toFloat w * 0.8 |> round) (leadersPerRow * cardWidth + (leadersPerRow * cardSpacing)))), centerX ]
             (wrappedRow [ centerX, spacing cardSpacing ] (List.map leader leaders))
         ]

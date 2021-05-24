@@ -10,7 +10,7 @@ import Element.Border as Border
 import Element.Events as Events
 import Element.Font as Font
 import Element.Input as Input
-import Element.Region as Region
+import Element.Region as Region exposing (description)
 import Gen.Params.Obsolescence exposing (Params)
 import Html exposing (br, div, iframe)
 import Html.Attributes exposing (attribute, class, id, property, src, style)
@@ -27,7 +27,6 @@ import Simple.Animation.Property as P
 import Storage exposing (NavBarDisplay(..))
 import Task
 import View exposing (View)
-import Element.Region exposing (description)
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
@@ -244,24 +243,23 @@ view shared model =
                                 none
                             )
                         ]
-                        (if item.description == "" then 
-                            (image
-                            [ centerX
-                            , centerY
-                            , width fill
-                            ]
-                            { src = item.image, description = item.title }
-                            )
-                            else
-                            ( el [inFront (el [Font.center, Font.light, padding 10, width fill, alignBottom, Background.color (rgba 1 1 1 0.85)] (text item.description))]
-                            (image
-                            [ centerX
-                            , centerY
-                            , width fill
-                            ]
-                            { src = item.image, description = item.title }
-                            )
-                            )
+                        (if item.description == "" then
+                            image
+                                [ centerX
+                                , centerY
+                                , width fill
+                                ]
+                                { src = item.image, description = item.title }
+
+                         else
+                            el [ inFront (el [ Font.center, Font.light, padding 10, width fill, alignBottom, Background.color (rgba 1 1 1 0.85) ] (text item.description)) ]
+                                (image
+                                    [ centerX
+                                    , centerY
+                                    , width fill
+                                    ]
+                                    { src = item.image, description = item.title }
+                                )
                         )
 
                 content =

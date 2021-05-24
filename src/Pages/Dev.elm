@@ -239,24 +239,23 @@ view shared model =
                                 none
                             )
                         ]
-                        (if item.description == "" then 
-                            (image
-                            [ centerX
-                            , centerY
-                            , width fill
-                            ]
-                            { src = item.image, description = item.title }
-                            )
-                            else
-                            ( el [inFront (el [Font.center, Font.light, padding 10, width fill, alignBottom, Background.color (rgba 1 1 1 0.85)] (text item.description))]
-                            (image
-                            [ centerX
-                            , centerY
-                            , width fill
-                            ]
-                            { src = item.image, description = item.title }
-                            )
-                            )
+                        (if item.description == "" then
+                            image
+                                [ centerX
+                                , centerY
+                                , width fill
+                                ]
+                                { src = item.image, description = item.title }
+
+                         else
+                            el [ inFront (el [ Font.center, Font.light, padding 10, width fill, alignBottom, Background.color (rgba 1 1 1 0.85) ] (text item.description)) ]
+                                (image
+                                    [ centerX
+                                    , centerY
+                                    , width fill
+                                    ]
+                                    { src = item.image, description = item.title }
+                                )
                         )
 
                 content =
