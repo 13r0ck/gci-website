@@ -27,6 +27,7 @@ import Simple.Animation.Property as P
 import Storage exposing (NavBarDisplay(..))
 import Task
 import View exposing (View)
+import Element.Region exposing (description)
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
@@ -56,6 +57,7 @@ type alias SubText =
     { id : Int
     , title : String
     , image : String
+    , description : String
     , text : String
     }
 
@@ -88,9 +90,9 @@ init shared =
                 , ( "3", AnimationState (PercentOfViewport 40) False )
                 ]
       , subTexts =
-            [ SubText 1 "Sub text" "/img/subtext4.jpg" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
-            , SubText 2 "Sub text" "/img/subtext5.jpg" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
-            , SubText 3 "Sub text" "/img/subtext6.jpg" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
+            [ SubText 1 "Sub text" "/img/subtext4.jpg" "test" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
+            , SubText 2 "Sub text" "/img/subtext5.jpg" "" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
+            , SubText 3 "Sub text" "/img/subtext6.jpg" "" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
             ]
       , localShared = { shared | navbarDisplay = Enter }
       }
@@ -242,12 +244,24 @@ view shared model =
                                 none
                             )
                         ]
-                        (image
+                        (if item.description == "" then 
+                            (image
                             [ centerX
                             , centerY
                             , width fill
                             ]
                             { src = item.image, description = item.title }
+                            )
+                            else
+                            ( el [inFront (el [Font.center, Font.light, padding 10, width fill, alignBottom, Background.color (rgba 1 1 1 0.85)] (text item.description))]
+                            (image
+                            [ centerX
+                            , centerY
+                            , width fill
+                            ]
+                            { src = item.image, description = item.title }
+                            )
+                            )
                         )
 
                 content =
@@ -303,7 +317,7 @@ view shared model =
                             10
 
                          else
-                            toFloat w * 0.2 |> round
+                            100
                         )
                         0
                     , width (fill |> maximum maxWidth)

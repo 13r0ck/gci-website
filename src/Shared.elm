@@ -928,14 +928,18 @@ footer shared message =
                     [ wrappedRow [ width (minimum w fill) ] (List.map (\btn -> el [ width fill ] (footerNavBtn btn)) navbtns)
                     , row [ centerX, fontSize device Md ] (List.map footerSocialBtn socials)
                     ]
-            , el [ width fill, Border.widthEach { top = 1, bottom = 1, left = 0, right = 0 } ]
-                (wrappedRow [ centerX, width shrink, fontSize device Xsm, padding 20 ]
+            , column [ width fill, Border.widthEach { top = 1, bottom = 1, left = 0, right = 0 }, padding 20, spacing 20]
+                [ wrappedRow [ centerX, width shrink, fontSize device Xsm]
                     [ el [ width fill ] (el [ padding 10, centerX ] (text address.street))
                     , el [ width fill ] (el [ padding 10, centerX ] (text address.city))
                     , el [ width fill ] (link [ padding 10, centerX ] { label = text address.phone, url = address.phoneLink })
                     , el [ width fill ] (link [ padding 10, centerX ] { label = text address.email, url = address.emailLink })
                     ]
-                )
+                , wrappedRow [centerX, fontSize device Xsm, spacing 20]
+                    [ el [ fontSize device Xsm ] (text "Cage: 7DGP6")
+                    , el [ fontSize device Xsm ] (text "Duns: 80126549")
+                    ]
+                ]
             , column [ fontSize device Xsm, paddingXY 200 20, centerX, spacing 10 ]
                 [ (if isPhone then
                     column

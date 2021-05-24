@@ -27,7 +27,7 @@ import Simple.Animation.Property as P
 import Storage exposing (NavBarDisplay(..))
 import Task
 import View exposing (View)
-
+import Process
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
@@ -50,6 +50,7 @@ type alias Model =
     , leadership : List Leadership
     , leadersPerRow : Int
     , localShared : Shared.Model
+    , hideAirlock : Bool
     }
 
 
@@ -87,10 +88,8 @@ init shared =
       , animationTracker =
             Dict.fromList
                 [ ( "mainText", AnimationState (PercentOfViewport 40) False )
+                , ( "leadership", AnimationState (PercentOfViewport 20) False )
                 , ( "bottomButtons", AnimationState (PercentOfViewport 40) False )
-                , ( "1", AnimationState (PercentOfViewport 20) False )
-                , ( "2", AnimationState (PercentOfViewport 40) False )
-                , ( "3", AnimationState (PercentOfViewport 40) False )
                 ]
       , leadership =
             [ Leadership 0 False "Erick Spory" "CEO and CTO" "erick.spory@gci-global.com" "(719) 573 - 6777 x104" "/img/erick.webp" "Erick M. Spory spent 22 years at Atmel Corporation in Colorado Springs, CO, ultimately becoming a Senior Principle Failure Analysis Engineer.  During his time at Atmel he worked closely with process, design, device, and packaging engineers to resolve yield issues. He is currently the President and CTO of Global Circuit Innovations, which he co-founded in 2006.   Mr. Spory holds 10 patents and has 9 other patents pending.  These involve Environmentally Hardened Integrated Circuits, Methods for Printing Integrated Circuit Bond Connections, Repackaged Integrated Circuit and Assembly Methods, Extracted Die and Reassembly and Counterfeit Mitigation. Mr. Spory has published numerous papers for a variety of publications, including the International Symposium for Testing and Failure Analysis and International Microelectronics Packaging and Assembly Society (IMAPS). He has presented at over twelve conferences including the Component Obsolescence Group (COG), International Microelectronics Assembly & Packaging (IMAPS) Components for Military and Space Electronics, Surface Mount Technology Association SMTA) Electronics in Harsh Environments, Afnor Obsolescence Organization, and multiple times at the Diminishing Manufacturing Supply and Material Shortages (DMSMS).\n\nMr. Spory has a B.S. in Materials Science Engineering with a Chemical Engineering Minor from Cornell University. Mr. Spory also has a M.S. in Electrical Engineering with a Microelectronics emphasis from the University of Colorado, Colorado Springs (UCCS) and is a current Candidate for a Ph.D. in Electrical Engineering from the University of Colorado."
@@ -103,6 +102,7 @@ init shared =
             ]
       , leadersPerRow = 3
       , localShared = { shared | navbarDisplay = Enter }
+      , hideAirlock = False
       }
     , Effect.none
     )
@@ -123,6 +123,7 @@ type Msg
     | Leader Int
     | ModifyLocalShared Shared.Model
     | WindowResized Int Int
+    | HideAirlock ()
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Msg )
@@ -169,7 +170,7 @@ update shared msg model =
                            )
               }
             , Effect.batch
-                (List.map animationTrackerToCmd (List.filter (\( _, v ) -> v.shouldAnimate == False) (Dict.toList model.animationTracker)))
+                (List.map animationTrackerToCmd (List.filter (\( _, v ) -> v.shouldAnimate == False) (Dict.toList model.animationTracker)) ++ (if ((shouldAnimate "leadership" model) && not model.hideAirlock) then [Task.perform HideAirlock (Process.sleep 1000) |> Effect.fromCmd ] else [Effect.none]))
             )
 
         ModifyLocalShared newSharedState ->
@@ -216,6 +217,8 @@ update shared msg model =
               }
             , Effect.none
             )
+        HideAirlock _ ->
+            ( {model | hideAirlock = True }, Effect.none)
 
 
 
@@ -276,14 +279,14 @@ view shared model =
                             10
 
                          else
-                            toFloat w * 0.2 |> round
+                            100
                         )
                         0
                     , width (fill |> maximum maxWidth)
                     , spacing 100
                     ]
                     [ mainText shared (shouldAnimate "mainText" model) ]
-                , leadership shared model.leadership model.leadersPerRow
+                , leadership shared model (shouldAnimate "leadership" model)
                 , bottomButtons shared (List.filter (\b -> b.id > 0) model.simpleBtnHoverTracker) (shouldAnimate "bottomButtons" model)
                 ]
             , footer model.localShared ModifyLocalShared
@@ -394,8 +397,13 @@ mainText shared animateSelf =
             , html <| br [] []
             , html <| br [] []
             ]
-
-        {-
+        , column [width fill]
+            [ el [width fill, padding 20, fontSize device Lg, Font.bold, Font.center, Region.heading 2, Background.color gciBlue, Font.color white] (text "Our Core Beliefs")
+            , wrappedRow [width fill]
+                [ el [width fill, Background.color gciBlue] (text "Performance")
+                ]
+            ]
+            {-
            , el [centerX, fontSize device Md, padding 3, Font.light, Border.widthEach {bottom = 1, top = 0, left = 0, right = 0}] (text "Our Core Beliefs")
            , paragraph [ spacing 10, fontSize device Sm, Font.light, htmlAttribute <| id "mainText", width fill]
                [ el [Font.regular] (text "Performance: ")
@@ -417,13 +425,22 @@ mainText shared animateSelf =
                , el [Font.regular] (text "Accountability: ")
                , text "Measuring ourselves against the highest standards of integrity and fiscal responsibility."
                ]
-        -}
+               -}
         ]
 
 
-leadership : Shared.Model -> List Leadership -> Int -> Element Msg
-leadership shared leaders leadersPerRow =
+leadership : Shared.Model -> Model -> Bool -> Element Msg
+leadership shared model animateSelf =
     let
+        leaders =
+            model.leadership
+
+        leadersPerRow =
+            model.leadersPerRow
+
+        hideAirlock =
+            model.hideAirlock
+
         device =
             shared.device.class
 
@@ -442,19 +459,34 @@ leadership shared leaders leadersPerRow =
         cardSpacing =
             50
 
+        zoom =
+                (if animateSelf then
+                    (Animation.steps
+                        { startAt = [ P.scaleXY 0.9 0.9 ]
+                        , options = [ Animation.easeInOutQuad ]
+                        }
+                        [ Animation.step 1000 [ P.scaleXY 0.9 0.9 ]
+                        , Animation.step 500 [ P.scaleXY 1 1]
+                        ]
+                    )
+                else
+                    Animation.empty
+                )
+
         leader l =
-            el [ width fill ]
+            ael
+                zoom
+                [ width fill ]
                 (column
                     [ width (px cardWidth)
                     , height (px cardHeight)
-                    , Border.rounded 20
                     , centerX
                     , clip
-                    , Border.shadow { blur = 10, color = rgba 0 0 0 0.3, offset = ( -5, 5 ), size = 5 }
                     , Background.color white
                     , Events.onClick (Leader l.id)
                     , Events.onMouseEnter (Leader l.id)
                     , Events.onMouseLeave (Leader l.id)
+                    , htmlAttribute <| class (if animateSelf then "animate_float" else "")
                     ]
                     [ image [ htmlAttribute <| class "animateTransform", width fill, height (px (toFloat cardHeight * (2.0 / 3.0) |> round)) ] { src = l.image, description = l.name }
                     , el
@@ -539,30 +571,56 @@ leadership shared leaders leadersPerRow =
                            )
                        )
         -}
+        airlock =
+            Animation.fromTo
+                { duration = 3000
+                , options = []
+                }
+                [ P.x 0 ]
+                [ P.x (toFloat w) ]
+        airlock2 =
+            Animation.fromTo
+                { duration = 3000
+                , options = []
+                }
+                [ P.x 0 ]
+                [ P.x -((toFloat w)) ]
+
+        shadowSettings =
+            if animateSelf then
+                { blur = 10, color = rgba 0 0 0 0.3, offset = ( -5, 5 ), size = 5 }
+            else
+                { blur = 0, color = rgba 0 0 0 0.3, offset = ( 0, 0 ), size = 0 }
     in
     column
         [ width fill
         , htmlAttribute <| class "circuit_board"
+        , htmlAttribute <| id "leadership"
         , spacing 50
         , padding 50
+        , htmlAttribute <| class "watch_pointer"
+        , inFront (if hideAirlock then (none) else (row [width fill, height fill, htmlAttribute <| class "ignore_pointer"]
+            [ ael (if animateSelf then airlock2 else Animation.empty) [height fill, width fill, Background.color white, Border.shadow shadowSettings] (none)
+            , ael (if animateSelf then airlock else Animation.empty) [height fill, width fill, Background.color white, Border.shadow shadowSettings] (none)
+            ]
+            ))
         , Border.innerShadow { blur = 10, color = rgba 0 0 0 0.3, offset = ( -5, 5 ), size = 5 }
         ]
-        [ column
+        [ el
+            [centerX, htmlAttribute <| class (if animateSelf then "animate_float" else "") ]
+            (acol 
+            zoom
             [ spacing 3
             , if isPhone then
                 paddingXY 20 20
 
               else
                 padding 55
-            , centerX
-            , Background.color (rgba 1 1 1 0)
             , Background.color white
-            , Border.rounded 20
-            , Border.shadow { blur = 10, color = rgba 0 0 0 0.3, offset = ( -5, 5 ), size = 5 }
             ]
             [ el [ Font.bold, fontSize device Xsm, Font.center, centerX, Font.color (rgb 0.2 0.2 0.3) ] (text "Global Circuit Innovations")
             , el [ Font.extraLight, Font.letterSpacing 5, Font.center, centerX, Font.underline, fontSize device Xlg ] (text "Leadership")
-            ]
+            ])
         , el [ width (px (min (toFloat w * 0.8 |> round) (leadersPerRow * cardWidth + (leadersPerRow * cardSpacing)))), centerX ]
             (wrappedRow [ centerX, spacing cardSpacing ] (List.map leader leaders))
         ]

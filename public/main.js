@@ -42,7 +42,7 @@ var enableRecvScroll = true;
 var ticking = 0;
 window.addEventListener("scroll", function (event) {
   if (enableRecvScroll) {
-    if (ticking > 5) {
+    if (ticking > 5 || (document.documentElement.scrollTop == 0)) {
       window.requestAnimationFrame(function() {
         app.ports.recvScroll.send(document.documentElement.scrollTop);
         ticking = 0;

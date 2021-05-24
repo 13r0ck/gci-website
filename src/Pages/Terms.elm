@@ -217,7 +217,7 @@ view shared model =
                     [ Region.heading 1
                     , centerX
                     , centerY
-                    , width (px (toFloat w * 0.8 |> round))
+                    , width (px (min 800 (toFloat w * 0.8 |> round)))
                     ]
                     [ el [ height (px 100) ] none
                     , paragraph [ Font.extraLight, centerX, centerY, Font.extraLight, fontSize device Xlg, padding 10, Font.center ] [ text "Terms and Conditions" ]

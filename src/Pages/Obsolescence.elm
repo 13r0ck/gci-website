@@ -27,6 +27,7 @@ import Simple.Animation.Property as P
 import Storage exposing (NavBarDisplay(..))
 import Task
 import View exposing (View)
+import Element.Region exposing (description)
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
@@ -56,6 +57,7 @@ type alias SubText =
     { id : Int
     , title : String
     , image : String
+    , description : String
     , text : String
     }
 
@@ -88,9 +90,9 @@ init shared =
                 , ( "3", AnimationState (PercentOfViewport 40) False )
                 ]
       , subTexts =
-            [ SubText 1 "Sub text" "/img/subtext1.jpg" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
-            , SubText 2 "Sub text" "/img/subtext2.jpg" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
-            , SubText 3 "Sub text" "/img/subtext3.jpg" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
+            [ SubText 1 "GCI is a solutions provider." "/img/subtext1.jpg" "Plane" "GCI designs, develops and manufactures form, fit, and function drop-in replacement electronics that can be seamlessly integrated into a larger electronics system as required. The replacement electronic components will work identically to the original obsolete components. The GCI approach typically saves 80% of the cost, and 75% of the schedule relative to a system redesign. Franchised."
+            , SubText 2 "Supporting Legacy Systems" "/img/subtext2.jpg" "" "GCI’s engineering team has decades of experience designing electronics. Our proprietary and proven technologies provide the building blocks to engineer custom electronic solutions based upon the customer needs and requirements. These drop-in replacement solutions for obsolete microcircuits improve DoD system readiness, decreasing the DMSMS issues associated with lifecycle sustainment."
+            , SubText 3 "Sub text" "/img/subtext3.jpg" "" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
             ]
       , localShared = { shared | navbarDisplay = Enter }
       }
@@ -242,12 +244,24 @@ view shared model =
                                 none
                             )
                         ]
-                        (image
+                        (if item.description == "" then 
+                            (image
                             [ centerX
                             , centerY
                             , width fill
                             ]
                             { src = item.image, description = item.title }
+                            )
+                            else
+                            ( el [inFront (el [Font.center, Font.light, padding 10, width fill, alignBottom, Background.color (rgba 1 1 1 0.85)] (text item.description))]
+                            (image
+                            [ centerX
+                            , centerY
+                            , width fill
+                            ]
+                            { src = item.image, description = item.title }
+                            )
+                            )
                         )
 
                 content =
@@ -310,7 +324,7 @@ view shared model =
                             10
 
                          else
-                            toFloat w * 0.2 |> round
+                            100
                         )
                         0
                     , width (fill |> maximum maxWidth)
@@ -433,7 +447,7 @@ head shared model =
                         min 150 (toFloat w * 0.1) |> floor
                     )
                 ]
-                [ text "We Stop", text "Electronic", text "Obsolescence." ]
+                [ text "We Solve", text "Electronic", text "Obsolescence." ]
             )
         , inFront (row [ centerX, centerY ] (List.map playBtn (List.filter (\a -> a.id == 0) simpleBtns)))
         ]
@@ -589,12 +603,9 @@ mainText shared animateSelf =
                 none
             )
         ]
-        [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Xlg ] [ text "Heading 1" ]
+        [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Xlg ] [ text "Obsolescence is a big deal" ]
         , paragraph [ spacing 10, fontSize device Sm, Font.light ]
-            [ text "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Blandit cursus risus at ultrices mi tempus imperdiet. Ultricies lacus sed turpis tincidunt id aliquet risus feugiat. Vulputate sapien nec sagittis aliquam malesuada bibendum arcu vitae."
-            , html <| br [] []
-            , html <| br [] []
-            , text "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Pellentesque elit ullamcorper dignissim cras. Et netus et malesuada fames ac turpis egestas integer."
+            [ text "Obsolescence of components is common in sectors such as Defense, where equipment has long lead times and needs to be supported for many decades. It is not unusual that 70–80 % of the electronic components become obsolete before the system has been deployed."
             ]
         ]
 

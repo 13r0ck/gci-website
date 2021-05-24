@@ -796,7 +796,6 @@ testimonials ts viewNum animateSelf shared =
                     )
                 , height fill
                 , Background.color white
-                , rounded 10
                 , clip
                 , centerX
                 , Border.shadow { blur = 8, color = rgba 0 0 0 0.2, offset = ( -5, 8 ), size = 1 }
@@ -1116,7 +1115,7 @@ boxes animateSelf content shared =
                 ]
             )
         , el [ width (px (eachWidth * (shared.width // eachWidth))), centerX ] (wrappedRow [ centerX ] (List.map box (List.indexedMap Tuple.pair content)))
-        , paragraph [ centerX, Font.light, Font.center, fontSize device Md, padding 30, width (fill |> maximum 800) ] [ text "GCI provides solutions for otherwise obsolete electronic systems. Keeping assets fully operational for many decades in the future." ]
+        , paragraph [ centerX, Font.light, Font.center, fontSize device Md, padding 30, width (fill |> maximum 800) ] [ text "GCI provides solutions for otherwise obsolete electronic systems, keeping assets fully operational for many decades in the future." ]
         ]
 
 
@@ -1201,9 +1200,7 @@ grayQuote animateSelf shared =
                 , transparent (not animateSelf)
                 , paddingXY dynamicPadding 40
                 ]
-                [ text "Global Circuit Innovation's expertise has a range of digital and analog security over many decades. This knowledge base is applied to develop electronic obsolescence solutions for legacy systems. Our device physics skills and experience enables us to provide environmental hardening for extremely high temperature applications."
-                , html <| br [] []
-                , el [ Font.bold, fontSize device Xsm ] (text "Cage: 7DGP6 | Duns: 80126549")
+                [ text "Global Circuit Innovation's expertise has a range of digital and analog circuitry over many decades. This knowledge base is applied to develop electronic obsolescence solutions for legacy systems. Our device physics skills and experience enables us to provide environmental hardening for extremely high temperature applications."
                 ]
             )
         ]
