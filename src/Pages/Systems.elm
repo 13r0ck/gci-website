@@ -252,7 +252,7 @@ view shared model =
                                 { src = item.image, description = item.title }
 
                          else
-                            el [ inFront (el [ Font.center, Font.light, padding 10, width fill, alignBottom, Background.color (rgba 1 1 1 0.85) ] (text item.description)) ]
+                            el [ inFront (el [ fontSize device Xsm, Font.center, Font.light, padding 10, width fill, alignBottom, Background.color (rgba 1 1 1 0.85) ] (text item.description)) ]
                                 (image
                                     [ centerX
                                     , centerY

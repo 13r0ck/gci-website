@@ -1,4 +1,4 @@
-module Pages.Obsolescence exposing (Model, Msg, page)
+module Pages.Ip exposing (Model, Msg, page)
 
 import Browser.Dom exposing (Viewport)
 import Browser.Events
@@ -8,17 +8,18 @@ import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Events as Events
-import Element.Font as Font
+import Element.Font as Font exposing (letterSpacing)
 import Element.Input as Input
-import Element.Region as Region exposing (description)
-import Gen.Params.Obsolescence exposing (Params)
+import Element.Region as Region
+import Gen.Params.Ip exposing (Params)
 import Html exposing (br, div, iframe)
 import Html.Attributes exposing (attribute, class, id, property, src, style)
 import Json.Encode as Encode
 import Page
 import Pages.Home_ exposing (AnimationState, When(..), onScreenItemtoCmd, updateElement)
-import Palette exposing (FontSize(..), black, fontSize, gciBlue, maxWidth, warning, white)
+import Palette exposing (FontSize(..), black, fontSize, gciBlue, gciBlueLight, maxWidth, warning, white)
 import Ports exposing (disableScrolling, recvScroll)
+import Process
 import Request
 import Shared exposing (acol, ael, contactUs, footer, navbar)
 import Simple.Animation as Animation exposing (Animation)
@@ -47,17 +48,22 @@ type alias Model =
     { showVimeo : Bool
     , simpleBtnHoverTracker : List SimpleBtn
     , animationTracker : Dict String AnimationState
-    , subTexts : List SubText
+    , patents : List Patent
+    , patentsPerRow : Int
     , localShared : Shared.Model
+    , hideAirlock : Bool
     }
 
 
-type alias SubText =
+type alias Patent =
     { id : Int
-    , title : String
+    , active : Bool
+    , number : String
+    , date : String
+    , inventor : String
+    , name : String
     , image : String
-    , description : String
-    , text : String
+    , link : String
     }
 
 
@@ -72,6 +78,13 @@ type alias SimpleBtn =
 
 init : Shared.Model -> ( Model, Effect Msg )
 init shared =
+    let
+        isMobile =
+            device == Phone || device == Tablet
+
+        device =
+            shared.device.class
+    in
     ( { showVimeo = False
       , simpleBtnHoverTracker =
             [ SimpleBtn 0 "Play" "#" False (Just OpenVimeo)
@@ -83,17 +96,40 @@ init shared =
       , animationTracker =
             Dict.fromList
                 [ ( "mainText", AnimationState (PercentOfViewport 40) False )
+                , ( "patents"
+                  , AnimationState
+                        (PercentOfViewport
+                            (if isMobile then
+                                5
+
+                             else
+                                20
+                            )
+                        )
+                        False
+                  )
                 , ( "bottomButtons", AnimationState (PercentOfViewport 40) False )
-                , ( "1", AnimationState (PercentOfViewport 20) False )
-                , ( "2", AnimationState (PercentOfViewport 40) False )
-                , ( "3", AnimationState (PercentOfViewport 40) False )
                 ]
-      , subTexts =
-            [ SubText 1 "GCI is a solutions provider." "/img/Power_Monitor_A1A1A5.jpg" "GCI CCA solution for Power Monitor, Maverick Missile Test Box" "GCI designs, develops and manufactures form, fit, and function drop-in replacement electronics that can be seamlessly integrated into a larger electronics system as required. The replacement electronic components will work identically to the original obsolete components. The GCI approach typically saves 80% of the cost, and 75% of the schedule relative to a system redesign."
-            , SubText 2 "Supporting Legacy Systems" "/img/RIF1K.png" "GCI microcircuit for ALE-45 Countermeasures System" "GCI’s engineering team has decades of experience designing electronics. Our proprietary and proven technologies provide the building blocks to engineer custom electronic solutions based upon the customer needs and requirements. These drop-in replacement solutions for obsolete microcircuits improve DoD system readiness, decreasing the DMSMS issues associated with lifecycle sustainment."
-            , SubText 3 "Combating Counterfeits" "/img/FPGA2.png" "GCI FPGA translation includes 17 microcircuits" "GCI only uses components from authorized, franchised distributors with full traceability.  This removes any possibility of counterfeit parts entering the supply chain with GCI’s solutions.  Memories and FPGAs (particularly the obsolete families) are some of the commonly identified counterfeits for military customers as reported through GIDEP. GCI’s strict adherence to franchised suppliers eliminates this risk."
+      , patents =
+            [ Patent 0 False "9,966,319" "8/21/11" "Erick M. Spory" "Environmental hardened integrated circuit method and apparatus" "/img/9966319.png" "https://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO1&Sect2=HITOFF&d=PALL&p=1&u=%2Fnetahtml%2FPTO%2Fsrchnum.htm&r=1&f=G&l=50&s1=9966319.PN.&OS=PN/9966319&RS=PN/9966319"
+            , Patent 1 False "9,935,028" "11/23/13" "Erick M. Spory" "Method and apparatus for printing integrated circuit bond connections" "/img/9935028.jpg" ""
+            , Patent 2 False "9,711,480" "11/28/11" "Erick M. Spory" "Environmental hardened packaged integrated circuit" "/img/9711480.jpg" ""
+            , Patent 3 False "9,824,948" "11/20/13" "Erick M. Spory" "Integrated circuit with printed bond connections" "/img/9824948.jpg" ""
+            , Patent 4 False "9,870,968" "1/28/16" "Erick M. Spory\nTimothy M. Barry" "Repackaged integrated circuit and assembly method" "/img/9870968.jpg" ""
+            , Patent 5 False "10,128,161" "6/19/17" "Erick M. Spory" "3D printed hermetic package assembly and method" "/img/10128161.jpg" ""
+            , Patent 6 False "10,177,056" "1/28/16" "Erick M. Spory" "Repackaged integrated circuit assembly method" "/img/10177056.jpg" ""
+            , Patent 7 False "10,654,259" "1/28/16" "Erick M. Spory" "Conductive Diamond Application Method and System" "/img/10654259.jpg" ""
+            , Patent 8 False "10,109,606" "1/28/16" "Erick M. Spory" "Remapped packaged extracted die" "/img/10109606.jpg" ""
+            , Patent 9 False "10,177,054" "1/28/16" "Erick M. Spory\nTimothy M. Barry" "Method for remapping a packaged extracted die" "/img/10177054.jpg" ""
+            , Patent 10 False "10,147,660" "1/28/16" "Erick M. Spory" "Repackaged integrated circuit with 3D printed bond connections" "/img/10147660.jpg" ""
+            , Patent 11 False "10,002,846" "1/28/16" "Erick M. Spory" "3D printed bond connection method for repackaged integrated circuit" "/img/10002846.jpg" ""
+            , Patent 12 False "10,460,326" "1/28/16" "Erick M. Spory" "IDD Signature" "/img/10460326.jpg" ""
+            , Patent 13 False "10,431,510" "10/3/17" "Erick M. Spory" "Hermetic Lid Seal Method and Apparatus" "/img/10431510.jpg" ""
+            , Patent 14 False "10,115,645" "10/27/17" "Erick M. Spory" "Repackaged reconditioned die method and assembly" "/img/10115645.jpg" ""
             ]
+      , patentsPerRow = 3
       , localShared = { shared | navbarDisplay = Enter }
+      , hideAirlock = True
       }
     , Effect.none
     )
@@ -111,8 +147,11 @@ type Msg
     | Scrolled Int
     | GotElement String (Result Browser.Dom.Error Browser.Dom.Element)
     | OpenContactUs
-    | WindowResized Int Int
+    | PatentActive Int
+    | PatentDeactive Int
     | ModifyLocalShared Shared.Model
+    | WindowResized Int Int
+    | HideAirlock ()
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Msg )
@@ -129,6 +168,14 @@ update shared msg model =
 
         SimpleBtnUnHover id ->
             ( { model | simpleBtnHoverTracker = List.indexedMap (setUnHovered id) model.simpleBtnHoverTracker }, Effect.none )
+
+        GotElement id element ->
+            case element of
+                Ok e ->
+                    ( { model | animationTracker = Dict.fromList (List.map (updateElement id e) (Dict.toList model.animationTracker)) }, Effect.none )
+
+                Err _ ->
+                    ( model, Effect.none )
 
         Scrolled distance ->
             ( { model
@@ -151,7 +198,14 @@ update shared msg model =
                            )
               }
             , Effect.batch
-                (List.map animationTrackerToCmd (List.filter (\( _, v ) -> v.shouldAnimate == False) (Dict.toList model.animationTracker)))
+                (List.map animationTrackerToCmd (List.filter (\( _, v ) -> v.shouldAnimate == False) (Dict.toList model.animationTracker))
+                    ++ (if shouldAnimate "patents" model && not model.hideAirlock then
+                            [ Task.perform HideAirlock (Process.sleep 1000) |> Effect.fromCmd ]
+
+                        else
+                            [ Effect.none ]
+                       )
+                )
             )
 
         ModifyLocalShared newSharedState ->
@@ -180,13 +234,27 @@ update shared msg model =
             in
             ( { model | localShared = newModel model.localShared }, Shared.UpdateModel (newModel model.localShared) |> Effect.fromShared )
 
-        GotElement id element ->
-            case element of
-                Ok e ->
-                    ( { model | animationTracker = Dict.fromList (List.map (updateElement id e) (Dict.toList model.animationTracker)) }, Effect.none )
+        PatentActive id ->
+            ( { model
+                | patents =
+                    List.map
+                        (\l ->
+                            if l.id == id then
+                                { l | active = True }
 
-                Err _ ->
-                    ( model, Effect.none )
+                            else
+                                { l | active = False }
+                        )
+                        model.patents
+              }
+            , Effect.none
+            )
+
+        PatentDeactive _ ->
+            ( { model | patents = List.map (\l -> { l | active = False }) model.patents }, Effect.none )
+
+        HideAirlock _ ->
+            ( { model | hideAirlock = True }, Effect.none )
 
 
 
@@ -225,74 +293,6 @@ view shared model =
 
         isMobile =
             isPhone || isTablet
-
-        subtext item =
-            let
-                img =
-                    el
-                        [ width (fillPortion 2)
-                        , clip
-                        , centerY
-                        , Border.rounded 10
-                        , inFront
-                            (el
-                                [ width fill
-                                , height fill
-                                , Border.innerShadow { blur = 18, color = rgba 0 0 0 0.3, offset = ( 1, 8 ), size = 8 }
-                                ]
-                                none
-                            )
-                        ]
-                        (if item.description == "" then
-                            image
-                                [ centerX
-                                , centerY
-                                , width fill
-                                ]
-                                { src = item.image, description = item.title }
-
-                         else
-                            el [ inFront (el [ fontSize device Xsm, Font.center, Font.light, padding 10, width fill, alignBottom, Background.color (rgba 1 1 1 0.85) ] (text item.description)) ]
-                                (image
-                                    [ centerX
-                                    , centerY
-                                    , width fill
-                                    ]
-                                    { src = item.image, description = item.title }
-                                )
-                        )
-
-                content =
-                    paragraph [ width fill, fontSize device Sm ] [ text item.text ]
-            in
-            acol
-                (if shouldAnimate (String.fromInt item.id) model then
-                    Animation.fromTo
-                        { duration = 500
-                        , options = []
-                        }
-                        [ P.opacity 0, P.y 100 ]
-                        [ P.opacity 100, P.y 0 ]
-
-                 else
-                    Animation.empty
-                )
-                [ width fill, height fill, spacing 20, htmlAttribute <| id (String.fromInt item.id), transparent (not (shouldAnimate (String.fromInt item.id) model)) ]
-                [ el [ Region.heading 3, Font.extraLight, fontSize device Lg ] (text item.title)
-                , (if isMobile then
-                    column
-
-                   else
-                    row
-                  )
-                    [ width fill, spacing 20 ]
-                    (if modBy 2 item.id == 0 || isMobile then
-                        [ img, content ]
-
-                     else
-                        [ content, img ]
-                    )
-                ]
     in
     { title = "GCI - Authorized Reverse Engineering IC Solutions for Obsolescence and High Temperature Environments"
     , attributes =
@@ -300,13 +300,6 @@ view shared model =
         , inFront
             (if shared.contactDialogState.showContactUs then
                 contactUs model.localShared ModifyLocalShared
-
-             else
-                none
-            )
-        , inFront
-            (if model.showVimeo then
-                vimeo shared
 
              else
                 none
@@ -328,9 +321,8 @@ view shared model =
                     , width (fill |> maximum maxWidth)
                     , spacing 100
                     ]
-                    (mainText shared (shouldAnimate "mainText" model)
-                        :: List.map subtext model.subTexts
-                    )
+                    [ mainText shared (shouldAnimate "mainText" model) ]
+                , patents shared model (shouldAnimate "patents" model)
                 , bottomButtons shared (List.filter (\b -> b.id > 0) model.simpleBtnHoverTracker) (shouldAnimate "bottomButtons" model)
                 ]
             , footer model.localShared ModifyLocalShared
@@ -355,82 +347,12 @@ head shared model =
 
         isPhone =
             device == Phone
-
-        scaleByHeight =
-            w // h <= 16 // 9
-
-        playBtn item =
-            el
-                [ width shrink
-                , height fill
-                , centerX
-                , transparent model.showVimeo
-                ]
-                (row
-                    [ Border.rounded 1000
-                    , width
-                        (px
-                            (if item.hovered then
-                                300
-
-                             else
-                                120
-                            )
-                        )
-                    , height (px 120)
-                    , centerX
-                    , centerY
-                    , Border.shadow { blur = 20, color = rgba 0 0 0 0.7, offset = ( 0, 0 ), size = 1 }
-                    , Background.color gciBlue
-                    , Font.color white
-                    , fontSize device Xlg
-                    , htmlAttribute <| class "backgroundStretch"
-                    , Events.onMouseEnter (SimpleBtnHover 0)
-                    , Events.onMouseLeave (SimpleBtnUnHover 0)
-                    ]
-                    (if item.hovered then
-                        [ ael
-                            (Animation.fromTo
-                                { duration = 300
-                                , options = []
-                                }
-                                [ P.opacity 0, P.x 10 ]
-                                [ P.opacity 100, P.x 0 ]
-                            )
-                            [ Font.bold, centerX, padding 10 ]
-                            (text "Play")
-                        , ael
-                            (Animation.fromTo
-                                { duration = 300
-                                , options = []
-                                }
-                                [ P.x -70 ]
-                                [ P.x 0 ]
-                            )
-                            [ Font.family [ Font.typeface "icons" ], centerX ]
-                            (text "\u{E801}")
-                        ]
-
-                     else
-                        [ ael
-                            (Animation.fromTo
-                                { duration = 300
-                                , options = []
-                                }
-                                [ P.x 50 ]
-                                [ P.x 0 ]
-                            )
-                            [ Font.family [ Font.typeface "icons" ], centerX ]
-                            (text "\u{E801}")
-                        ]
-                    )
-                )
     in
-    Input.button
+    image
         [ width fill
         , height (px h)
         , clip
-        , inFront (el [ width fill, height fill, Background.color (rgba 0 0 0 0.25) ] none)
+        , inFront (el [ width fill, height fill, Background.color (rgba 0 0 0 0.4) ] none)
         , inFront
             (column
                 [ fontSize device XXlg
@@ -445,105 +367,10 @@ head shared model =
                         min 150 (toFloat w * 0.1) |> floor
                     )
                 ]
-                [ text "We Solve", text "Electronic", text "Obsolescence." ]
-            )
-        , inFront (row [ centerX, centerY ] (List.map playBtn (List.filter (\a -> a.id == 0) simpleBtns)))
-        ]
-        { onPress = Just OpenVimeo
-        , label =
-            image
-                [ centerX
-                , if scaleByHeight then
-                    height (px h)
-
-                  else
-                    width (px w)
-                ]
-                { src = "/img/bourbon_street_video.jpg", description = "Click or tap to play Global circuit innovation's company video" }
-        }
-
-
-vimeo : Shared.Model -> Element Msg
-vimeo shared =
-    let
-        w =
-            shared.width
-
-        h =
-            shared.height
-
-        videoWidth =
-            let
-                scale =
-                    if isPhone then
-                        0.95
-
-                    else
-                        0.75
-            in
-            if h > ((9 * (toFloat w * scale)) / 16 |> round) then
-                toFloat w * scale |> floor
-
-            else
-                (16 * (toFloat h * 0.9)) / 9 |> round
-
-        device =
-            shared.device.class
-
-        isPhone =
-            device == Phone
-    in
-    el
-        [ width fill
-        , height fill
-        , htmlAttribute <| class "point_enter_down_long"
-        , behindContent
-            (link [ width fill, height fill ]
-                { url = "/obsolescence#mainText"
-                , label =
-                    el
-                        [ width fill
-                        , height fill
-                        , Background.gradient
-                            { angle = degrees 165
-                            , steps = [ rgba255 87 83 78 0.7, rgba255 17 24 39 0.9 ]
-                            }
-                        , Events.onClick CloseVimeo
-                        ]
-                        none
-                }
+                [ text "Our", text "trademarks", text "and patents." ]
             )
         ]
-        (column
-            [ width (px videoWidth)
-            , centerX
-            , centerY
-            , Border.rounded 10
-            , clip
-            , Border.shadow { blur = 20, color = rgba 0 0 0 0.5, offset = ( 0, 0 ), size = 1 }
-            ]
-            [ el [ width fill, height fill, centerX, centerY ]
-                (html <|
-                    div
-                        [ style "padding" "56.25% 0 0 0"
-                        , style "position" "relative"
-                        ]
-                        [ iframe
-                            [ style "position" "absolute"
-                            , style "top" "0"
-                            , style "left" "0"
-                            , style "width" "100%"
-                            , style "height" "100%"
-                            , attribute "frameborder" "0"
-                            , attribute "allow" "autoplay; fullscreen; picture-in-picture"
-                            , property "allowfullscreen" (Encode.bool True)
-                            , src "https://player.vimeo.com/video/322836491?autoplay=1&color=1d376c&title=0&byline=0&portrait=0"
-                            ]
-                            []
-                        ]
-                )
-            ]
-        )
+        { src = "/img/patents.jpg", description = "Picture of GCI's head quarters" }
 
 
 mainText : Shared.Model -> Bool -> Element Msg
@@ -561,7 +388,6 @@ mainText shared animateSelf =
     column
         [ width fill
         , spacing 25
-        , htmlAttribute <| id "mainText"
         , padding 25
         , width fill
         , inFront
@@ -601,10 +427,212 @@ mainText shared animateSelf =
                 none
             )
         ]
-        [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Xlg ] [ text "Obsolescence is a big deal" ]
-        , paragraph [ spacing 10, fontSize device Sm, Font.light ]
-            [ text "Electronics obsolescence is common in sectors such as Defense, where equipment has long lead times and needs to be supported for many decades. It is not unusual that 70–80 % of the electronic components become obsolete before the system has been deployed."
+        [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Xlg ] [ text "15 issued patents and counting." ]
+        , paragraph [ spacing 10, fontSize device Sm, Font.light, htmlAttribute <| id "mainText", width fill ]
+            [ text "For over a decade Global Circuit Innovations has held patents, and we continue to be issued more. Sometimes more is better."
+            , html <| br [] []
+            , html <| br [] []
             ]
+        ]
+
+
+patents : Shared.Model -> Model -> Bool -> Element Msg
+patents shared model animateSelf =
+    let
+        patentsPerRow =
+            model.patentsPerRow
+
+        hideAirlock =
+            model.hideAirlock
+
+        device =
+            shared.device.class
+
+        w =
+            shared.width
+
+        isPhone =
+            device == Phone
+
+        cardWidth =
+            300
+
+        cardHeight =
+            500
+
+        cardSpacing =
+            50
+
+        zoom =
+            if animateSelf then
+                Animation.steps
+                    { startAt = [ P.scaleXY 0.9 0.9 ]
+                    , options = [ Animation.easeInOutQuad ]
+                    }
+                    [ Animation.step 1000 [ P.scaleXY 0.9 0.9 ]
+                    , Animation.step 500 [ P.scaleXY 1 1 ]
+                    ]
+
+            else
+                Animation.steps
+                    { startAt = [ P.scaleXY 0.9 0.9 ]
+                    , options = [ Animation.easeInOutQuad ]
+                    }
+                    [ Animation.step 10 [ P.scaleXY 0.9 0.9 ]
+                    , Animation.step 10 [ P.scaleXY 0.9 0.9 ]
+                    ]
+
+        patent l =
+            ael
+                zoom
+                [ width fill ]
+                (column
+                    [ width (px cardWidth)
+                    , height (px cardHeight)
+                    , centerX
+                    , clip
+                    , Background.color white
+                    , Events.onClick (PatentActive l.id)
+                    , Events.onMouseEnter (PatentActive l.id)
+                    , Events.onMouseLeave (PatentDeactive l.id)
+                    , htmlAttribute <|
+                        class
+                            (if animateSelf then
+                                "animate_float"
+
+                             else
+                                ""
+                            )
+                    ]
+                    [ image [ htmlAttribute <| class "animateTransform", width fill, height (px (toFloat cardHeight * (2.0 / 3.0) |> round)) ] { src = l.image, description = l.name }
+                    , el
+                        ([ htmlAttribute <| class "animateTransform"
+                         , height (px (toFloat cardHeight * (1.0 / 3.0) |> round))
+                         , width fill
+                         , Background.color white
+                         , Border.shadow { blur = 3, color = rgba 0 0 0 0.2, offset = ( 0, 0 ), size = 1 }
+                         ]
+                            ++ (if l.active then
+                                    [ moveUp cardHeight
+                                    ]
+
+                                else
+                                    []
+                               )
+                        )
+                        (column [ centerX, centerY, spacing 20 ]
+                            [ el [ centerX, fontSize device Md, Font.light, Font.center ] (text l.inventor)
+                            , el [ centerX, fontSize device Xsm, Font.color (rgb 0.2 0.2 0.3) ] (text ("#" ++ l.number ++ " - " ++ l.date))
+                            ]
+                        )
+                    , column
+                        ([ width fill, htmlAttribute <| class "animateTransform", height (px cardHeight), Background.color white ]
+                            ++ (if l.active then
+                                    [ moveUp cardHeight ]
+
+                                else
+                                    []
+                               )
+                        )
+                        [ paragraph [ fontSize device Xsm, padding 20, Font.center, centerY ]
+                            [ el [ Font.center, fontSize device Sm, Font.light ] (text l.name)
+                            , html <| br [] []
+                            , html <| br [] []
+                            , el [] (text ("Patent number: " ++ l.number))
+                            , html <| br [] []
+                            , el [] (text ("Issued on: " ++ l.date))
+                            , html <| br [] []
+                            , html <| br [] []
+                            ]
+                        , newTabLink [ Font.color gciBlue, centerY, mouseOver [ Font.color gciBlueLight ], centerX, Font.bold ] { url = l.link, label = el [] (text "Read More") }
+                        ]
+                    ]
+                )
+
+        airlock =
+            Animation.fromTo
+                { duration = 3000
+                , options = []
+                }
+                [ P.x 0 ]
+                [ P.x (toFloat w) ]
+
+        airlock2 =
+            Animation.fromTo
+                { duration = 3000
+                , options = []
+                }
+                [ P.x 0 ]
+                [ P.x -(toFloat w) ]
+
+        shadowSettings =
+            if animateSelf then
+                { blur = 10, color = rgba 0 0 0 0.3, offset = ( -5, 5 ), size = 5 }
+
+            else
+                { blur = 0, color = rgba 0 0 0 0.3, offset = ( 0, 0 ), size = 0 }
+    in
+    column
+        [ width fill
+        , htmlAttribute <| class "circuit_board"
+        , htmlAttribute <| id "patents"
+        , spacing 50
+        , padding 50
+        , inFront
+            (if hideAirlock then
+                none
+
+             else
+                row [ width fill, height fill, htmlAttribute <| class "ignore_pointer" ]
+                    [ ael
+                        (if animateSelf then
+                            airlock2
+
+                         else
+                            Animation.empty
+                        )
+                        [ height fill, width fill, Background.color white, Border.shadow shadowSettings ]
+                        none
+                    , ael
+                        (if animateSelf then
+                            airlock
+
+                         else
+                            Animation.empty
+                        )
+                        [ height fill, width fill, Background.color white, Border.shadow shadowSettings ]
+                        none
+                    ]
+            )
+        , Border.innerShadow { blur = 10, color = rgba 0 0 0 0.3, offset = ( -5, 5 ), size = 5 }
+        ]
+        [ el
+            [ centerX
+            , htmlAttribute <|
+                class
+                    (if animateSelf then
+                        "animate_float"
+
+                     else
+                        ""
+                    )
+            ]
+            (acol
+                zoom
+                [ spacing 3
+                , if isPhone then
+                    paddingXY 20 20
+
+                  else
+                    padding 55
+                , Background.color white
+                ]
+                [ el [ Font.bold, fontSize device Xsm, Font.center, centerX, Font.color (rgb 0.2 0.2 0.3) ] (text "Global Circuit Innovations")
+                , el [ Font.extraLight, Font.letterSpacing 5, Font.center, centerX, Font.underline, fontSize device Xlg ] (text "Patents")
+                ]
+            )
+        , el [ width (px (min (toFloat w * 0.8 |> round) (patentsPerRow * cardWidth + (patentsPerRow * cardSpacing)))), centerX ]
+            (wrappedRow [ centerX, spacing cardSpacing ] (List.map patent model.patents))
         ]
 
 
