@@ -1,4 +1,4 @@
-module Pages.Systems exposing (Model, Msg, page)
+module Pages.Solutions exposing (Model, Msg, page)
 
 import Browser.Dom exposing (Viewport)
 import Browser.Events
@@ -11,7 +11,7 @@ import Element.Events as Events
 import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region exposing (description)
-import Gen.Params.Systems exposing (Params)
+import Gen.Params.Solutions exposing (Params)
 import Html exposing (br, div, iframe)
 import Html.Attributes exposing (attribute, class, id, property, src, style)
 import Json.Encode as Encode
@@ -365,7 +365,7 @@ head shared =
                         min 150 (toFloat w * 0.1) |> floor
                     )
                 ]
-                [ text "We Build", text "Complex", text "Electronic Systems." ]
+                [ text "GCI Develops", text "And Delivers", text "Electronic Solutions." ]
             )
         ]
         { src = "/img/bourbon_street_video2.jpg", description = "Photo of circuit manufacturing." }
@@ -425,12 +425,11 @@ mainText shared animateSelf =
                 none
             )
         ]
-        [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Xlg ] [ text "Heading 1" ]
+        [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Xlg ] [ text "GCI’s technology can generate a broad range of solutions." ]
         , paragraph [ spacing 10, fontSize device Sm, Font.light, htmlAttribute <| id "mainText" ]
-            [ text "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Blandit cursus risus at ultrices mi tempus imperdiet. Ultricies lacus sed turpis tincidunt id aliquet risus feugiat. Vulputate sapien nec sagittis aliquam malesuada bibendum arcu vitae."
+            [ text "Our engineering experience provides solutions for electronics ranging from a resistor assembly on a B-52 Windshield Wiper Speed Control to a Variable Frequency Driver solution in an ECU in a Patriot Missile battery."
             , html <| br [] []
             , html <| br [] []
-            , text "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Pellentesque elit ullamcorper dignissim cras. Et netus et malesuada fames ac turpis egestas integer."
             ]
         ]
 

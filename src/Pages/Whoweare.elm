@@ -481,7 +481,7 @@ mainText shared values animateSelf =
         ]
         [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Xlg ] [ text "Founded in 2006 in Colorado Springs, CO." ]
         , paragraph [ spacing 10, fontSize device Sm, Font.light, htmlAttribute <| id "mainText", width fill ]
-            [ text "Global Circuit Innovations (GCI) is a Design & Manufacturing Engineering Solutions House for Electronic Obsolescence"
+            [ text "Global Circuit Innovations (GCI) is a Design & Manufacturing Engineering Solutions House for DoD Electronic Obsolescence and Oil and Gas High Temperature Electronics."
             , html <| br [] []
             , html <| br [] []
             ]

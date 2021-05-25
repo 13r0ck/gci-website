@@ -49,6 +49,7 @@ type alias Model =
     , simpleBtnHoverTracker : List SimpleBtn
     , animationTracker : Dict String AnimationState
     , patents : List Patent
+    , trademarks : List Trademark
     , patentsPerRow : Int
     , localShared : Shared.Model
     , hideAirlock : Bool
@@ -63,6 +64,18 @@ type alias Patent =
     , inventor : String
     , name : String
     , image : String
+    , link : String
+    }
+
+
+type alias Trademark =
+    { id : Int
+    , active : Bool
+    , name : String
+    , number : String
+    , class : String
+    , registered : String
+    , firstUse : String
     , link : String
     }
 
@@ -112,20 +125,25 @@ init shared =
                 ]
       , patents =
             [ Patent 0 False "9,966,319" "8/21/11" "Erick M. Spory" "Environmental hardened integrated circuit method and apparatus" "/img/9966319.png" "https://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO1&Sect2=HITOFF&d=PALL&p=1&u=%2Fnetahtml%2FPTO%2Fsrchnum.htm&r=1&f=G&l=50&s1=9966319.PN.&OS=PN/9966319&RS=PN/9966319"
-            , Patent 1 False "9,935,028" "11/23/13" "Erick M. Spory" "Method and apparatus for printing integrated circuit bond connections" "/img/9935028.jpg" ""
-            , Patent 2 False "9,711,480" "11/28/11" "Erick M. Spory" "Environmental hardened packaged integrated circuit" "/img/9711480.jpg" ""
-            , Patent 3 False "9,824,948" "11/20/13" "Erick M. Spory" "Integrated circuit with printed bond connections" "/img/9824948.jpg" ""
-            , Patent 4 False "9,870,968" "1/28/16" "Erick M. Spory\nTimothy M. Barry" "Repackaged integrated circuit and assembly method" "/img/9870968.jpg" ""
-            , Patent 5 False "10,128,161" "6/19/17" "Erick M. Spory" "3D printed hermetic package assembly and method" "/img/10128161.jpg" ""
-            , Patent 6 False "10,177,056" "1/28/16" "Erick M. Spory" "Repackaged integrated circuit assembly method" "/img/10177056.jpg" ""
-            , Patent 7 False "10,654,259" "1/28/16" "Erick M. Spory" "Conductive Diamond Application Method and System" "/img/10654259.jpg" ""
-            , Patent 8 False "10,109,606" "1/28/16" "Erick M. Spory" "Remapped packaged extracted die" "/img/10109606.jpg" ""
-            , Patent 9 False "10,177,054" "1/28/16" "Erick M. Spory\nTimothy M. Barry" "Method for remapping a packaged extracted die" "/img/10177054.jpg" ""
-            , Patent 10 False "10,147,660" "1/28/16" "Erick M. Spory" "Repackaged integrated circuit with 3D printed bond connections" "/img/10147660.jpg" ""
-            , Patent 11 False "10,002,846" "1/28/16" "Erick M. Spory" "3D printed bond connection method for repackaged integrated circuit" "/img/10002846.jpg" ""
-            , Patent 12 False "10,460,326" "1/28/16" "Erick M. Spory" "IDD Signature" "/img/10460326.jpg" ""
-            , Patent 13 False "10,431,510" "10/3/17" "Erick M. Spory" "Hermetic Lid Seal Method and Apparatus" "/img/10431510.jpg" ""
-            , Patent 14 False "10,115,645" "10/27/17" "Erick M. Spory" "Repackaged reconditioned die method and assembly" "/img/10115645.jpg" ""
+            , Patent 1 False "9,935,028" "11/23/13" "Erick M. Spory" "Method and apparatus for printing integrated circuit bond connections" "/img/9935028.png" "https://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO1&Sect2=HITOFF&d=PALL&p=1&u=%2Fnetahtml%2FPTO%2Fsrchnum.htm&r=1&f=G&l=50&s1=9935028.PN.&OS=PN/9935028&RS=PN/9935028"
+            , Patent 2 False "9,711,480" "11/28/11" "Erick M. Spory" "Environmental hardened packaged integrated circuit" "/img/9711480.png" "https://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO1&Sect2=HITOFF&d=PALL&p=1&u=%2Fnetahtml%2FPTO%2Fsrchnum.htm&r=1&f=G&l=50&s1=9711480.PN.&OS=PN/9711480&RS=PN/9711480"
+            , Patent 3 False "9,824,948" "11/20/13" "Erick M. Spory" "Integrated circuit with printed bond connections" "/img/9824948.png" "https://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO1&Sect2=HITOFF&d=PALL&p=1&u=%2Fnetahtml%2FPTO%2Fsrchnum.htm&r=1&f=G&l=50&s1=9824948.PN.&OS=PN/9824948&RS=PN/9824948"
+            , Patent 4 False "9,870,968" "1/28/16" "Erick M. Spory\nTimothy M. Barry" "Repackaged integrated circuit and assembly method" "/img/9870968.png" "https://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO1&Sect2=HITOFF&d=PALL&p=1&u=%2Fnetahtml%2FPTO%2Fsrchnum.htm&r=1&f=G&l=50&s1=9870968.PN.&OS=PN/9870968&RS=PN/9870968"
+            , Patent 5 False "10,128,161" "6/19/17" "Erick M. Spory" "3D printed hermetic package assembly and method" "/img/10128161.png" "https://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO1&Sect2=HITOFF&d=PALL&p=1&u=%2Fnetahtml%2FPTO%2Fsrchnum.htm&r=1&f=G&l=50&s1=10128161.PN.&OS=PN/10128161&RS=PN/10128161"
+            , Patent 6 False "10,177,056" "1/28/16" "Erick M. Spory" "Repackaged integrated circuit assembly method" "/img/10177056.png" "https://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO1&Sect2=HITOFF&d=PALL&p=1&u=%2Fnetahtml%2FPTO%2Fsrchnum.htm&r=1&f=G&l=50&s1=10177056.PN.&OS=PN/10177056&RS=PN/10177056"
+            , Patent 7 False "10,654,259" "1/28/16" "Erick M. Spory" "Conductive Diamond Application Method and System" "/img/10654259.png" "https://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO1&Sect2=HITOFF&d=PALL&p=1&u=%2Fnetahtml%2FPTO%2Fsrchnum.htm&r=1&f=G&l=50&s1=10,654,259.PN.&OS=PN/10,654,259&RS=PN/10,654,259"
+            , Patent 8 False "10,109,606" "1/28/16" "Erick M. Spory" "Remapped packaged extracted die" "/img/10109606.png" "https://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO1&Sect2=HITOFF&d=PALL&p=1&u=%2Fnetahtml%2FPTO%2Fsrchnum.htm&r=1&f=G&l=50&s1=10109606.PN.&OS=PN/10109606&RS=PN/10109606"
+            , Patent 9 False "10,177,054" "1/28/16" "Erick M. Spory\nTimothy M. Barry" "Method for remapping a packaged extracted die" "/img/10177054.png" "https://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO1&Sect2=HITOFF&d=PALL&p=1&u=%2Fnetahtml%2FPTO%2Fsrchnum.htm&r=1&f=G&l=50&s1=10177054.PN.&OS=PN/10177054&RS=PN/10177054"
+            , Patent 10 False "10,147,660" "1/28/16" "Erick M. Spory" "Repackaged integrated circuit with 3D printed bond connections" "/img/10147660.png" "https://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO1&Sect2=HITOFF&d=PALL&p=1&u=%2Fnetahtml%2FPTO%2Fsrchnum.htm&r=1&f=G&l=50&s1=10147660.PN.&OS=PN/10147660&RS=PN/10147660"
+            , Patent 11 False "10,002,846" "1/28/16" "Erick M. Spory" "3D printed bond connection method for repackaged integrated circuit" "/img/10002846.png" "https://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO1&Sect2=HITOFF&d=PALL&p=1&u=%2Fnetahtml%2FPTO%2Fsrchnum.htm&r=1&f=G&l=50&s1=10002846.PN.&OS=PN/10002846&RS=PN/10002846"
+            , Patent 12 False "10,460,326" "1/28/16" "Erick M. Spory" "IDD Signature" "/img/10460326.png" "https://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO1&Sect2=HITOFF&d=PALL&p=1&u=%2Fnetahtml%2FPTO%2Fsrchnum.htm&r=1&f=G&l=50&s1=10460326.PN.&OS=PN/10460326&RS=PN/10460326"
+            , Patent 13 False "10,431,510" "10/3/17" "Erick M. Spory" "Hermetic Lid Seal Method and Apparatus" "/img/10431510.png" "https://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO1&Sect2=HITOFF&d=PALL&p=1&u=%2Fnetahtml%2FPTO%2Fsrchnum.htm&r=1&f=G&l=50&s1=10431510.PN.&OS=PN/10431510&RS=PN/10431510"
+            , Patent 14 False "10,115,645" "10/27/17" "Erick M. Spory" "Repackaged reconditioned die method and assembly" "/img/10115645.png" "https://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO1&Sect2=HITOFF&d=PALL&p=1&u=%2Fnetahtml%2FPTO%2Fsrchnum.htm&r=1&f=G&l=50&s1=10115645.PN.&OS=PN/10115645&RS=PN/10115645"
+            ]
+      , trademarks =
+            [ Trademark 0 False "DER" "5,278,571" "CLASS 37: Repair or maintenance of integrated circuits manufacturing machines and systems" "8/29/17" "6/15/10" "https://tmsearch.uspto.gov/bin/showfield?f=doc&state=4806:6m7zhk.4.1"
+            , Trademark 1 False "DEER" "5,400,012" "CLASS 9: Semiconductor devices" "2/13/18" "11/1/13" "https://tmsearch.uspto.gov/bin/showfield?f=doc&state=4806:6m7zhk.5.1"
+            , Trademark 2 False "DER" "5,215,549" "CLASS 9: Electronic chips for the manufacture of integrated circuits" "5/30/17" "11/1/13" "https://tmsearch.uspto.gov/bin/showfield?f=doc&state=4806:6m7zhk.6.1"
             ]
       , patentsPerRow = 3
       , localShared = { shared | navbarDisplay = Enter }
@@ -149,6 +167,8 @@ type Msg
     | OpenContactUs
     | PatentActive Int
     | PatentDeactive Int
+    | TrademarkActive Int
+    | TrademarkDeactive Int
     | ModifyLocalShared Shared.Model
     | WindowResized Int Int
     | HideAirlock ()
@@ -252,6 +272,25 @@ update shared msg model =
 
         PatentDeactive _ ->
             ( { model | patents = List.map (\l -> { l | active = False }) model.patents }, Effect.none )
+
+        TrademarkActive id ->
+            ( { model
+                | trademarks =
+                    List.map
+                        (\l ->
+                            if l.id == id then
+                                { l | active = True }
+
+                            else
+                                { l | active = False }
+                        )
+                        model.trademarks
+              }
+            , Effect.none
+            )
+
+        TrademarkDeactive _ ->
+            ( { model | trademarks = List.map (\l -> { l | active = False }) model.trademarks }, Effect.none )
 
         HideAirlock _ ->
             ( { model | hideAirlock = True }, Effect.none )
@@ -429,7 +468,9 @@ mainText shared animateSelf =
         ]
         [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Xlg ] [ text "15 issued patents and counting." ]
         , paragraph [ spacing 10, fontSize device Sm, Font.light, htmlAttribute <| id "mainText", width fill ]
-            [ text "For over a decade Global Circuit Innovations has held patents, and we continue to be issued more. Sometimes more is better."
+            [ text "Over a decade ago we applied for our first patent. In that time we never stopped applying, and today we have 15 pattens, 3 trademarks, and 6 more patents processing."
+            , html <| br [] []
+            , text "Sometimes more is better."
             , html <| br [] []
             , html <| br [] []
             ]
@@ -481,6 +522,73 @@ patents shared model animateSelf =
                     [ Animation.step 10 [ P.scaleXY 0.9 0.9 ]
                     , Animation.step 10 [ P.scaleXY 0.9 0.9 ]
                     ]
+
+        trademark l =
+            ael
+                zoom
+                [ width fill ]
+                (column
+                    [ width (px cardWidth)
+                    , height (px cardHeight)
+                    , centerX
+                    , clip
+                    , Background.color white
+                    , Events.onClick (TrademarkActive l.id)
+                    , Events.onMouseEnter (TrademarkActive l.id)
+                    , Events.onMouseLeave (TrademarkDeactive l.id)
+                    , htmlAttribute <|
+                        class
+                            (if animateSelf then
+                                "animate_float"
+
+                             else
+                                ""
+                            )
+                    ]
+                    [ image [ htmlAttribute <| class "animateTransform", width fill, height (px (toFloat cardHeight * (2.0 / 3.0) |> round)) ] { src = "/img/uspto.jpg", description = "USPTO logo" }
+                    , el
+                        ([ htmlAttribute <| class "animateTransform"
+                         , height (px (toFloat cardHeight * (1.0 / 3.0) |> round))
+                         , width fill
+                         , Background.color white
+                         , Border.shadow { blur = 3, color = rgba 0 0 0 0.2, offset = ( 0, 0 ), size = 1 }
+                         ]
+                            ++ (if l.active then
+                                    [ moveUp cardHeight
+                                    ]
+
+                                else
+                                    []
+                               )
+                        )
+                        (column [ centerX, centerY, spacing 20 ]
+                            [ el [ centerX, fontSize device Md, Font.light, Font.center ] (text l.name)
+                            , el [ centerX, fontSize device Xsm, Font.color (rgb 0.2 0.2 0.3) ] (text ("#" ++ l.number ++ " - " ++ l.registered))
+                            ]
+                        )
+                    , column
+                        ([ width fill, htmlAttribute <| class "animateTransform", height (px cardHeight), Background.color white ]
+                            ++ (if l.active then
+                                    [ moveUp cardHeight ]
+
+                                else
+                                    []
+                               )
+                        )
+                        [ paragraph [ fontSize device Xsm, padding 20, Font.center, centerY ]
+                            [ el [ Font.center, fontSize device Sm, Font.light ] (text l.class)
+                            , html <| br [] []
+                            , html <| br [] []
+                            , el [] (text ("Reg. No.: " ++ l.number))
+                            , html <| br [] []
+                            , el [] (text ("First Use: " ++ l.firstUse))
+                            , html <| br [] []
+                            , html <| br [] []
+                            ]
+                        , newTabLink [ Font.color gciBlue, centerY, mouseOver [ Font.color gciBlueLight ], centerX, Font.bold ] { url = l.link, label = el [] (text "Read More") }
+                        ]
+                    ]
+                )
 
         patent l =
             ael
@@ -633,6 +741,33 @@ patents shared model animateSelf =
             )
         , el [ width (px (min (toFloat w * 0.8 |> round) (patentsPerRow * cardWidth + (patentsPerRow * cardSpacing)))), centerX ]
             (wrappedRow [ centerX, spacing cardSpacing ] (List.map patent model.patents))
+        , el
+            [ centerX
+            , htmlAttribute <|
+                class
+                    (if animateSelf then
+                        "animate_float"
+
+                     else
+                        ""
+                    )
+            ]
+            (acol
+                zoom
+                [ spacing 3
+                , if isPhone then
+                    paddingXY 20 20
+
+                  else
+                    padding 55
+                , Background.color white
+                ]
+                [ el [ Font.bold, fontSize device Xsm, Font.center, centerX, Font.color (rgb 0.2 0.2 0.3) ] (text "Global Circuit Innovations")
+                , el [ Font.extraLight, Font.letterSpacing 5, Font.center, centerX, Font.underline, fontSize device Xlg ] (text "Trademarks")
+                ]
+            )
+        , el [ width (px (min (toFloat w * 0.8 |> round) (patentsPerRow * cardWidth + (patentsPerRow * cardSpacing)))), centerX ]
+            (wrappedRow [ centerX, spacing cardSpacing ] (List.map trademark model.trademarks))
         ]
 
 
