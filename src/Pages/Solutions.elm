@@ -89,9 +89,9 @@ init shared =
                 , ( "3", AnimationState (PercentOfViewport 40) False )
                 ]
       , subTexts =
-            [ SubText 1 "Sub text" "/img/subtext4.jpg" "test" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
+            [ SubText 1 "Something" "/img/subtext6.jpg" "" "Decades of experience in failure analysis combined with an engineering team committed to innovative solutions, allows GCI to develop solutions for a wide array of electronic applications."
             , SubText 2 "Sub text" "/img/subtext5.jpg" "" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
-            , SubText 3 "Sub text" "/img/subtext6.jpg" "" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
+            , SubText 3 "Sub text" "/img/subtext4.jpg" "" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
             ]
       , localShared = { shared | navbarDisplay = Enter }
       }
@@ -230,7 +230,7 @@ view shared model =
             let
                 img =
                     el
-                        [ width (fillPortion 2)
+                        [ width (fillPortion 4)
                         , clip
                         , centerY
                         , Border.rounded 10
@@ -263,7 +263,7 @@ view shared model =
                         )
 
                 content =
-                    paragraph [ width fill, fontSize device Sm ] [ text item.text ]
+                    paragraph [ width (fillPortion 3), fontSize device Sm ] [ text item.text ]
             in
             acol
                 (if shouldAnimate (String.fromInt item.id) model then
@@ -350,7 +350,7 @@ head shared =
         [ width fill
         , height (px h)
         , clip
-        , inFront (el [ width fill, height fill, Background.color (rgba 0 0 0 0.25) ] none)
+        , inFront (el [ width fill, height fill, Background.color (rgba 0 0 0 0.3) ] none)
         , inFront
             (column
                 [ fontSize device XXlg
@@ -365,7 +365,7 @@ head shared =
                         min 150 (toFloat w * 0.1) |> floor
                     )
                 ]
-                [ text "GCI Develops", text "And Delivers", text "Electronic Solutions." ]
+                [ text "GCI", text "Delivers", text "Electronic Solutions." ]
             )
         ]
         { src = "/img/bourbon_street_video2.jpg", description = "Photo of circuit manufacturing." }
@@ -427,7 +427,7 @@ mainText shared animateSelf =
         ]
         [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Xlg ] [ text "GCI’s technology can generate a broad range of solutions." ]
         , paragraph [ spacing 10, fontSize device Sm, Font.light, htmlAttribute <| id "mainText" ]
-            [ text "Our engineering experience provides solutions for electronics ranging from a resistor assembly on a B-52 Windshield Wiper Speed Control to a Variable Frequency Driver solution in an ECU in a Patriot Missile battery."
+            [ text "Our engineering experience enables us to provide solutions for electronics ranging from a resistor assembly on a B-52 Windshield Wiper Speed Control to a Variable Frequency Driver solution in a Patriot Missile battery ECU."
             , html <| br [] []
             , html <| br [] []
             ]

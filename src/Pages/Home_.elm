@@ -149,14 +149,14 @@ init shared =
             [ SimpleBtn 0 "Contact Us" "#" False OpenContactUs
             ]
       , testimonials =
-            [ Testimonial "Sikorsky Aircraft Corperation" "/img/sky.jpg" "Global Circuit Innovations provided a form, fit and function solution to keep our Black Hawk helicopters flying." "- Peter Kubik" "(Senior Staff Engineer)"
+            [ Testimonial "Sikorsky Aircraft Corperation" "/img/helicopter1.jpg" "Global Circuit Innovations provided a form, fit and function solution to keep our Black Hawk helicopters flying." "- Peter Kubik" "(Senior Staff Engineer)"
             , Testimonial "USAF" "/img/helicopter0.jpg" "GCI offers cost effective, proven obsolescence solutions to keep planes flying and save the US Air Force tens of millions of dollars." "- Jeffery Sillart" "(USAF Lead-Engineer, F-16)"
             , Testimonial "Sikorsky Aircraft Corperation" "/img/sky.jpg" "This is the spot for a third testimonial" "- Brock" "(Cool Dude)"
             ]
       , boxes =
             [ BoxesItem "Electronic Obsolescence Solutions" "/obsolescence" "/img/plane1.png" "/img/plane2.png" False "point_idle"
             , BoxesItem "Electronic Solutions" "/solutions" "/img/circuit1.png" "/img/circuit2.png" False "point_idle"
-            , BoxesItem "Oil and Gas High Temp Electronics" "/oil" "img/oil1.png" "/img/oil2.png" False "point_idle"
+            , BoxesItem "Electronics in Harsh Environments" "/oil" "img/oil1.png" "/img/oil2.png" False "point_idle"
             , BoxesItem "Research and Development" "/dev" "img/oil1.png" "/img/oil2.png" False "point_idle"
             ]
       , localShared = { shared | navbarDisplay = Enter }

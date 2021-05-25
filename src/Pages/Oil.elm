@@ -226,7 +226,7 @@ view shared model =
             let
                 img =
                     el
-                        [ width (fillPortion 2)
+                        [ width (fillPortion 4)
                         , clip
                         , centerY
                         , Border.rounded 10
@@ -259,7 +259,7 @@ view shared model =
                         )
 
                 content =
-                    paragraph [ width fill, fontSize device Sm ] [ text item.text ]
+                    paragraph [ width (fillPortion 3), fontSize device Sm ] [ text item.text ]
             in
             acol
                 (if shouldAnimate (String.fromInt item.id) model then

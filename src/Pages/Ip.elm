@@ -113,10 +113,10 @@ init shared =
                   , AnimationState
                         (PercentOfViewport
                             (if isMobile then
-                                5
+                                1
 
                              else
-                                20
+                                5
                             )
                         )
                         False
@@ -147,7 +147,7 @@ init shared =
             ]
       , patentsPerRow = 3
       , localShared = { shared | navbarDisplay = Enter }
-      , hideAirlock = True
+      , hideAirlock = False
       }
     , Effect.none
     )
