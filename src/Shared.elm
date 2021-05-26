@@ -807,7 +807,8 @@ contactUs shared message =
                     ]
                 )
             ]
-            [ el [height (fillPortion 3), width fill, clip]
+            [-- el [height (fillPortion 3), width fill, clip]
+            {-}
                 (html <| iframe
                 [ src "https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d24841.18006570458!2d-104.8844136!3d38.897742!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8713502b631d3ad1%3A0x1ba83899ee826bda!2s4815%20List%20Dr%2C%20Colorado%20Springs%2C%20CO%2080919%2C%20USA!5e0!3m2!1sen!2sca!4v1622055792062!5m2!1sen!2sca"
                 , style "border" "0"
@@ -818,14 +819,15 @@ contactUs shared message =
                 ]
                 [] 
                 )
-             {-image
+                -}
+             image
                 [ width fill
                 , height (fillPortion 3)
                 , clip
 
                 ]
-                { src = "/img/building.png", description = "Picutre of GCI's building" }
-                -}
+                { src = "/img/building.jpg", description = "Picutre of GCI's building" }
+                
             , el [ width fill, height (fillPortion 5) ] contactDialog
             ]
         )

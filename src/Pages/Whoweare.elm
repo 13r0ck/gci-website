@@ -472,9 +472,9 @@ mainText shared values animateSelf =
                 none
             )
         ]
-        [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Xlg ] [ text "Founded in 2006 in Colorado Springs, CO." ]
+        [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Lg ] [ text "Where Innovation and Talent Integrate" ]
         , paragraph [ spacing 10, fontSize device Sm, Font.light, htmlAttribute <| id "mainText", width fill ]
-            [ text "Global Circuit Innovations (GCI) is a Design & Manufacturing Engineering Solutions House for DoD Electronic Obsolescence and Oil and Gas High Temperature Electronics."
+            [ text "Founded in 2006 in Colorado Springs, CO, what started as a small company has evolved into a Design & Manufacturing Engineering Solutions House for DoD Electronic Obsolescence and High Temperature Electronics.  GCI’s team leverages decades of experience to innovate and work tirelessly to provide solutions for even the most challenging electronics projects."
             , html <| br [] []
             , html <| br [] []
             ]
