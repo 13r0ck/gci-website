@@ -19,7 +19,7 @@ import Pages.Home_ exposing (AnimationState, When(..), updateElement)
 import Palette exposing (FontSize(..), black, fontSize, gciBlue, gciBlueLight, maxWidth, warning, white)
 import Ports exposing (recvScroll)
 import Request
-import Shared exposing (acol, ael, contactUs, footer, navbar)
+import Shared exposing (acol, ael, contactUs, footer, navbar, reset)
 import Simple.Animation as Animation exposing (Animation)
 import Simple.Animation.Animated as Animated
 import Simple.Animation.Property as P
@@ -61,7 +61,7 @@ type alias SimpleBtn =
 
 init : Shared.Model -> ( Model, Effect Msg )
 init shared =
-    ( { localShared = { shared | navbarDisplay = Enter }
+    ( { localShared = reset shared
       , legal = ""
       , simpleBtnHoverTracker =
             [ SimpleBtn 0 "ignored" "/" False Nothing
@@ -98,25 +98,18 @@ update : Shared.Model -> Msg -> Model -> ( Model, Effect Msg )
 update shared msg model =
     case msg of
         Scrolled distance ->
-            ( { model
-                | localShared =
-                    model.localShared
-                        |> (\l ->
-                                { l
-                                    | scrolledDistance = distance
-                                    , navbarDisplay =
-                                        if abs (distance - l.scrolledDistance) > 10 then
-                                            if distance > l.scrolledDistance then
-                                                Hide
-
-                                            else
-                                                Enter
-
-                                        else
-                                            l.navbarDisplay
-                                }
-                           )
-              }
+            let
+                modifyNavbarDisplay state =
+                    model.localShared |> (\l -> {l| navbarDisplay = state, scrolledDistance = distance, showMobileNav = (if state == Hide then False else l.showMobileNav)})
+            in
+            ((if abs (distance - model.localShared.scrolledDistance) > 3 then
+                if distance > model.localShared.scrolledDistance then
+                    {model | localShared = modifyNavbarDisplay Hide}
+                else
+                    {model | localShared = modifyNavbarDisplay Enter}
+            else
+                model
+            )
             , Effect.batch
                 (List.map animationTrackerToCmd (List.filter (\( _, v ) -> v.shouldAnimate == False) (Dict.toList model.animationTracker)))
             )

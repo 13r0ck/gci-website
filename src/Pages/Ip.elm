@@ -21,7 +21,7 @@ import Palette exposing (FontSize(..), black, fontSize, gciBlue, gciBlueLight, m
 import Ports exposing (disableScrolling, recvScroll)
 import Process
 import Request
-import Shared exposing (acol, ael, contactUs, footer, navbar)
+import Shared exposing (acol, ael, contactUs, footer, navbar, reset)
 import Simple.Animation as Animation exposing (Animation)
 import Simple.Animation.Animated as Animated
 import Simple.Animation.Property as P
@@ -113,7 +113,7 @@ init shared =
                   , AnimationState
                         (PercentOfViewport
                             (if isMobile then
-                                1
+                                2
 
                              else
                                 5
@@ -146,7 +146,7 @@ init shared =
             , Trademark 2 False "DER" "5,215,549" "CLASS 9: Electronic chips for the manufacture of integrated circuits" "5/30/17" "11/1/13" "https://tmsearch.uspto.gov/bin/showfield?f=doc&state=4806:6m7zhk.6.1"
             ]
       , patentsPerRow = 3
-      , localShared = { shared | navbarDisplay = Enter }
+      , localShared = reset shared
       , hideAirlock = False
       }
     , Effect.none
@@ -198,25 +198,18 @@ update shared msg model =
                     ( model, Effect.none )
 
         Scrolled distance ->
-            ( { model
-                | localShared =
-                    model.localShared
-                        |> (\l ->
-                                { l
-                                    | scrolledDistance = distance
-                                    , navbarDisplay =
-                                        if abs (distance - l.scrolledDistance) > 10 then
-                                            if distance > l.scrolledDistance then
-                                                Hide
-
-                                            else
-                                                Enter
-
-                                        else
-                                            l.navbarDisplay
-                                }
-                           )
-              }
+            let
+                modifyNavbarDisplay state =
+                    model.localShared |> (\l -> {l| navbarDisplay = state, scrolledDistance = distance, showMobileNav = (if state == Hide then False else l.showMobileNav)})
+            in
+            ((if abs (distance - model.localShared.scrolledDistance) > 3 then
+                if distance > model.localShared.scrolledDistance then
+                    {model | localShared = modifyNavbarDisplay Hide}
+                else
+                    {model | localShared = modifyNavbarDisplay Enter}
+            else
+                model
+            )
             , Effect.batch
                 (List.map animationTrackerToCmd (List.filter (\( _, v ) -> v.shouldAnimate == False) (Dict.toList model.animationTracker))
                     ++ (if shouldAnimate "patents" model && not model.hideAirlock then
@@ -736,7 +729,7 @@ patents shared model animateSelf =
                 , Background.color white
                 ]
                 [ el [ Font.bold, fontSize device Xsm, Font.center, centerX, Font.color (rgb 0.2 0.2 0.3) ] (text "Global Circuit Innovations")
-                , el [ Font.extraLight, Font.letterSpacing 5, Font.center, centerX, Font.underline, fontSize device Xlg ] (text "Patents")
+                , el [ Font.extraLight, Font.letterSpacing 5, Font.center, centerX, fontSize device Xlg ] (text "Patents")
                 ]
             )
         , el [ width (px (min (toFloat w * 0.8 |> round) (patentsPerRow * cardWidth + (patentsPerRow * cardSpacing)))), centerX ]
@@ -763,7 +756,7 @@ patents shared model animateSelf =
                 , Background.color white
                 ]
                 [ el [ Font.bold, fontSize device Xsm, Font.center, centerX, Font.color (rgb 0.2 0.2 0.3) ] (text "Global Circuit Innovations")
-                , el [ Font.extraLight, Font.letterSpacing 5, Font.center, centerX, Font.underline, fontSize device Xlg ] (text "Trademarks")
+                , el [ Font.extraLight, Font.letterSpacing 5, Font.center, centerX, fontSize device Xlg ] (text "Trademarks")
                 ]
             )
         , el [ width (px (min (toFloat w * 0.8 |> round) (patentsPerRow * cardWidth + (patentsPerRow * cardSpacing)))), centerX ]

@@ -21,7 +21,7 @@ import Palette exposing (FontSize(..), black, fontSize, gciBlue, maxWidth, warni
 import Ports exposing (disableScrolling, recvScroll)
 import Process
 import Request
-import Shared exposing (acol, ael, contactUs, footer, navbar)
+import Shared exposing (acol, ael, contactUs, footer, navbar, reset)
 import Simple.Animation as Animation exposing (Animation)
 import Simple.Animation.Animated as Animated
 import Simple.Animation.Property as P
@@ -135,7 +135,7 @@ init shared =
             , Value False "Accountability" "We measure ourselves against the highest standards of integrity and fiscal responsibility."
             ]
       , leadersPerRow = 3
-      , localShared = { shared | navbarDisplay = Enter }
+      , localShared = reset shared
       , hideAirlock = False
       }
     , Effect.none
@@ -187,25 +187,18 @@ update shared msg model =
                     ( model, Effect.none )
 
         Scrolled distance ->
-            ( { model
-                | localShared =
-                    model.localShared
-                        |> (\l ->
-                                { l
-                                    | scrolledDistance = distance
-                                    , navbarDisplay =
-                                        if abs (distance - l.scrolledDistance) > 10 then
-                                            if distance > l.scrolledDistance then
-                                                Hide
-
-                                            else
-                                                Enter
-
-                                        else
-                                            l.navbarDisplay
-                                }
-                           )
-              }
+            let
+                modifyNavbarDisplay state =
+                    model.localShared |> (\l -> {l| navbarDisplay = state, scrolledDistance = distance, showMobileNav = (if state == Hide then False else l.showMobileNav)})
+            in
+            ((if abs (distance - model.localShared.scrolledDistance) > 3 then
+                if distance > model.localShared.scrolledDistance then
+                    {model | localShared = modifyNavbarDisplay Hide}
+                else
+                    {model | localShared = modifyNavbarDisplay Enter}
+            else
+                model
+            )
             , Effect.batch
                 (List.map animationTrackerToCmd (List.filter (\( _, v ) -> v.shouldAnimate == False) (Dict.toList model.animationTracker))
                     ++ (if shouldAnimate "leadership" model && not model.hideAirlock then
@@ -581,7 +574,7 @@ leadership shared model animateSelf =
                                )
                         )
                         (column [ centerX, centerY, spacing 20 ]
-                            [ el [ centerX, fontSize device Md, Font.light, Font.underline ] (text l.name)
+                            [ el [ centerX, fontSize device Md, Font.light ] (text l.name)
                             , el [ centerX, fontSize device Xsm, Font.color (rgb 0.2 0.2 0.3) ] (text l.job)
                             ]
                         )
@@ -594,7 +587,7 @@ leadership shared model animateSelf =
                                     []
                                )
                         )
-                        (paragraph [ Font.alignLeft, fontSize device Xsm, padding 20 ]
+                        (paragraph [ Font.alignLeft, fontSize device Sm, padding 20, height (px cardHeight), scrollbarY]
                             [ text l.story ]
                         )
                     ]
@@ -679,7 +672,7 @@ leadership shared model animateSelf =
                 , Background.color white
                 ]
                 [ el [ Font.bold, fontSize device Xsm, Font.center, centerX, Font.color (rgb 0.2 0.2 0.3) ] (text "Global Circuit Innovations")
-                , el [ Font.extraLight, Font.letterSpacing 5, Font.center, centerX, Font.underline, fontSize device Xlg ] (text "Leadership")
+                , el [ Font.extraLight, Font.letterSpacing 5, Font.center, centerX, fontSize device Xlg ] (text "Leadership")
                 ]
             )
         , el [ width (px (min (toFloat w * 0.8 |> round) (leadersPerRow * cardWidth + (leadersPerRow * cardSpacing)))), centerX ]

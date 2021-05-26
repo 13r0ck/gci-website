@@ -13,7 +13,7 @@ import Page
 import Palette exposing (FontSize(..), black, fontSize, gciBlue, gciBlueLight, maxWidth, warning, white)
 import Ports exposing (recvScroll)
 import Request
-import Shared exposing (contactUs, footer, navbar)
+import Shared exposing (contactUs, footer, navbar, reset)
 import Storage exposing (NavBarDisplay(..))
 import View exposing (View)
 
@@ -38,7 +38,7 @@ type alias Model =
 
 init : Shared.Model -> ( Model, Effect Msg )
 init shared =
-    ( { localShared = { shared | navbarDisplay = Enter } }, Effect.none )
+    ( { localShared = reset shared }, Effect.none )
 
 
 
@@ -56,25 +56,18 @@ update : Shared.Model -> Msg -> Model -> ( Model, Effect Msg )
 update shared msg model =
     case msg of
         Scrolled distance ->
-            ( { model
-                | localShared =
-                    model.localShared
-                        |> (\l ->
-                                { l
-                                    | scrolledDistance = distance
-                                    , navbarDisplay =
-                                        if abs (distance - l.scrolledDistance) > 10 then
-                                            if distance > l.scrolledDistance then
-                                                Hide
-
-                                            else
-                                                Enter
-
-                                        else
-                                            l.navbarDisplay
-                                }
-                           )
-              }
+            let
+                modifyNavbarDisplay state =
+                    model.localShared |> (\l -> {l| navbarDisplay = state, scrolledDistance = distance, showMobileNav = (if state == Hide then False else l.showMobileNav)})
+            in
+            ((if abs (distance - model.localShared.scrolledDistance) > 3 then
+                if distance > model.localShared.scrolledDistance then
+                    {model | localShared = modifyNavbarDisplay Hide}
+                else
+                    {model | localShared = modifyNavbarDisplay Enter}
+            else
+                model
+            )
             , Effect.none
             )
 

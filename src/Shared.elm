@@ -12,6 +12,7 @@ module Shared exposing
     , setPhoneCursor
     , subscriptions
     , update
+    , reset
     )
 
 import Browser.Events
@@ -26,9 +27,10 @@ import Element.Input as Input
 import Element.Region as Region
 import Email as Email
 import Html exposing (a, br, div, span, video)
-import Html.Attributes exposing (alt, attribute, autoplay, class, classList, id, loop, src)
+import Html.Attributes exposing (alt, attribute, autoplay, class, classList, id, loop, src, style)
 import Html.Events
 import Json.Decode as Json
+import Json.Encode as Encode
 import Palette exposing (FontSize(..), black, fontSize, gciBlue, gciBlueLight, maxWidth, warning, white)
 import PhoneNumber
 import PhoneNumber.Countries exposing (countryUS)
@@ -49,6 +51,8 @@ import Storage as Storage
         )
 import Task
 import Time
+import Html exposing (iframe)
+import Html.Attributes exposing (property)
 
 
 type alias Flags =
@@ -110,6 +114,7 @@ init _ flags =
             Address
                 "4815 List Drive, Suite 109"
                 "Colorado Springs, CO 80919"
+                "https://www.google.com/maps/place/Global+Circuit+Innovations/@38.9010033,-104.853527,17z/data=!3m1!4b1!4m5!3m4!1s0x871346a0f04367d1:0x112099ed55c03e4b!8m2!3d38.9010033!4d-104.8513383?hl=en"
                 "+1 (719) 573 - 6777"
                 "tel:+17195736777"
                 "info@gci-global.com"
@@ -802,14 +807,25 @@ contactUs shared message =
                     ]
                 )
             ]
-            [ image
+            [ el [height (fillPortion 3), width fill, clip]
+                (html <| iframe
+                [ src "https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d24841.18006570458!2d-104.8844136!3d38.897742!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8713502b631d3ad1%3A0x1ba83899ee826bda!2s4815%20List%20Dr%2C%20Colorado%20Springs%2C%20CO%2080919%2C%20USA!5e0!3m2!1sen!2sca!4v1622055792062!5m2!1sen!2sca"
+                , style "border" "0"
+                , style "width" "100%"
+                , style "height" "100%"
+                , attribute "loading" "lazy"
+                , property "allowfullscreen" (Encode.string "")
+                ]
+                [] 
+                )
+             {-image
                 [ width fill
                 , height (fillPortion 3)
                 , clip
 
-                --, inFront (el [alignBottom, Font.color (rgb 1 1 1 ), centerX, Font.bold] (text "Cage: 7DGP6  |  Duns: 80126549"))
                 ]
                 { src = "/img/building.png", description = "Picutre of GCI's building" }
+                -}
             , el [ width fill, height (fillPortion 5) ] contactDialog
             ]
         )
@@ -930,8 +946,8 @@ footer shared message =
                     ]
             , column [ width fill, Border.widthEach { top = 1, bottom = 1, left = 0, right = 0 }, padding 20, spacing 20 ]
                 [ wrappedRow [ centerX, width shrink, fontSize device Xsm ]
-                    [ el [ width fill ] (el [ padding 10, centerX ] (text address.street))
-                    , el [ width fill ] (el [ padding 10, centerX ] (text address.city))
+                    [ newTabLink [width fill] {url = address.mapsLink, label = (el [ padding 10, centerX ] (text address.street))}
+                    , newTabLink [width fill] { url = address.mapsLink, label =(el [ padding 10, centerX ] (text address.city))}
                     , el [ width fill ] (link [ padding 10, centerX ] { label = text address.phone, url = address.phoneLink })
                     , el [ width fill ] (link [ padding 10, centerX ] { label = text address.email, url = address.emailLink })
                     ]
@@ -1343,3 +1359,7 @@ contactPhone model newPhone =
                             }
                        )
         }
+
+reset : Model -> Model
+reset model =
+    { model | navbarDisplay = Enter, showMobileNav = False, scrolledDistance = 0}

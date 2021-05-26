@@ -42,6 +42,7 @@ type alias ContactDialogState =
 type alias Address =
     { street : String
     , city : String
+    , mapsLink : String
     , phone : String
     , phoneLink : String
     , email : String

@@ -8,7 +8,7 @@ import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border exposing (innerShadow, rounded, shadow, widthEach)
-import Element.Events as EE
+import Element.Events as Events
 import Element.Font as Font exposing (center)
 import Element.Input as Input
 import Element.Region as Region
@@ -24,7 +24,7 @@ import PhoneNumber
 import PhoneNumber.Countries exposing (countryUS)
 import Ports exposing (controlVideo, recvScroll, showNav)
 import Request
-import Shared exposing (Msg(..), acol, ael, arow, contactUs, footer, navbar)
+import Shared exposing (Msg(..), acol, ael, arow, contactUs, footer, navbar, reset)
 import Simple.Animation as Animation exposing (Animation)
 import Simple.Animation.Animated as Animated
 import Simple.Animation.Property as P
@@ -93,7 +93,7 @@ type alias SimpleBtn =
     , name : String
     , link : String
     , hovered : Bool
-    , message : Msg
+    , message : Maybe Msg
     }
 
 
@@ -146,7 +146,11 @@ init shared =
             [ OnScreenItem "earthVideo" True
             ]
       , simpleBtnHoverTracker =
-            [ SimpleBtn 0 "Contact Us" "#" False OpenContactUs
+            [ SimpleBtn 0 "Play" "#" False Nothing
+            , SimpleBtn 1 "Intellectual property" "/ip" False Nothing
+            , SimpleBtn 2 "What we do" "/#whatwedo" False Nothing
+            , SimpleBtn 3 "Contact Us" "" False (Just OpenContactUs)
+            , SimpleBtn 4 "Technical Papers" "/technical" False Nothing
             ]
       , testimonials =
             [ Testimonial "Sikorsky Aircraft Corperation" "/img/helicopter1.jpg" "Global Circuit Innovations provided a form, fit and function solution to keep our Black Hawk helicopters flying." "- Peter Kubik" "(Senior Staff Engineer)"
@@ -159,7 +163,7 @@ init shared =
             , BoxesItem "Electronics in Harsh Environments" "/oil" "img/oil1.png" "/img/oil2.png" False "point_idle"
             , BoxesItem "Research and Development" "/dev" "img/oil1.png" "/img/oil2.png" False "point_idle"
             ]
-      , localShared = { shared | navbarDisplay = Enter }
+      , localShared = reset shared
       }
     , controlVideo True |> Effect.fromCmd
     )
@@ -191,25 +195,18 @@ update : Shared.Model -> Msg -> Model -> ( Model, Effect Msg )
 update shared msg model =
     case msg of
         Scrolled distance ->
-            ( { model
-                | localShared =
-                    model.localShared
-                        |> (\l ->
-                                { l
-                                    | scrolledDistance = distance
-                                    , navbarDisplay =
-                                        if abs (distance - l.scrolledDistance) > 3 then
-                                            if distance > l.scrolledDistance then
-                                                Hide
-
-                                            else
-                                                Enter
-
-                                        else
-                                            l.navbarDisplay
-                                }
-                           )
-              }
+            let
+                modifyNavbarDisplay state =
+                    model.localShared |> (\l -> {l| navbarDisplay = state, scrolledDistance = distance, showMobileNav = (if state == Hide then False else l.showMobileNav)})
+            in
+            ((if abs (distance - model.localShared.scrolledDistance) > 3 then
+                if distance > model.localShared.scrolledDistance then
+                    {model | localShared = modifyNavbarDisplay Hide}
+                else
+                    {model | localShared = modifyNavbarDisplay Enter}
+            else
+                model
+            )
             , Effect.batch
                 (List.map animationTrackerToCmd (List.filter (\( _, v ) -> v.shouldAnimate == False) (Dict.toList model.animationTracker))
                     ++ List.map (\i -> onScreenItemtoCmd i.id) model.onScreenTracker
@@ -425,7 +422,7 @@ view shared model =
                 , testimonials model.testimonials model.testimonial_viewNum (shouldAnimate "testimonials" model) shared
                 , grayQuote (shouldAnimate "grayQuote" model) shared
                 , boxes (shouldAnimate "whatwedo" model) model.boxes shared
-                , cleanRoom (shouldAnimate "cleanRoom" model) model.simpleBtnHoverTracker shared
+                , cleanRoom shared (List.filter (\b -> b.id > 0) model.simpleBtnHoverTracker) (shouldAnimate "cleanRoom" model)
                 ]
             , footer shared ModifyLocalShared
             ]
@@ -907,62 +904,88 @@ onEnter msg =
         )
 
 
-cleanRoom : Bool -> List SimpleBtn -> Shared.Model -> Element Msg
-cleanRoom animateSelf simpleBtns shared =
+cleanRoom : Shared.Model -> List SimpleBtn -> Bool -> Element Msg
+cleanRoom shared btns animateSelf =
     let
+        h =
+            shared.height
+
+        w =
+            shared.width
+
         device =
             shared.device.class
 
         isPhone =
             device == Phone
 
-        btn item =
-            el
-                [ centerX
-                , Border.width 5
-                , paddingXY 20 10
-                , Border.rounded 10
-                , fontSize device Md
-                , Font.color white
-                , Font.bold
-                , htmlAttribute <| class "background_transition"
-                , Border.color white
-                , inFront
-                    (el
-                        [ htmlAttribute <|
-                            class
-                                (if item.hovered then
-                                    "point_enter_down"
+        isTablet =
+            device == Tablet
 
-                                 else
-                                    "point_leave_up"
-                                )
-                        , centerX
-                        , centerY
-                        , paddingXY 22 10
-                        , fontSize device Md
-                        , Font.color gciBlue
-                        , rounded 5
-                        , Font.bold
-                        , Background.color white
-                        ]
+        isMobile =
+            isPhone || isTablet
+
+        btn item =
+            let
+                attr =
+                    [ centerX
+                    , Border.width 5
+                    , paddingXY 20 10
+                    , Border.rounded 10
+                    , fontSize device Md
+                    , Font.color white
+                    , Font.bold
+                    , htmlAttribute <| class "background_transition"
+                    , Border.color white
+                    , Font.center
+                    , inFront
+                        (el
+                            [ htmlAttribute <|
+                                class
+                                    (if item.hovered then
+                                        "point_enter_down"
+
+                                     else
+                                        "point_leave_up"
+                                    )
+                            , centerX
+                            , centerY
+                            , paddingXY 22 10
+                            , fontSize device Md
+                            , Font.color gciBlue
+                            , Border.rounded 5
+                            , Font.bold
+                            , Background.color white
+                            , if isMobile then
+                                width fill
+
+                              else
+                                pointer
+                            ]
+                            (text item.name)
+                        )
+                    , Events.onMouseEnter (SimpleBtnHover item.id)
+                    , Events.onMouseLeave (SimpleBtnUnHover item.id)
+                    , if isMobile then
+                        width fill
+
+                      else
+                        pointer
+                    , htmlAttribute <| class "gciBtn"
+                    ]
+            in
+            case item.message of
+                Just m ->
+                    el
+                        (Events.onClick m :: attr)
                         (text item.name)
-                    )
-                , EE.onMouseEnter (SimpleBtnHover 0)
-                , EE.onMouseLeave (SimpleBtnUnHover 0)
-                , EE.onClick item.message
-                , pointer
-                , htmlAttribute <| class "gciBtn"
-                ]
-                (text item.name)
+
+                Nothing ->
+                    link [ centerX, width fill ] { url = item.link, label = el attr (text item.name) }
     in
-    row
-        [ height (px 400)
-        , width fill
-        , Background.image "/img/clean_room2.jpg"
-        , transparent (not animateSelf)
-        , htmlAttribute <| id "cleanRoom"
-        , htmlAttribute <|
+    column
+        [ height (px 500), Background.image "/img/clean_room2.jpg", width fill, padding 50, spacing 10, transparent (not animateSelf), htmlAttribute <| id "cleanRoom"
+                , htmlAttribute <|
             class
                 (if animateSelf then
                     "point_enter_left_long"
@@ -971,30 +994,16 @@ cleanRoom animateSelf simpleBtns shared =
                     "point_idle"
                 )
         ]
-        [ if isPhone then
-            none
+        [ paragraph [ centerY, Region.heading 4, fontSize device Lg, Font.center, Font.bold, Font.color white ] [ text "Want to know more about us?" ]
+        , (if isMobile then
+            column
 
-          else
-            column [ width fill ] []
-        , column [ width (fillPortion 2), height fill ]
-            [ paragraph
-                [ width fill
-                , alignRight
-                , Font.extraBold
-                , fontSize device Lg
-                , Font.color white
-                , Font.center
-                , centerY
-                ]
-                [ text "Interested?"
-                , html <| br [] []
-                , text "See how we can help!"
-                , html <| br [] []
-                ]
-            , row [ centerX, centerY, padding 24 ] (List.map btn (List.filter (\a -> a.id == 0) simpleBtns))
-            ]
+           else
+            row
+          )
+            [ centerX, centerY, spacing 10 ]
+            (List.map btn btns)
         ]
-
 
 boxes : Bool -> List BoxesItem -> Shared.Model -> Element Msg
 boxes animateSelf content shared =
@@ -1057,8 +1066,8 @@ boxes animateSelf content shared =
                                     [ text item.name ]
                                 )
                             )
-                        , EE.onMouseEnter (BoxHover id)
-                        , EE.onMouseLeave (BoxUnHover id)
+                        , Events.onMouseEnter (BoxHover id)
+                        , Events.onMouseLeave (BoxUnHover id)
                         ]
                         [ paragraph
                             [ fontSize device Sm
