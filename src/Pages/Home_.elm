@@ -154,7 +154,7 @@ init shared =
             ]
       , testimonials =
             [ Testimonial "Sikorsky Aircraft Corperation" "/img/helicopter1.jpg" "Global Circuit Innovations provided a form, fit and function solution to keep our Black Hawk helicopters flying." "- Peter Kubik" "(Senior Staff Engineer)"
-            , Testimonial "USAF" "/img/helicopter0.jpg" "GCI offers cost effective, proven obsolescence solutions to keep planes flying and save the US Air Force tens of millions of dollars." "- Jeffery Sillart" "(USAF Lead-Engineer, F-16)"
+            , Testimonial "USAF" "/img/f16.jpg" "GCI offers cost effective, proven obsolescence solutions to keep planes flying and save the US Air Force tens of millions of dollars." "- Jeffery Sillart" "(USAF Lead-Engineer, F-16)"
             , Testimonial "Sikorsky Aircraft Corperation" "/img/sky.jpg" "This is the spot for a third testimonial" "- Brock" "(Cool Dude)"
             ]
       , boxes =
@@ -197,16 +197,29 @@ update shared msg model =
         Scrolled distance ->
             let
                 modifyNavbarDisplay state =
-                    model.localShared |> (\l -> {l| navbarDisplay = state, scrolledDistance = distance, showMobileNav = (if state == Hide then False else l.showMobileNav)})
+                    model.localShared
+                        |> (\l ->
+                                { l
+                                    | navbarDisplay = state
+                                    , scrolledDistance = distance
+                                    , showMobileNav =
+                                        if state == Hide then
+                                            False
+
+                                        else
+                                            l.showMobileNav
+                                }
+                           )
             in
-            ((if abs (distance - model.localShared.scrolledDistance) > 3 then
+            ( if abs (distance - model.localShared.scrolledDistance) > 3 then
                 if distance > model.localShared.scrolledDistance then
-                    {model | localShared = modifyNavbarDisplay Hide}
+                    { model | localShared = modifyNavbarDisplay Hide }
+
                 else
-                    {model | localShared = modifyNavbarDisplay Enter}
-            else
+                    { model | localShared = modifyNavbarDisplay Enter }
+
+              else
                 model
-            )
             , Effect.batch
                 (List.map animationTrackerToCmd (List.filter (\( _, v ) -> v.shouldAnimate == False) (Dict.toList model.animationTracker))
                     ++ List.map (\i -> onScreenItemtoCmd i.id) model.onScreenTracker
@@ -984,8 +997,14 @@ cleanRoom shared btns animateSelf =
                     link [ centerX, width fill ] { url = item.link, label = el attr (text item.name) }
     in
     column
-        [ height (px 500), Background.image "/img/clean_room2.jpg", width fill, padding 50, spacing 10, transparent (not animateSelf), htmlAttribute <| id "cleanRoom"
-                , htmlAttribute <|
+        [ height (px 500)
+        , Background.image "/img/clean_room2.jpg"
+        , width fill
+        , padding 50
+        , spacing 10
+        , transparent (not animateSelf)
+        , htmlAttribute <| id "cleanRoom"
+        , htmlAttribute <|
             class
                 (if animateSelf then
                     "point_enter_left_long"
@@ -1004,6 +1023,7 @@ cleanRoom shared btns animateSelf =
             [ centerX, centerY, spacing 10 ]
             (List.map btn btns)
         ]
+
 
 boxes : Bool -> List BoxesItem -> Shared.Model -> Element Msg
 boxes animateSelf content shared =

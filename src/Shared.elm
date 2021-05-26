@@ -9,10 +9,10 @@ module Shared exposing
     , footer
     , init
     , navbar
+    , reset
     , setPhoneCursor
     , subscriptions
     , update
-    , reset
     )
 
 import Browser.Events
@@ -26,8 +26,8 @@ import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region
 import Email as Email
-import Html exposing (a, br, div, span, video)
-import Html.Attributes exposing (alt, attribute, autoplay, class, classList, id, loop, src, style)
+import Html exposing (a, br, div, iframe, span, video)
+import Html.Attributes exposing (alt, attribute, autoplay, class, classList, id, loop, property, src, style)
 import Html.Events
 import Json.Decode as Json
 import Json.Encode as Encode
@@ -51,8 +51,6 @@ import Storage as Storage
         )
 import Task
 import Time
-import Html exposing (iframe)
-import Html.Attributes exposing (property)
 
 
 type alias Flags =
@@ -807,27 +805,25 @@ contactUs shared message =
                     ]
                 )
             ]
-            [-- el [height (fillPortion 3), width fill, clip]
-            {-}
-                (html <| iframe
-                [ src "https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d24841.18006570458!2d-104.8844136!3d38.897742!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8713502b631d3ad1%3A0x1ba83899ee826bda!2s4815%20List%20Dr%2C%20Colorado%20Springs%2C%20CO%2080919%2C%20USA!5e0!3m2!1sen!2sca!4v1622055792062!5m2!1sen!2sca"
-                , style "border" "0"
-                , style "width" "100%"
-                , style "height" "100%"
-                , attribute "loading" "lazy"
-                , property "allowfullscreen" (Encode.string "")
-                ]
-                [] 
-                )
-                -}
-             image
+            [ -- el [height (fillPortion 3), width fill, clip]
+              {- }
+                 (html <| iframe
+                 [ src "https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d24841.18006570458!2d-104.8844136!3d38.897742!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8713502b631d3ad1%3A0x1ba83899ee826bda!2s4815%20List%20Dr%2C%20Colorado%20Springs%2C%20CO%2080919%2C%20USA!5e0!3m2!1sen!2sca!4v1622055792062!5m2!1sen!2sca"
+                 , style "border" "0"
+                 , style "width" "100%"
+                 , style "height" "100%"
+                 , attribute "loading" "lazy"
+                 , property "allowfullscreen" (Encode.string "")
+                 ]
+                 []
+                 )
+              -}
+              image
                 [ width fill
                 , height (fillPortion 3)
                 , clip
-
                 ]
                 { src = "/img/building.jpg", description = "Picutre of GCI's building" }
-                
             , el [ width fill, height (fillPortion 5) ] contactDialog
             ]
         )
@@ -948,8 +944,8 @@ footer shared message =
                     ]
             , column [ width fill, Border.widthEach { top = 1, bottom = 1, left = 0, right = 0 }, padding 20, spacing 20 ]
                 [ wrappedRow [ centerX, width shrink, fontSize device Xsm ]
-                    [ newTabLink [width fill] {url = address.mapsLink, label = (el [ padding 10, centerX ] (text address.street))}
-                    , newTabLink [width fill] { url = address.mapsLink, label =(el [ padding 10, centerX ] (text address.city))}
+                    [ newTabLink [ width fill ] { url = address.mapsLink, label = el [ padding 10, centerX ] (text address.street) }
+                    , newTabLink [ width fill ] { url = address.mapsLink, label = el [ padding 10, centerX ] (text address.city) }
                     , el [ width fill ] (link [ padding 10, centerX ] { label = text address.phone, url = address.phoneLink })
                     , el [ width fill ] (link [ padding 10, centerX ] { label = text address.email, url = address.emailLink })
                     ]
@@ -1362,6 +1358,7 @@ contactPhone model newPhone =
                        )
         }
 
+
 reset : Model -> Model
 reset model =
-    { model | navbarDisplay = Enter, showMobileNav = False, scrolledDistance = 0}
+    { model | navbarDisplay = Enter, showMobileNav = False, scrolledDistance = 0 }

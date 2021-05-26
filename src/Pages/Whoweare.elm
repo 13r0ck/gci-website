@@ -111,11 +111,12 @@ init shared =
                                 5
 
                              else
-                                20
+                                10
                             )
                         )
                         False
                   )
+                , ( "core", AnimationState (PercentOfViewport 50) False )
                 , ( "bottomButtons", AnimationState (PercentOfViewport 40) False )
                 ]
       , leadership =
@@ -189,16 +190,29 @@ update shared msg model =
         Scrolled distance ->
             let
                 modifyNavbarDisplay state =
-                    model.localShared |> (\l -> {l| navbarDisplay = state, scrolledDistance = distance, showMobileNav = (if state == Hide then False else l.showMobileNav)})
+                    model.localShared
+                        |> (\l ->
+                                { l
+                                    | navbarDisplay = state
+                                    , scrolledDistance = distance
+                                    , showMobileNav =
+                                        if state == Hide then
+                                            False
+
+                                        else
+                                            l.showMobileNav
+                                }
+                           )
             in
-            ((if abs (distance - model.localShared.scrolledDistance) > 3 then
+            ( if abs (distance - model.localShared.scrolledDistance) > 3 then
                 if distance > model.localShared.scrolledDistance then
-                    {model | localShared = modifyNavbarDisplay Hide}
+                    { model | localShared = modifyNavbarDisplay Hide }
+
                 else
-                    {model | localShared = modifyNavbarDisplay Enter}
-            else
+                    { model | localShared = modifyNavbarDisplay Enter }
+
+              else
                 model
-            )
             , Effect.batch
                 (List.map animationTrackerToCmd (List.filter (\( _, v ) -> v.shouldAnimate == False) (Dict.toList model.animationTracker))
                     ++ (if shouldAnimate "leadership" model && not model.hideAirlock then
@@ -340,9 +354,11 @@ view shared model =
                         )
                         0
                     , width (fill |> maximum maxWidth)
-                    , spacing 100
+                    , spacing 50
                     ]
-                    [ mainText shared model.values (shouldAnimate "mainText" model) ]
+                    [ mainText shared (shouldAnimate "mainText" model)
+                    , core shared model.values (shouldAnimate "core" model)
+                    ]
                 , leadership shared model (shouldAnimate "leadership" model)
                 , bottomButtons shared (List.filter (\b -> b.id > 0) model.simpleBtnHoverTracker) (shouldAnimate "bottomButtons" model)
                 ]
@@ -394,8 +410,8 @@ head shared model =
         { src = "/img/building.jpg", description = "Picture of GCI's head quarters" }
 
 
-mainText : Shared.Model -> List Value -> Bool -> Element Msg
-mainText shared values animateSelf =
+mainText : Shared.Model -> Bool -> Element Msg
+mainText shared animateSelf =
     let
         device =
             shared.device.class
@@ -405,30 +421,6 @@ mainText shared values animateSelf =
 
         w =
             shared.width
-
-        value i item =
-            el
-                [ clip
-                , width (fill |> minimum 250)
-                , height (px 250)
-                , Background.color (rgba255 29 55 108 (1.0 - (toFloat (i + 1) * 0.1)))
-                , Events.onClick (ValueActive i)
-                , Events.onMouseEnter (ValueActive i)
-                , Events.onMouseLeave (ValueDeactive i)
-                ]
-                (column
-                    ([ htmlAttribute <| class "animateTransform", fontSize device Sm, width fill, height fill ]
-                        ++ (if item.active then
-                                [ moveUp 250 ]
-
-                            else
-                                []
-                           )
-                    )
-                    [ el [ width fill, height (px 250) ] (el [ centerX, centerY ] (text item.title))
-                    , el [ width fill, height (px 250) ] (paragraph [ width (px 250), centerX, centerY, Font.center ] [ text item.detailed ])
-                    ]
-                )
     in
     column
         [ width fill
@@ -478,11 +470,53 @@ mainText shared values animateSelf =
             , html <| br [] []
             , html <| br [] []
             ]
-        , column [ width fill ]
-            [ el [ width fill, padding 20, fontSize device Md, Font.bold, Font.center, Region.heading 2, Background.color gciBlue, Font.color white ] (text "Our Core Values")
-            , wrappedRow [ width fill, Font.bold, Font.color white ]
-                (List.indexedMap value values)
-            ]
+        ]
+
+
+core shared values animateSelf =
+    let
+        device =
+            shared.device.class
+
+        value i item =
+            el
+                [ clip
+                , width (fill |> minimum 250)
+                , height (px 250)
+                , Background.color (rgba255 29 55 108 (1.0 - (toFloat (i + 1) * 0.1)))
+                , Events.onClick (ValueActive i)
+                , Events.onMouseEnter (ValueActive i)
+                , Events.onMouseLeave (ValueDeactive i)
+                ]
+                (column
+                    ([ htmlAttribute <| class "animateTransform", fontSize device Sm, width fill, height fill ]
+                        ++ (if item.active then
+                                [ moveUp 250 ]
+
+                            else
+                                []
+                           )
+                    )
+                    [ el [ width fill, height (px 250) ] (el [ centerX, centerY ] (text item.title))
+                    , el [ width fill, height (px 250) ] (paragraph [ width (px 250), centerX, centerY, Font.center ] [ text item.detailed ])
+                    ]
+                )
+    in
+    column
+        [ width fill
+        , htmlAttribute <|
+            class
+                (if animateSelf then
+                    "point_enter_left_long"
+
+                 else
+                    "point_idle"
+                )
+        , htmlAttribute <| id "core"
+        ]
+        [ el [ width fill, padding 20, fontSize device Md, Font.bold, Font.center, Region.heading 2, Background.color gciBlue, Font.color white ] (text "Our Core Values")
+        , wrappedRow [ width fill, Font.bold, Font.color white ]
+            (List.indexedMap value values)
         ]
 
 
@@ -587,7 +621,7 @@ leadership shared model animateSelf =
                                     []
                                )
                         )
-                        (paragraph [ Font.alignLeft, fontSize device Sm, padding 20, height (px cardHeight), scrollbarY]
+                        (paragraph [ Font.alignLeft, fontSize device Sm, padding 20, height (px cardHeight), scrollbarY ]
                             [ text l.story ]
                         )
                     ]

@@ -133,16 +133,29 @@ update shared msg model =
         Scrolled distance ->
             let
                 modifyNavbarDisplay state =
-                    model.localShared |> (\l -> {l| navbarDisplay = state, scrolledDistance = distance, showMobileNav = (if state == Hide then False else l.showMobileNav)})
+                    model.localShared
+                        |> (\l ->
+                                { l
+                                    | navbarDisplay = state
+                                    , scrolledDistance = distance
+                                    , showMobileNav =
+                                        if state == Hide then
+                                            False
+
+                                        else
+                                            l.showMobileNav
+                                }
+                           )
             in
-            ((if abs (distance - model.localShared.scrolledDistance) > 3 then
+            ( if abs (distance - model.localShared.scrolledDistance) > 3 then
                 if distance > model.localShared.scrolledDistance then
-                    {model | localShared = modifyNavbarDisplay Hide}
+                    { model | localShared = modifyNavbarDisplay Hide }
+
                 else
-                    {model | localShared = modifyNavbarDisplay Enter}
-            else
+                    { model | localShared = modifyNavbarDisplay Enter }
+
+              else
                 model
-            )
             , Effect.batch
                 (List.map animationTrackerToCmd (List.filter (\( _, v ) -> v.shouldAnimate == False) (Dict.toList model.animationTracker)))
             )
@@ -256,7 +269,7 @@ view shared model =
                         )
 
                 content =
-                    paragraph [ width (fillPortion 3), fontSize device Sm, Font.light] [ text item.text ]
+                    paragraph [ width (fillPortion 3), fontSize device Sm, Font.light ] (List.concat (List.intersperse [ html <| br [] [], html <| br [] [] ] (item.text |> String.split "\n" |> List.map (\t -> [ text t ]))))
             in
             acol
                 (if shouldAnimate (String.fromInt item.id) model then

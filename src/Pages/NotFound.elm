@@ -58,16 +58,29 @@ update shared msg model =
         Scrolled distance ->
             let
                 modifyNavbarDisplay state =
-                    model.localShared |> (\l -> {l| navbarDisplay = state, scrolledDistance = distance, showMobileNav = (if state == Hide then False else l.showMobileNav)})
+                    model.localShared
+                        |> (\l ->
+                                { l
+                                    | navbarDisplay = state
+                                    , scrolledDistance = distance
+                                    , showMobileNav =
+                                        if state == Hide then
+                                            False
+
+                                        else
+                                            l.showMobileNav
+                                }
+                           )
             in
-            ((if abs (distance - model.localShared.scrolledDistance) > 3 then
+            ( if abs (distance - model.localShared.scrolledDistance) > 3 then
                 if distance > model.localShared.scrolledDistance then
-                    {model | localShared = modifyNavbarDisplay Hide}
+                    { model | localShared = modifyNavbarDisplay Hide }
+
                 else
-                    {model | localShared = modifyNavbarDisplay Enter}
-            else
+                    { model | localShared = modifyNavbarDisplay Enter }
+
+              else
                 model
-            )
             , Effect.none
             )
 

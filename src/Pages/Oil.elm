@@ -88,8 +88,8 @@ init shared =
                 , ( "3", AnimationState (PercentOfViewport 40) False )
                 ]
       , subTexts =
-            [ SubText 1 "Sub text" "/img/subtext4.jpg" "test" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
-            , SubText 2 "Sub text" "/img/subtext5.jpg" "" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
+            [ SubText 1 "Oil and Gas Downhole Drilling" "/img/subtext4.jpg" "test" "GCI has provided over 150,000 production microcircuits to the oil and gas industry that have been in use worldwide for more than decade.\n\nGCI’s solutions extend the lifetime of standard microcircuits operating at +250°C  by more than 10,000X."
+            , SubText 2 "Department of Defense" "/img/subtext5.jpg" "" "GCI is also leveraging identical technologies to provide military grade electronic solutions for highly demanding DoD applications."
             , SubText 3 "Sub text" "/img/subtext6.jpg" "" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
             ]
       , localShared = reset shared
@@ -132,16 +132,29 @@ update shared msg model =
         Scrolled distance ->
             let
                 modifyNavbarDisplay state =
-                    model.localShared |> (\l -> {l| navbarDisplay = state, scrolledDistance = distance, showMobileNav = (if state == Hide then False else l.showMobileNav)})
+                    model.localShared
+                        |> (\l ->
+                                { l
+                                    | navbarDisplay = state
+                                    , scrolledDistance = distance
+                                    , showMobileNav =
+                                        if state == Hide then
+                                            False
+
+                                        else
+                                            l.showMobileNav
+                                }
+                           )
             in
-            ((if abs (distance - model.localShared.scrolledDistance) > 3 then
+            ( if abs (distance - model.localShared.scrolledDistance) > 3 then
                 if distance > model.localShared.scrolledDistance then
-                    {model | localShared = modifyNavbarDisplay Hide}
+                    { model | localShared = modifyNavbarDisplay Hide }
+
                 else
-                    {model | localShared = modifyNavbarDisplay Enter}
-            else
+                    { model | localShared = modifyNavbarDisplay Enter }
+
+              else
                 model
-            )
             , Effect.batch
                 (List.map animationTrackerToCmd (List.filter (\( _, v ) -> v.shouldAnimate == False) (Dict.toList model.animationTracker)))
             )
@@ -252,7 +265,7 @@ view shared model =
                         )
 
                 content =
-                    paragraph [ width (fillPortion 3), fontSize device Sm, Font.light] [ text item.text ]
+                    paragraph [ width (fillPortion 3), fontSize device Sm, Font.light ] (List.concat (List.intersperse [ html <| br [] [], html <| br [] [] ] (item.text |> String.split "\n" |> List.map (\t -> [ text t ]))))
             in
             acol
                 (if shouldAnimate (String.fromInt item.id) model then
@@ -417,12 +430,12 @@ mainText shared animateSelf =
                 none
             )
         ]
-        [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Xlg ] [ text "Heading 1" ]
+        [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Xlg ] [ text "High\u{00A0}Reliability\u{00A0}Electronics\u{00A0}for Harsh & Extreme Environments" ]
         , paragraph [ spacing 10, fontSize device Sm, Font.light, htmlAttribute <| id "mainText" ]
-            [ text "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Blandit cursus risus at ultrices mi tempus imperdiet. Ultricies lacus sed turpis tincidunt id aliquet risus feugiat. Vulputate sapien nec sagittis aliquam malesuada bibendum arcu vitae."
+            [ text ""
             , html <| br [] []
             , html <| br [] []
-            , text "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Pellentesque elit ullamcorper dignissim cras. Et netus et malesuada fames ac turpis egestas integer."
+            , text ""
             ]
         ]
 
