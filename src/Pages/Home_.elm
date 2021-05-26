@@ -155,7 +155,7 @@ init shared =
       , testimonials =
             [ Testimonial "Sikorsky Aircraft Corperation" "/img/helicopter1.jpg" "Global Circuit Innovations provided a form, fit and function solution to keep our Black Hawk helicopters flying." "- Peter Kubik" "(Senior Staff Engineer)"
             , Testimonial "USAF" "/img/f16.jpg" "GCI offers cost effective, proven obsolescence solutions to keep planes flying and save the US Air Force tens of millions of dollars." "- Jeffery Sillart" "(USAF Lead-Engineer, F-16)"
-            , Testimonial "Sikorsky Aircraft Corperation" "/img/sky.jpg" "This is the spot for a third testimonial" "- Brock" "(Cool Dude)"
+            , Testimonial "Sikorsky Aircraft Corperation" "/img/AGM-65.jpg" "This is the spot for a third testimonial" "- Brock" "(Cool Dude)"
             ]
       , boxes =
             [ BoxesItem "Electronic Obsolescence Solutions" "/obsolescence" "/img/plane1.png" "/img/plane2.png" False "point_idle"
