@@ -129,11 +129,11 @@ init shared =
             , Leadership 6 False "Dustin Morgan" "Business Development" "dustin .morgan@gci-global.com" "(719) 573 - 6777 x107" "/img/dustin.webp" "Dustin Morgan joined GCI in 2016 as the Director of Marketing. She holds a B.A. in Communications from the University of Colorado, Boulder and a M.A. in International Development from the Josef Korbel School of International Studies at the University of Denver.  Ms. Morgan has over 20 years of experience in both marketing and program management.  She previously worked for Central Bancorp in Colorado Springs where she was tasked with the design, creation, and management of a new business venture, Johnny Martin's Car Central.  Ms. Morgan served as the Executive Director in this role.  Ms. Morgan currently manages DoD contract programs and is Director of Business Development."
             ]
       , values =
-            [ Value False "Performance" "Executional excellence is at the foundation of GCI."
-            , Value False "Passion" "Passion is at the heart of our company. We always move forward, innovate, and improve."
+            [ Value False "Performance" "Executional excellence in electronics solutions is our foundation."
+            , Value False "Passion" "Passion is at the heart of our company. We continue to move forward, innovate, and improve."
             , Value False "Integrity" "We are honest, open, ethical, and fair. People trust us to adhere to our word."
-            , Value False "Diversity" "People with different ideas, interests, and culturals are needed for our company succeed."
-            , Value False "Accountability" "We measure ourselves against the highest standards of integrity and fiscal responsibility."
+            , Value False "Diversity" "We know it takes people with different ideas, strengths, interests, and cultural backgrounds to make our company succeed."
+            , Value False "Accountability" "Measuring ourselves against the highest standards of integrity and fiscal responsibility."
             ]
       , leadersPerRow = 3
       , localShared = reset shared

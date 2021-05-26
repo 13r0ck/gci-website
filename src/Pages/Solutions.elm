@@ -374,7 +374,7 @@ head shared =
                 [ text "GCI", text "Delivers", text "Electronic Solutions." ]
             )
         ]
-        { src = "/img/bourbon_street_video2.jpg", description = "Photo of circuit manufacturing." }
+        { src = "/img/electronics.jpg", description = "Photo of circuit manufacturing." }
 
 
 mainText : Shared.Model -> Bool -> Element Msg
