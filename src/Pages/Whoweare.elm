@@ -621,7 +621,7 @@ leadership shared model animateSelf =
                                     []
                                )
                         )
-                        (paragraph [ Font.alignLeft, fontSize device Sm, padding 20, height (px cardHeight), scrollbarY ]
+                        (paragraph [ Font.alignLeft, fontSize device Xsm, padding 20, height (px cardHeight), scrollbarY ]
                             [ text l.story ]
                         )
                     ]
