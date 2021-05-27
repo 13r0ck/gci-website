@@ -1,4 +1,4 @@
-module Pages.Solutions exposing (Model, Msg, page)
+module Pages.Electronics exposing (Model, Msg, page)
 
 import Browser.Dom exposing (Viewport)
 import Browser.Events
@@ -11,7 +11,7 @@ import Element.Events as Events
 import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region exposing (description)
-import Gen.Params.Solutions exposing (Params)
+import Gen.Params.Electronics exposing (Params)
 import Html exposing (br, div, iframe)
 import Html.Attributes exposing (attribute, class, id, property, src, style)
 import Json.Encode as Encode
@@ -78,7 +78,7 @@ init shared =
             , SimpleBtn 1 "Intellectual property" "/ip" False Nothing
             , SimpleBtn 2 "What we do" "/#whatwedo" False Nothing
             , SimpleBtn 3 "Contact Us" "" False (Just OpenContactUs)
-            , SimpleBtn 4 "Technical Papers" "/technical" False Nothing
+            , SimpleBtn 4 "Technical Papers" "/papers" False Nothing
             ]
       , animationTracker =
             Dict.fromList

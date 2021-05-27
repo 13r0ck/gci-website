@@ -104,7 +104,7 @@ init shared =
             , SimpleBtn 1 "Intellectual property" "/ip" False Nothing
             , SimpleBtn 2 "What we do" "/#whatwedo" False Nothing
             , SimpleBtn 3 "Contact Us" "" False (Just OpenContactUs)
-            , SimpleBtn 4 "Technical Papers" "/technical" False Nothing
+            , SimpleBtn 4 "Technical Papers" "/papers" False Nothing
             ]
       , animationTracker =
             Dict.fromList

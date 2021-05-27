@@ -1,23 +1,25 @@
-module Pages.Dev exposing (Model, Msg, page)
+module Pages.Papers exposing (Model, Msg, page)
 
 import Browser.Dom exposing (Viewport)
+import Browser.Events
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Events as Events
-import Element.Font as Font
+import Element.Font as Font exposing (letterSpacing)
 import Element.Input as Input
 import Element.Region as Region
-import Gen.Params.Dev exposing (Params)
+import Gen.Params.Papers exposing (Params)
 import Html exposing (br, div, iframe)
 import Html.Attributes exposing (attribute, class, id, property, src, style)
 import Json.Encode as Encode
 import Page
 import Pages.Home_ exposing (AnimationState, When(..), onScreenItemtoCmd, updateElement)
-import Palette exposing (FontSize(..), black, fontSize, gciBlue, maxWidth, warning, white)
+import Palette exposing (FontSize(..), black, fontSize, gciBlue, gciBlueLight, maxWidth, warning, white)
 import Ports exposing (disableScrolling, recvScroll)
+import Process
 import Request
 import Shared exposing (acol, ael, contactUs, footer, navbar, reset)
 import Simple.Animation as Animation exposing (Animation)
@@ -46,17 +48,21 @@ type alias Model =
     { showVimeo : Bool
     , simpleBtnHoverTracker : List SimpleBtn
     , animationTracker : Dict String AnimationState
-    , subTexts : List SubText
+    , papers : List Paper
+    , papersPerRow : Int
     , localShared : Shared.Model
+    , hideAirlock : Bool
     }
 
 
-type alias SubText =
+type alias Paper =
     { id : Int
-    , title : String
+    , active : Bool
+    , link : String
+    , author : String
+    , date : String
+    , summary : String
     , image : String
-    , description : String
-    , text : String
     }
 
 
@@ -71,6 +77,13 @@ type alias SimpleBtn =
 
 init : Shared.Model -> ( Model, Effect Msg )
 init shared =
+    let
+        isMobile =
+            device == Phone || device == Tablet
+
+        device =
+            shared.device.class
+    in
     ( { showVimeo = False
       , simpleBtnHoverTracker =
             [ SimpleBtn 0 "Play" "#" False (Just OpenVimeo)
@@ -82,17 +95,34 @@ init shared =
       , animationTracker =
             Dict.fromList
                 [ ( "mainText", AnimationState (PercentOfViewport 40) False )
+                , ( "papers"
+                  , AnimationState
+                        (PercentOfViewport
+                            (if isMobile then
+                                5
+
+                             else
+                                10
+                            )
+                        )
+                        False
+                  )
                 , ( "bottomButtons", AnimationState (PercentOfViewport 40) False )
-                , ( "1", AnimationState (PercentOfViewport 20) False )
-                , ( "2", AnimationState (PercentOfViewport 40) False )
-                , ( "3", AnimationState (PercentOfViewport 40) False )
                 ]
-      , subTexts =
-            [ SubText 1 "Sub text" "/img/subtext4.jpg" "test" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
-            , SubText 2 "Sub text" "/img/subtext5.jpg" "" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
-            , SubText 3 "Sub text" "/img/subtext6.jpg" "" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
+      , papers =
+            [ Paper 0 False "/download/SBIR_Phase_II_CDRL-0002AJ.pdf" "Erick Spory" "2020" "Maybe these should have a short summary?" "/img/Air_Force_Research_Laboratory.jpg"
+            , Paper 1 False "/download/CDRL_7_Technical_Report.pdf" "Erick Spory" "2017" "Maybe these should have a short summary?" "/img/AFLCMC.jpg"
+            , Paper 2 False "/download/LRU,_CCA,_&_IC_Microcircuit_Obsolescence_Solutions_without_System_Redesign.pdf" "Erick Spory" "2018" "Maybe these should have a short summary?" "/img/DMSMS2018.jpg"
+            , Paper 3 False "/download/Increased_High-Temperature_Reliability_and_Package_Hardening_of_Commercial_Integrated_Circuits.pdf" "Erick Spory" "2015" "Maybe these should have a short summary?" "/img/imaps.jpg"
+            , Paper 4 False "/download/Increasing_High-Temperature_Reliability_of_Plastic_ICs_Using_DEER.pdf" "Erick Spory" "20~~" "Maybe these should have a short summary?" "/img/smta.jpg"
+            , Paper 5 False "/download/NSWC_Crane_&_GCI:_A_DMSMS_Case_Study_2016.pdf" "Erick Spory" "2016" "Maybe these should have a short summary?" "/img/navsea.jpg"
+            , Paper 6 False "/download/Successful_FPGA_Obsolescence_Form,_Fit,_and_Function_Solution_Using_a_MCM_and_DER_to_Implement_Original_Logic_Design.pdf" "Erick Spory" "2018" "Maybe these should have a short summary?" "/img/imaps.jpg"
+            , Paper 7 False "/download/A_How-To_Guide_on_Addressing_and_Resolving_IC_Obsolescence.pdf" "Charlie Beebout" "2017" "Maybe these should have a short summary?" "/img/DMSMS2017.jpg"
+            , Paper 1 False "/download/Frequently_Asked_Questions.pdf" "GCI" "" "FAQ" "/img/logo.jpg"
             ]
+      , papersPerRow = 3
       , localShared = reset shared
+      , hideAirlock = False
       }
     , Effect.none
     )
@@ -110,8 +140,11 @@ type Msg
     | Scrolled Int
     | GotElement String (Result Browser.Dom.Error Browser.Dom.Element)
     | OpenContactUs
-    | WindowResized Int Int
+    | PaperActive Int
+    | PaperDeactive Int
     | ModifyLocalShared Shared.Model
+    | WindowResized Int Int
+    | HideAirlock ()
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Msg )
@@ -128,6 +161,14 @@ update shared msg model =
 
         SimpleBtnUnHover id ->
             ( { model | simpleBtnHoverTracker = List.indexedMap (setUnHovered id) model.simpleBtnHoverTracker }, Effect.none )
+
+        GotElement id element ->
+            case element of
+                Ok e ->
+                    ( { model | animationTracker = Dict.fromList (List.map (updateElement id e) (Dict.toList model.animationTracker)) }, Effect.none )
+
+                Err _ ->
+                    ( model, Effect.none )
 
         Scrolled distance ->
             let
@@ -156,7 +197,14 @@ update shared msg model =
               else
                 model
             , Effect.batch
-                (List.map animationTrackerToCmd (List.filter (\( _, v ) -> v.shouldAnimate == False) (Dict.toList model.animationTracker)))
+                (List.map animationTrackerToCmd (List.filter (\( _, v ) -> v.shouldAnimate == False) (Dict.toList model.animationTracker))
+                    ++ (if shouldAnimate "papers" model && not model.hideAirlock then
+                            [ Task.perform HideAirlock (Process.sleep 1000) |> Effect.fromCmd ]
+
+                        else
+                            [ Effect.none ]
+                       )
+                )
             )
 
         ModifyLocalShared newSharedState ->
@@ -185,13 +233,27 @@ update shared msg model =
             in
             ( { model | localShared = newModel model.localShared }, Shared.UpdateModel (newModel model.localShared) |> Effect.fromShared )
 
-        GotElement id element ->
-            case element of
-                Ok e ->
-                    ( { model | animationTracker = Dict.fromList (List.map (updateElement id e) (Dict.toList model.animationTracker)) }, Effect.none )
+        PaperActive id ->
+            ( { model
+                | papers =
+                    List.map
+                        (\p ->
+                            if p.id == id then
+                                { p | active = True }
 
-                Err _ ->
-                    ( model, Effect.none )
+                            else
+                                { p | active = False }
+                        )
+                        model.papers
+              }
+            , Effect.none
+            )
+
+        PaperDeactive _ ->
+            ( { model | papers = List.map (\p -> { p | active = False }) model.papers }, Effect.none )
+
+        HideAirlock _ ->
+            ( { model | hideAirlock = True }, Effect.none )
 
 
 
@@ -200,7 +262,10 @@ update shared msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    recvScroll Scrolled
+    Sub.batch
+        [ recvScroll Scrolled
+        , Browser.Events.onResize WindowResized
+        ]
 
 
 
@@ -227,74 +292,6 @@ view shared model =
 
         isMobile =
             isPhone || isTablet
-
-        subtext item =
-            let
-                img =
-                    el
-                        [ width (fillPortion 4)
-                        , clip
-                        , centerY
-                        , Border.rounded 10
-                        , inFront
-                            (el
-                                [ width fill
-                                , height fill
-                                , Border.innerShadow { blur = 18, color = rgba 0 0 0 0.3, offset = ( 1, 8 ), size = 8 }
-                                ]
-                                none
-                            )
-                        ]
-                        (if item.description == "" then
-                            image
-                                [ centerX
-                                , centerY
-                                , width fill
-                                ]
-                                { src = item.image, description = item.title }
-
-                         else
-                            el [ inFront (el [ fontSize device Xsm, Font.center, Font.light, padding 10, width fill, alignBottom, Background.color (rgba 1 1 1 0.85) ] (text item.description)) ]
-                                (image
-                                    [ centerX
-                                    , centerY
-                                    , width fill
-                                    ]
-                                    { src = item.image, description = item.title }
-                                )
-                        )
-
-                content =
-                    paragraph [ width (fillPortion 3), fontSize device Sm, Font.light ] (List.concat (List.intersperse [ html <| br [] [], html <| br [] [] ] (item.text |> String.split "\n" |> List.map (\t -> [ text t ]))))
-            in
-            acol
-                (if shouldAnimate (String.fromInt item.id) model then
-                    Animation.fromTo
-                        { duration = 500
-                        , options = []
-                        }
-                        [ P.opacity 0, P.y 100 ]
-                        [ P.opacity 100, P.y 0 ]
-
-                 else
-                    Animation.empty
-                )
-                [ width fill, height fill, spacing 20, htmlAttribute <| id (String.fromInt item.id), transparent (not (shouldAnimate (String.fromInt item.id) model)) ]
-                [ el [ Region.heading 3, Font.extraLight, fontSize device Lg ] (text item.title)
-                , (if isMobile then
-                    column
-
-                   else
-                    row
-                  )
-                    [ width fill, spacing 20 ]
-                    (if modBy 2 item.id == 0 || isMobile then
-                        [ img, content ]
-
-                     else
-                        [ content, img ]
-                    )
-                ]
     in
     { title = "GCI - Authorized Reverse Engineering IC Solutions for Obsolescence and High Temperature Environments"
     , attributes =
@@ -321,11 +318,10 @@ view shared model =
                         )
                         0
                     , width (fill |> maximum maxWidth)
-                    , spacing 100
+                    , spacing 50
                     ]
-                    (mainText shared (shouldAnimate "mainText" model)
-                        :: List.map subtext model.subTexts
-                    )
+                    [ mainText shared (shouldAnimate "mainText" model) ]
+                , papers shared model (shouldAnimate "papers" model)
                 , bottomButtons shared (List.filter (\b -> b.id > 0) model.simpleBtnHoverTracker) (shouldAnimate "bottomButtons" model)
                 ]
             , footer model.localShared ModifyLocalShared
@@ -370,10 +366,10 @@ head shared model =
                         min 150 (toFloat w * 0.1) |> floor
                     )
                 ]
-                [ text "This", text "is the", text "Development page." ]
+                [ text "Global", text "Circuit", text "Inovations." ]
             )
         ]
-        { src = "/img/oil_head.jpg", description = "" }
+        { src = "/img/building.jpg", description = "Picture of GCI's head quarters" }
 
 
 mainText : Shared.Model -> Bool -> Element Msg
@@ -430,13 +426,215 @@ mainText shared animateSelf =
                 none
             )
         ]
-        [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Xlg ] [ text "Heading 1" ]
-        , paragraph [ spacing 10, fontSize device Sm, Font.light, htmlAttribute <| id "mainText" ]
-            [ text "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Blandit cursus risus at ultrices mi tempus imperdiet. Ultricies lacus sed turpis tincidunt id aliquet risus feugiat. Vulputate sapien nec sagittis aliquam malesuada bibendum arcu vitae."
+        [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Lg ] [ text "Where Innovation and Talent Integrate" ]
+        , paragraph [ spacing 10, fontSize device Sm, Font.light, htmlAttribute <| id "mainText", width fill ]
+            [ text "Founded in 2006 in Colorado Springs, CO, what started as a small company has evolved into a Design & Manufacturing Engineering Solutions House for DoD Electronic Obsolescence and High Temperature Electronics.  GCI’s team leverages decades of experience to innovate and work tirelessly to provide solutions for even the most challenging electronics projects."
             , html <| br [] []
             , html <| br [] []
-            , text "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Pellentesque elit ullamcorper dignissim cras. Et netus et malesuada fames ac turpis egestas integer."
             ]
+        ]
+
+
+papers : Shared.Model -> Model -> Bool -> Element Msg
+papers shared model animateSelf =
+    let
+        papersPerRow =
+            model.papersPerRow
+
+        hideAirlock =
+            model.hideAirlock
+
+        device =
+            shared.device.class
+
+        w =
+            shared.width
+
+        isPhone =
+            device == Phone
+
+        cardWidth =
+            300
+
+        cardHeight =
+            500
+
+        cardSpacing =
+            50
+
+        name s =
+            s |> String.replace "/download/" "" |> String.replace "_" " "
+
+        zoom =
+            if animateSelf then
+                Animation.steps
+                    { startAt = [ P.scaleXY 0.9 0.9 ]
+                    , options = [ Animation.easeInOutQuad ]
+                    }
+                    [ Animation.step 1000 [ P.scaleXY 0.9 0.9 ]
+                    , Animation.step 500 [ P.scaleXY 1 1 ]
+                    ]
+
+            else
+                Animation.steps
+                    { startAt = [ P.scaleXY 0.9 0.9 ]
+                    , options = [ Animation.easeInOutQuad ]
+                    }
+                    [ Animation.step 10 [ P.scaleXY 0.9 0.9 ]
+                    , Animation.step 10 [ P.scaleXY 0.9 0.9 ]
+                    ]
+
+        paper p =
+            ael
+                zoom
+                [ width fill ]
+                (column
+                    [ width (px cardWidth)
+                    , height (px cardHeight)
+                    , centerX
+                    , clip
+                    , Background.color white
+                    , Events.onClick (PaperActive p.id)
+                    , Events.onMouseEnter (PaperActive p.id)
+                    , Events.onMouseLeave (PaperDeactive p.id)
+                    , htmlAttribute <|
+                        class
+                            (if animateSelf then
+                                "animate_float"
+
+                             else
+                                ""
+                            )
+                    ]
+                    [ image [ htmlAttribute <| class "animateTransform", width fill, height (px (toFloat cardHeight * (1.0 / 2.0) |> round)) ] { src = p.image, description = name p.link |> String.split "." |> List.head |> Maybe.withDefault (name p.link) }
+                    , el
+                        ([ htmlAttribute <| class "animateTransform"
+                         , height (px (toFloat cardHeight * (1.0 / 2.0) |> round))
+                         , width fill
+                         , Background.color white
+                         , Border.shadow { blur = 3, color = rgba 0 0 0 0.2, offset = ( 0, 0 ), size = 1 }
+                         ]
+                            ++ (if p.active then
+                                    [ moveUp cardHeight
+                                    ]
+
+                                else
+                                    []
+                               )
+                        )
+                        (column [ centerX, centerY, spacing 20, padding 5 ]
+                            [ paragraph [ centerX, fontSize device Sm, Font.light, Font.center ] [ text (name p.link |> String.split "." |> List.head |> Maybe.withDefault (name p.link)) ]
+                            , el [ centerX, fontSize device Xsm, Font.color (rgb 0.2 0.2 0.3) ] (text p.date)
+                            ]
+                        )
+                    , column
+                        ([ width fill, htmlAttribute <| class "animateTransform", height (px cardHeight), Background.color white ]
+                            ++ (if p.active then
+                                    [ moveUp cardHeight ]
+
+                                else
+                                    []
+                               )
+                        )
+                        [ paragraph [ fontSize device Xsm, padding 20, Font.center, centerY ]
+                            [ el [ Font.center, fontSize device Sm, Font.light ] (text p.summary)
+                            , html <| br [] []
+                            , html <| br [] []
+                            , el [] (text ("Author : " ++ p.author))
+                            , html <| br [] []
+                            , el [] (text ("Published on: " ++ p.date))
+                            , html <| br [] []
+                            , html <| br [] []
+                            ]
+                        , downloadAs [ Font.color gciBlue, centerY, mouseOver [ Font.color gciBlueLight ], centerX, Font.bold ] { url = p.link, filename = name p.link, label = el [] (text "Download") }
+                        ]
+                    ]
+                )
+
+        airlock =
+            Animation.fromTo
+                { duration = 3000
+                , options = []
+                }
+                [ P.x 0 ]
+                [ P.x (toFloat w) ]
+
+        airlock2 =
+            Animation.fromTo
+                { duration = 3000
+                , options = []
+                }
+                [ P.x 0 ]
+                [ P.x -(toFloat w) ]
+
+        shadowSettings =
+            if animateSelf then
+                { blur = 10, color = rgba 0 0 0 0.3, offset = ( -5, 5 ), size = 5 }
+
+            else
+                { blur = 0, color = rgba 0 0 0 0.3, offset = ( 0, 0 ), size = 0 }
+    in
+    column
+        [ width fill
+        , htmlAttribute <| class "circuit_board"
+        , htmlAttribute <| id "papers"
+        , spacing 50
+        , padding 50
+        , inFront
+            (if hideAirlock then
+                none
+
+             else
+                row [ width fill, height fill, htmlAttribute <| class "ignore_pointer" ]
+                    [ ael
+                        (if animateSelf then
+                            airlock2
+
+                         else
+                            Animation.empty
+                        )
+                        [ height fill, width fill, Background.color white, Border.shadow shadowSettings ]
+                        none
+                    , ael
+                        (if animateSelf then
+                            airlock
+
+                         else
+                            Animation.empty
+                        )
+                        [ height fill, width fill, Background.color white, Border.shadow shadowSettings ]
+                        none
+                    ]
+            )
+        , Border.innerShadow { blur = 10, color = rgba 0 0 0 0.3, offset = ( -5, 5 ), size = 5 }
+        ]
+        [ el
+            [ centerX
+            , htmlAttribute <|
+                class
+                    (if animateSelf then
+                        "animate_float"
+
+                     else
+                        ""
+                    )
+            ]
+            (acol
+                zoom
+                [ spacing 3
+                , if isPhone then
+                    paddingXY 20 20
+
+                  else
+                    padding 55
+                , Background.color white
+                ]
+                [ el [ Font.bold, fontSize device Xsm, Font.center, centerX, Font.color (rgb 0.2 0.2 0.3) ] (text "Global Circuit Innovations")
+                , paragraph [ Font.extraLight, Font.letterSpacing 5, Font.center, centerX, fontSize device Xlg ] [ text "Technical Papers" ]
+                ]
+            )
+        , el [ width (px (min (toFloat w * 0.8 |> round) (papersPerRow * cardWidth + (papersPerRow * cardSpacing)))), centerX ]
+            (wrappedRow [ centerX, spacing cardSpacing ] (List.map paper model.papers))
         ]
 
 

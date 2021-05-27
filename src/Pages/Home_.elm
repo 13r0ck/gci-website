@@ -150,7 +150,7 @@ init shared =
             , SimpleBtn 1 "Intellectual property" "/ip" False Nothing
             , SimpleBtn 2 "What we do" "/#whatwedo" False Nothing
             , SimpleBtn 3 "Contact Us" "" False (Just OpenContactUs)
-            , SimpleBtn 4 "Technical Papers" "/technical" False Nothing
+            , SimpleBtn 4 "Technical Papers" "/papers" False Nothing
             ]
       , testimonials =
             [ Testimonial "Sikorsky Aircraft Corperation" "/img/helicopter1.jpg" "Global Circuit Innovations provided a form, fit and function solution to keep our Black Hawk helicopters flying." "- Peter Kubik" "(Senior Staff Engineer)"
@@ -159,7 +159,7 @@ init shared =
             ]
       , boxes =
             [ BoxesItem "Electronic Obsolescence Solutions" "/obsolescence" "/img/plane1.png" "/img/plane2.png" False "point_idle"
-            , BoxesItem "Electronic Solutions" "/solutions" "/img/circuit1.png" "/img/circuit2.png" False "point_idle"
+            , BoxesItem "Electronic Solutions" "/electronics" "/img/circuit1.png" "/img/circuit2.png" False "point_idle"
             , BoxesItem "Electronics in Harsh Environments" "/oil" "img/oil1.png" "/img/oil2.png" False "point_idle"
             , BoxesItem "Research and Development" "/dev" "img/research1.jpg" "/img/research2.jpg" False "point_idle"
             ]
