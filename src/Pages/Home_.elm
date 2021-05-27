@@ -161,7 +161,7 @@ init shared =
             [ BoxesItem "Electronic Obsolescence Solutions" "/obsolescence" "/img/plane1.png" "/img/plane2.png" False "point_idle"
             , BoxesItem "Electronic Solutions" "/electronics" "/img/circuit1.png" "/img/circuit2.png" False "point_idle"
             , BoxesItem "Electronics in Harsh Environments" "/oil" "img/oil1.png" "/img/oil2.png" False "point_idle"
-            , BoxesItem "Research and Development" "/dev" "img/research1.jpg" "/img/research2.jpg" False "point_idle"
+            , BoxesItem "Research and Development" "/dev" "img/heat1.png" "/img/heat2.png" False "point_idle"
             ]
       , localShared = reset shared
       }

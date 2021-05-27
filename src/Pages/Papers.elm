@@ -114,7 +114,7 @@ init shared =
             , Paper 1 False "/download/CDRL_7_Technical_Report.pdf" "Erick Spory" "2017" "Maybe these should have a short summary?" "/img/AFLCMC.jpg"
             , Paper 2 False "/download/LRU,_CCA,_&_IC_Microcircuit_Obsolescence_Solutions_without_System_Redesign.pdf" "Erick Spory" "2018" "Maybe these should have a short summary?" "/img/DMSMS2018.jpg"
             , Paper 3 False "/download/Increased_High-Temperature_Reliability_and_Package_Hardening_of_Commercial_Integrated_Circuits.pdf" "Erick Spory" "2015" "Maybe these should have a short summary?" "/img/imaps.jpg"
-            , Paper 4 False "/download/Increasing_High-Temperature_Reliability_of_Plastic_ICs_Using_DEER.pdf" "Erick Spory" "20~~" "Maybe these should have a short summary?" "/img/smta.jpg"
+            , Paper 4 False "/download/Increasing_High-Temperature_Reliability_of_Plastic_ICs_Using_DEER.pdf" "Erick Spory" "2015" "Maybe these should have a short summary?" "/img/smta.jpg"
             , Paper 5 False "/download/NSWC_Crane_&_GCI:_A_DMSMS_Case_Study_2016.pdf" "Erick Spory" "2016" "Maybe these should have a short summary?" "/img/navsea.jpg"
             , Paper 6 False "/download/Successful_FPGA_Obsolescence_Form,_Fit,_and_Function_Solution_Using_a_MCM_and_DER_to_Implement_Original_Logic_Design.pdf" "Erick Spory" "2018" "Maybe these should have a short summary?" "/img/imaps.jpg"
             , Paper 7 False "/download/A_How-To_Guide_on_Addressing_and_Resolving_IC_Obsolescence.pdf" "Charlie Beebout" "2017" "Maybe these should have a short summary?" "/img/DMSMS2017.jpg"

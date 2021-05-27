@@ -132,7 +132,7 @@ init shared =
             [ Value False "Performance" "Executional excellence in electronics solutions is our foundation."
             , Value False "Passion" "Passion is at the heart of our company. We continue to move forward, innovate, and improve."
             , Value False "Integrity" "We are honest, open, ethical, and fair. People trust us to adhere to our word."
-            , Value False "Diversity" "We know it takes people with different ideas, strengths, interests, and cultural backgrounds to make our company succeed."
+            , Value False "Diversity" "It takes people with different ideas, strengths, interests, and cultural backgrounds to make our company succeed."
             , Value False "Accountability" "Measuring ourselves against the highest standards of integrity and fiscal responsibility."
             ]
       , leadersPerRow = 3
