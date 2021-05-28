@@ -89,9 +89,9 @@ init shared =
                 , ( "3", AnimationState (PercentOfViewport 40) False )
                 ]
       , subTexts =
-            [ SubText 1 "Something" "/img/subtext6.jpg" "" "Decades of experience in failure analysis combined with an engineering team committed to innovative solutions, allows GCI to develop solutions for a wide array of electronic applications."
-            , SubText 2 "Sub text" "/img/subtext5.jpg" "" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
-            , SubText 3 "Sub text" "/img/subtext4.jpg" "" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
+            [ SubText 1 "Wide Array of Expertise." "/img/subtext6.jpg" "" "We Welcome Challenges\nGCI’s ability to solve complex problems is what sets us apart. Where others have been unable to find a solution, GCI is able to forge ahead and solve even the most difficult of problems. We work tirelessly to provide our customers with a solution to keep their assets functioning."
+            , SubText 2 "Our promise." "/img/subtext7.jpg" "" "Our experts at GCI can often find a solution that, does not require engineering.  Often times, a customer cannot find a part and believes it to be unavailable.  However, due to our knowledge base, our team can identify a similar part, perhaps with different speed grade, but that will function identically to the unavailable part.  Our philosophy it that we pass this information on to our customers, a testament to our transparency."
+            , SubText 3 "Sub text" "/img/subtext8.jpg" "" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
             ]
       , localShared = reset shared
       }
@@ -236,7 +236,7 @@ view shared model =
             let
                 img =
                     el
-                        [ width (fillPortion 4)
+                        [ width fill
                         , clip
                         , centerY
                         , Border.rounded 10
@@ -258,7 +258,7 @@ view shared model =
                                 { src = item.image, description = item.title }
 
                          else
-                            el [ inFront (el [ fontSize device Xsm, Font.center, Font.light, padding 10, width fill, alignBottom, Background.color (rgba 1 1 1 0.85) ] (text item.description)) ]
+                            el [ inFront (paragraph [ fontSize device Xsm, Font.center, Font.light, padding 10, width fill, alignBottom, Background.color (rgba 1 1 1 0.85) ] [ text item.description ]) ]
                                 (image
                                     [ centerX
                                     , centerY
@@ -269,7 +269,7 @@ view shared model =
                         )
 
                 content =
-                    paragraph [ width (fillPortion 3), fontSize device Sm, Font.light ] (List.concat (List.intersperse [ html <| br [] [], html <| br [] [] ] (item.text |> String.split "\n" |> List.map (\t -> [ text t ]))))
+                    paragraph [ width fill, fontSize device Sm, Font.light ] (List.concat (List.intersperse [ html <| br [] [], html <| br [] [] ] (item.text |> String.split "\n" |> List.map (\t -> [ text t ]))))
             in
             acol
                 (if shouldAnimate (String.fromInt item.id) model then
@@ -324,7 +324,8 @@ view shared model =
                             100
                         )
                         0
-                    , width (fill |> maximum maxWidth)
+                    , centerX
+                    , width (fill |> maximum (toFloat maxWidth * 0.7 |> round))
                     , spacing 100
                     ]
                     (mainText shared (shouldAnimate "mainText" model)

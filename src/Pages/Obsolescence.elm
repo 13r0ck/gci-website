@@ -89,9 +89,9 @@ init shared =
                 , ( "3", AnimationState (PercentOfViewport 40) False )
                 ]
       , subTexts =
-            [ SubText 1 "GCI is a solutions provider." "/img/Power_Monitor_A1A1A5.jpg" "GCI CCA solution for Power Monitor, Maverick Missile Test Box" "GCI designs, develops and manufactures form, fit, and function drop-in replacement electronics that can be seamlessly integrated into a larger electronics system as required. The replacement electronic components will work identically to the original obsolete components. The GCI approach typically saves 80% of the cost, and 75% of the schedule relative to a system redesign."
-            , SubText 2 "Supporting Legacy Systems" "/img/RIF1K.png" "GCI microcircuit for ALE-45 Countermeasures System" "GCI’s engineering team has decades of experience designing electronics. Our proprietary and proven technologies provide the building blocks to engineer custom electronic solutions based upon the customer needs and requirements. These drop-in replacement solutions for obsolete microcircuits improve DoD system readiness, decreasing the DMSMS issues associated with lifecycle sustainment."
-            , SubText 3 "Combating Counterfeits" "/img/FPGA2.png" "GCI FPGA translation includes 17 microcircuits" "GCI only uses components from authorized, franchised distributors with full traceability.  This removes any possibility of counterfeit parts entering the supply chain with GCI’s solutions.  Memories and FPGAs (particularly the obsolete families) are some of the commonly identified counterfeits for military customers as reported through GIDEP. GCI’s strict adherence to franchised suppliers eliminates this risk."
+            [ SubText 1 "GCI is a solutions provider." "/img/Power_Monitor_A1A1A5.jpg" "GCI CCA solution for Power Monitor, Maverick Missile Test Box" "GCI designs, develops and manufactures form, fit, and function drop-in replacement electronics that can be seamlessly integrated into a larger electronics system as required. The replacement electronic components will work identically to the original obsolete components.\nThe GCI approach typically saves 80% of the cost, and 75% of the schedule relative to a system redesign."
+            , SubText 2 "Supporting Legacy Systems" "/img/black_circuit.jpg" "" "GCI’s engineering team has decades of experience designing electronics. Our proprietary and proven technologies provide the building blocks to engineer custom electronic solutions based upon the customer needs and requirements.\nThese drop-in replacement solutions for obsolete microcircuits improve DoD system readiness, decreasing the DMSMS issues associated with lifecycle sustainment."
+            , SubText 3 "Combating Counterfeits" "/img/FPGA2.png" "GCI FPGA translation includes 17 microcircuits" "GCI only uses components from authorized, franchised distributors with full traceability. This removes any possibility of counterfeit parts entering the supply chain with GCI’s solutions. Memories and FPGAs, particularly the obsolete families, are some of the commonly identified counterfeits for military customers as reported through GIDEP.\nGCI’s strict adherence to franchised suppliers eliminates this risk."
             ]
       , localShared = reset shared
       }
@@ -236,7 +236,7 @@ view shared model =
             let
                 img =
                     el
-                        [ width (fillPortion 4)
+                        [ width fill
                         , clip
                         , centerY
                         , Border.rounded 10
@@ -258,7 +258,7 @@ view shared model =
                                 { src = item.image, description = item.title }
 
                          else
-                            el [ inFront (el [ fontSize device Xsm, Font.center, Font.light, padding 10, width fill, alignBottom, Background.color (rgba 1 1 1 0.85) ] (text item.description)) ]
+                            el [ inFront (paragraph [ fontSize device Xsm, Font.center, Font.light, padding 10, width fill, alignBottom, Background.color (rgba 1 1 1 0.85) ] [ text item.description ]) ]
                                 (image
                                     [ centerX
                                     , centerY
@@ -269,7 +269,7 @@ view shared model =
                         )
 
                 content =
-                    paragraph [ width (fillPortion 3), fontSize device Sm, Font.light ] (List.concat (List.intersperse [ html <| br [] [], html <| br [] [] ] (item.text |> String.split "\n" |> List.map (\t -> [ text t ]))))
+                    paragraph [ width fill, fontSize device Sm, Font.light ] (List.concat (List.intersperse [ html <| br [] [], html <| br [] [] ] (item.text |> String.split "\n" |> List.map (\t -> [ text t ]))))
             in
             acol
                 (if shouldAnimate (String.fromInt item.id) model then
@@ -331,7 +331,8 @@ view shared model =
                             100
                         )
                         0
-                    , width (fill |> maximum maxWidth)
+                    , centerX
+                    , width (fill |> maximum (toFloat maxWidth * 0.7 |> round))
                     , spacing 100
                     ]
                     (mainText shared (shouldAnimate "mainText" model)

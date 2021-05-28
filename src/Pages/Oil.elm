@@ -88,9 +88,9 @@ init shared =
                 , ( "3", AnimationState (PercentOfViewport 40) False )
                 ]
       , subTexts =
-            [ SubText 1 "Oil and Gas Downhole Drilling" "/img/subtext4.jpg" "test" "GCI has provided over 150,000 production microcircuits to the oil and gas industry that have been in use worldwide for more than decade.\n\nGCI’s solutions extend the lifetime of standard microcircuits operating at +250°C  by more than 10,000X."
-            , SubText 2 "Department of Defense" "/img/subtext5.jpg" "" "GCI is also leveraging identical technologies to provide military grade electronic solutions for highly demanding DoD applications."
-            , SubText 3 "Sub text" "/img/subtext6.jpg" "" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
+            [ SubText 1 "Oil and Gas Downhole Drilling" "/img/oil1.jpg" "test" "GCI has provided over 150,000 production microcircuits to the oil and gas industry that have been in use worldwide for more than decade.\n\nGCI’s solutions extend the lifetime of standard microcircuits operating at +250°C  by more than 10,000X."
+            , SubText 2 "DoD" "/img/b52.jpg" "" "The oil and gas industry has been purchasing production microcircuits using the GCI’s\u{00A0}process with excellent life-test and production application results demonstrating dramatically increased component lifetimes at elevated temperatures. GCI leverages this prove technology for DOD applications exposing microcircuits to harsh environments. Not only is the high-temperature reliability dramatically increased, but the new hermetic, ceramic package protects the microcircuit from a variety of elements and environments (e.g., corrosives and moisture)."
+            , SubText 3 "Hermetic Packaging" "/img/subtext6.jpg" "" "Global Circuit Innovations, Inc. has developed a manufacturable, cost effective solution to extract the integrated circuit from any plastic encapsulated device and subsequently repackage that device into an identical ceramic footprint, with the ability to maintain high-integrity connectivity to the device. This is a high-value added solution to provide high-temperature integrated circuits for a large spectrum of requirements: low-volume, quick-turn evaluation of integrated circuit prototyping, as well as medium to high-volume production needs for ongoing production needs."
             ]
       , localShared = reset shared
       }
@@ -232,7 +232,7 @@ view shared model =
             let
                 img =
                     el
-                        [ width (fillPortion 4)
+                        [ width fill
                         , clip
                         , centerY
                         , Border.rounded 10
@@ -254,7 +254,7 @@ view shared model =
                                 { src = item.image, description = item.title }
 
                          else
-                            el [ inFront (el [ fontSize device Xsm, Font.center, Font.light, padding 10, width fill, alignBottom, Background.color (rgba 1 1 1 0.85) ] (text item.description)) ]
+                            el [ inFront (paragraph [ fontSize device Xsm, Font.center, Font.light, padding 10, width fill, alignBottom, Background.color (rgba 1 1 1 0.85) ] [ text item.description ]) ]
                                 (image
                                     [ centerX
                                     , centerY
@@ -265,7 +265,7 @@ view shared model =
                         )
 
                 content =
-                    paragraph [ width (fillPortion 3), fontSize device Sm, Font.light ] (List.concat (List.intersperse [ html <| br [] [], html <| br [] [] ] (item.text |> String.split "\n" |> List.map (\t -> [ text t ]))))
+                    paragraph [ width fill, fontSize device Sm, Font.light ] (List.concat (List.intersperse [ html <| br [] [], html <| br [] [] ] (item.text |> String.split "\n" |> List.map (\t -> [ text t ]))))
             in
             acol
                 (if shouldAnimate (String.fromInt item.id) model then
@@ -320,7 +320,8 @@ view shared model =
                             100
                         )
                         0
-                    , width (fill |> maximum maxWidth)
+                    , centerX
+                    , width (fill |> maximum (toFloat maxWidth * 0.7 |> round))
                     , spacing 100
                     ]
                     (mainText shared (shouldAnimate "mainText" model)
@@ -430,12 +431,9 @@ mainText shared animateSelf =
                 none
             )
         ]
-        [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Xlg ] [ text "High\u{00A0}Reliability\u{00A0}Electronics\u{00A0}for Harsh & Extreme Environments" ]
+        [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Xlg ] [ text "High Reliability Electronics for Harsh & Extreme Environments" ]
         , paragraph [ spacing 10, fontSize device Sm, Font.light, htmlAttribute <| id "mainText" ]
-            [ text ""
-            , html <| br [] []
-            , html <| br [] []
-            , text ""
+            [ text "GCI technologies have been  proven in the oil and gas industry that provide microcircuits with high durability to harsh environmental conditions, which include extreme heat exposure (>150°C) as well as high mechanical stresses (20,000G’s)."
             ]
         ]
 

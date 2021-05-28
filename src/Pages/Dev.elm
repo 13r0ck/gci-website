@@ -88,8 +88,8 @@ init shared =
                 , ( "3", AnimationState (PercentOfViewport 40) False )
                 ]
       , subTexts =
-            [ SubText 1 "Sub text" "/img/subtext4.jpg" "test" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
-            , SubText 2 "Sub text" "/img/subtext5.jpg" "" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
+            [ SubText 1 "Thermal 3D modeling with Ansys software" "/img/ansys.jpg" "ANSYS Temperature Modeling and Electrical Confirmation of Die Surface Temperature with Silicon PN Sensors" "GCI uses Ansys software to generate images and architectures to be predicted and verified within simulations prior to actual system design and implementation for optimal materials and design choices."
+            , SubText 2 "Sub text" "/img/ansys2.jpg" "Thermal Heat Transfer Simulation Rendering for IC Package Fins within Immersion Cooler" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
             , SubText 3 "Sub text" "/img/subtext6.jpg" "" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
             ]
       , localShared = reset shared
@@ -232,7 +232,7 @@ view shared model =
             let
                 img =
                     el
-                        [ width (fillPortion 4)
+                        [ width fill
                         , clip
                         , centerY
                         , Border.rounded 10
@@ -254,7 +254,7 @@ view shared model =
                                 { src = item.image, description = item.title }
 
                          else
-                            el [ inFront (el [ fontSize device Xsm, Font.center, Font.light, padding 10, width fill, alignBottom, Background.color (rgba 1 1 1 0.85) ] (text item.description)) ]
+                            el [ inFront (paragraph [ fontSize device Xsm, Font.center, Font.light, padding 10, width fill, alignBottom, Background.color (rgba 1 1 1 0.85) ] [ text item.description ]) ]
                                 (image
                                     [ centerX
                                     , centerY
@@ -265,7 +265,7 @@ view shared model =
                         )
 
                 content =
-                    paragraph [ width (fillPortion 3), fontSize device Sm, Font.light ] (List.concat (List.intersperse [ html <| br [] [], html <| br [] [] ] (item.text |> String.split "\n" |> List.map (\t -> [ text t ]))))
+                    paragraph [ width fill, fontSize device Sm, Font.light ] (List.concat (List.intersperse [ html <| br [] [], html <| br [] [] ] (item.text |> String.split "\n" |> List.map (\t -> [ text t ]))))
             in
             acol
                 (if shouldAnimate (String.fromInt item.id) model then
@@ -320,7 +320,8 @@ view shared model =
                             100
                         )
                         0
-                    , width (fill |> maximum maxWidth)
+                    , centerX
+                    , width (fill |> maximum (toFloat maxWidth * 0.7 |> round))
                     , spacing 100
                     ]
                     (mainText shared (shouldAnimate "mainText" model)
@@ -370,10 +371,10 @@ head shared model =
                         min 150 (toFloat w * 0.1) |> floor
                     )
                 ]
-                (List.intersperse (html <| br [] []) [ text "This", text "is the", text "Development page." ])
+                (List.intersperse (html <| br [] []) [ text "", text "Innovative", text "Modernization" ])
             )
         ]
-        { src = "/img/oil_head.jpg", description = "" }
+        { src = "/img/math.jpg", description = "" }
 
 
 mainText : Shared.Model -> Bool -> Element Msg
@@ -430,12 +431,9 @@ mainText shared animateSelf =
                 none
             )
         ]
-        [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Xlg ] [ text "Heading 1" ]
+        [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Xlg ] [ text "Advanced Thermal Management Systems" ]
         , paragraph [ spacing 10, fontSize device Sm, Font.light, htmlAttribute <| id "mainText" ]
-            [ text "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Blandit cursus risus at ultrices mi tempus imperdiet. Ultricies lacus sed turpis tincidunt id aliquet risus feugiat. Vulputate sapien nec sagittis aliquam malesuada bibendum arcu vitae."
-            , html <| br [] []
-            , html <| br [] []
-            , text "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Pellentesque elit ullamcorper dignissim cras. Et netus et malesuada fames ac turpis egestas integer."
+            [ text "Current Immersion coolers are not compatible with standard electronic component packaging of ICs and CCA’s. Long-term exposure of the electronics to commonly used coolants, such as mineral oil, or water inevitably leads to damaged components. Non-reactive engineering fluids are available for a premium cost but do not have optimal heat transfer characteristics. Large datacenters have begun implementing engineering fluids in both single-phased and two-phased immersion cooling for server racks, demonstrating a practical application of immersion cooling. GCI’s flexibility in both IC packaging material and form-factor allows for hermetically sealed, corrosion-resistant, high-reliability components that do not react with mineral oil or water. This unique capability allows GCI to pursue immersion cooling on a scale that is compatible with SWaP-C requirements."
             ]
         ]
 

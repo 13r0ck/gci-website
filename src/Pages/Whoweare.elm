@@ -407,7 +407,7 @@ head shared model =
                 (List.intersperse (html <| br [] []) [ text "Global", text "Circuit", text "Inovations." ])
             )
         ]
-        { src = "/img/building2.jpg", description = "Picture of GCI's head quarters" }
+        { src = "/img/building.jpg", description = "Picture of GCI's head quarters" }
 
 
 mainText : Shared.Model -> Bool -> Element Msg
@@ -624,7 +624,9 @@ leadership shared model animateSelf =
                         (paragraph [ Font.alignLeft, fontSize device Xsm, padding 20, height (px cardHeight), scrollbarY ]
                             (List.concat
                                 (List.intersperse [ html <| br [] [], html <| br [] [] ]
-                                    (l.story |> String.split "\n" |> List.reverse
+                                    (l.story
+                                        |> String.split "\n"
+                                        |> List.reverse
                                         |> List.indexedMap
                                             (\i t ->
                                                 if i == 0 then
