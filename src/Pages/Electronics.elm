@@ -358,7 +358,7 @@ head shared =
         , clip
         , inFront (el [ width fill, height fill, Background.color (rgba 0 0 0 0.3) ] none)
         , inFront
-            (column
+            (paragraph
                 [ fontSize device XXlg
                 , Font.color white
                 , Font.extraBold
@@ -371,7 +371,7 @@ head shared =
                         min 150 (toFloat w * 0.1) |> floor
                     )
                 ]
-                [ text "GCI", text "Delivers", text "Electronic Solutions." ]
+                (List.intersperse (html <| br [] []) [ text "GCI", text "Delivers", text "Electronic Solutions." ])
             )
         ]
         { src = "/img/electronics.jpg", description = "Photo of circuit manufacturing." }

@@ -105,7 +105,8 @@ init _ flags =
       , navHoverTracker =
             [ NavItem "WHO WE ARE" "#" False (Url "/whoweare")
             , NavItem "WHAT WE DO" "#" False (Url "/#whatwedo")
-            , NavItem "NEWSROOM" "#" False (Url "/newsroom")
+
+            --, NavItem "NEWSROOM" "#" False (Url "/newsroom")
             , NavItem "CONTACT US" "#" False (SetContactUs True)
             ]
       , address =
@@ -823,7 +824,7 @@ contactUs shared message =
                 , height (fillPortion 3)
                 , clip
                 ]
-                { src = "/img/building.jpg", description = "Picutre of GCI's building" }
+                { src = "/img/building2.jpg", description = "Picutre of GCI's building" }
             , el [ width fill, height (fillPortion 5) ] contactDialog
             ]
         )

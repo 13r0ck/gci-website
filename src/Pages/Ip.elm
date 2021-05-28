@@ -399,7 +399,7 @@ head shared model =
         , clip
         , inFront (el [ width fill, height fill, Background.color (rgba 0 0 0 0.4) ] none)
         , inFront
-            (column
+            (paragraph
                 [ fontSize device XXlg
                 , Font.color white
                 , Font.extraBold
@@ -412,7 +412,7 @@ head shared model =
                         min 150 (toFloat w * 0.1) |> floor
                     )
                 ]
-                [ text "Our", text "trademarks", text "and patents." ]
+                (List.intersperse (html <| br [] []) [ text "Our", text "trademarks", text "and patents." ])
             )
         ]
         { src = "/img/patents.jpg", description = "Picture of GCI's head quarters" }

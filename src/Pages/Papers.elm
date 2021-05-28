@@ -110,15 +110,15 @@ init shared =
                 , ( "bottomButtons", AnimationState (PercentOfViewport 40) False )
                 ]
       , papers =
-            [ Paper 0 False "/download/SBIR_Phase_II_CDRL-0002AJ.pdf" "Erick Spory" "2020" "Maybe these should have a short summary?" "/img/Air_Force_Research_Laboratory.jpg"
-            , Paper 1 False "/download/CDRL_7_Technical_Report.pdf" "Erick Spory" "2017" "Maybe these should have a short summary?" "/img/AFLCMC.jpg"
-            , Paper 2 False "/download/LRU,_CCA,_&_IC_Microcircuit_Obsolescence_Solutions_without_System_Redesign.pdf" "Erick Spory" "2018" "Maybe these should have a short summary?" "/img/DMSMS2018.jpg"
-            , Paper 3 False "/download/Increased_High-Temperature_Reliability_and_Package_Hardening_of_Commercial_Integrated_Circuits.pdf" "Erick Spory" "2015" "Maybe these should have a short summary?" "/img/imaps.jpg"
-            , Paper 4 False "/download/Increasing_High-Temperature_Reliability_of_Plastic_ICs_Using_DEER.pdf" "Erick Spory" "2015" "Maybe these should have a short summary?" "/img/smta.jpg"
-            , Paper 5 False "/download/NSWC_Crane_&_GCI:_A_DMSMS_Case_Study_2016.pdf" "Erick Spory" "2016" "Maybe these should have a short summary?" "/img/navsea.jpg"
-            , Paper 6 False "/download/Successful_FPGA_Obsolescence_Form,_Fit,_and_Function_Solution_Using_a_MCM_and_DER_to_Implement_Original_Logic_Design.pdf" "Erick Spory" "2018" "Maybe these should have a short summary?" "/img/imaps.jpg"
-            , Paper 7 False "/download/A_How-To_Guide_on_Addressing_and_Resolving_IC_Obsolescence.pdf" "Charlie Beebout" "2017" "Maybe these should have a short summary?" "/img/DMSMS2017.jpg"
-            , Paper 1 False "/download/Frequently_Asked_Questions.pdf" "GCI" "" "FAQ" "/img/logo.jpg"
+            [ Paper 0 False "/download/Integrated_Circuit_(IC)_Die_Extraction_And_Reassembly.pdf" "Erick Spory" "2020" "" "/img/Air_Force_Research_Laboratory.jpg"
+            , Paper 1 False "/download/CDRL_7_Technical_Report.pdf" "Erick Spory" "2017" "" "/img/AFLCMC.jpg"
+            , Paper 2 False "/download/LRU,_CCA,_&_IC_Microcircuit_Obsolescence_Solutions_without_System_Redesign.pdf" "Erick Spory" "2018" "" "/img/DMSMS2018.jpg"
+            , Paper 3 False "/download/Increased_High-Temperature_Reliability_and_Package_Hardening_of_Commercial_Integrated_Circuits.pdf" "Erick Spory" "2015" "" "/img/imaps.jpg"
+            , Paper 4 False "/download/Increasing_High-Temperature_Reliability_of_Plastic_ICs_Using_DEER.pdf" "Erick Spory" "2015" "" "/img/smta.jpg"
+            , Paper 5 False "/download/NSWC_Crane_&_GCI:_A_DMSMS_Case_Study_2016.pdf" "Erick Spory" "2016" "" "/img/navsea.jpg"
+            , Paper 6 False "/download/Successful_FPGA_Obsolescence_Form,_Fit,_and_Function_Solution_Using_a_MCM_and_DER_to_Implement_Original_Logic_Design.pdf" "Erick Spory" "2018" "" "/img/imaps.jpg"
+            , Paper 7 False "/download/A_How-To_Guide_on_Addressing_and_Resolving_IC_Obsolescence.pdf" "Charlie Beebout" "2017" "" "/img/DMSMS2017.jpg"
+            , Paper 1 False "/download/Frequently_Asked_Questions.pdf" "" "" "FAQ" "/img/logo.jpg"
             ]
       , papersPerRow = 3
       , localShared = reset shared
@@ -353,7 +353,7 @@ head shared model =
         , clip
         , inFront (el [ width fill, height fill, Background.color (rgba 0 0 0 0.25) ] none)
         , inFront
-            (column
+            (paragraph
                 [ fontSize device XXlg
                 , Font.color white
                 , Font.extraBold
@@ -366,7 +366,7 @@ head shared model =
                         min 150 (toFloat w * 0.1) |> floor
                     )
                 ]
-                [ text "Global", text "Circuit", text "Inovations." ]
+                (List.intersperse (html <| br [] []) [ text "Technical", text "Papers and", text "Presentations." ])
             )
         ]
         { src = "/img/building.jpg", description = "Picture of GCI's head quarters" }
@@ -540,9 +540,17 @@ papers shared model animateSelf =
                             [ el [ Font.center, fontSize device Sm, Font.light ] (text p.summary)
                             , html <| br [] []
                             , html <| br [] []
-                            , el [] (text ("Author : " ++ p.author))
+                            , if String.isEmpty p.author then
+                                none
+
+                              else
+                                el [] (text ("Author : " ++ p.author))
                             , html <| br [] []
-                            , el [] (text ("Published on: " ++ p.date))
+                            , if String.isEmpty p.date then
+                                none
+
+                              else
+                                el [] (text ("Published on: " ++ p.date))
                             , html <| br [] []
                             , html <| br [] []
                             ]

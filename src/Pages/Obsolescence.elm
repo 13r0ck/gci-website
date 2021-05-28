@@ -438,7 +438,7 @@ head shared model =
         , clip
         , inFront (el [ width fill, height fill, Background.color (rgba 0 0 0 0.25) ] none)
         , inFront
-            (column
+            (paragraph
                 [ fontSize device XXlg
                 , Font.color white
                 , Font.extraBold
@@ -451,7 +451,7 @@ head shared model =
                         min 150 (toFloat w * 0.1) |> floor
                     )
                 ]
-                [ text "We Solve", text "Electronic", text "Obsolescence." ]
+                (List.intersperse (html <| br [] []) [ text "We Solve", text "Electronic", text "Obsolescence." ])
             )
         , inFront (row [ centerX, centerY ] (List.map playBtn (List.filter (\a -> a.id == 0) simpleBtns)))
         ]

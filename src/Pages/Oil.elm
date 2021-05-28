@@ -357,7 +357,7 @@ head shared model =
         , clip
         , inFront (el [ width fill, height fill, Background.color (rgba 0 0 0 0.25) ] none)
         , inFront
-            (column
+            (paragraph
                 [ fontSize device XXlg
                 , Font.color white
                 , Font.extraBold
@@ -370,7 +370,7 @@ head shared model =
                         min 150 (toFloat w * 0.1) |> floor
                     )
                 ]
-                [ text "Not", text "Farts", text "Real Engineering." ]
+                (List.intersperse (html <| br [] []) [ text "Bring", text "The", text "Heat." ])
             )
         ]
         { src = "/img/oil_head.jpg", description = "Picture of an Oil rig" }
