@@ -118,7 +118,7 @@ init shared =
             , Paper 5 False "/download/NSWC_Crane_&_GCI:_A_DMSMS_Case_Study.pdf" "Erick Spory" "2016" "" "/img/navsea.jpg"
             , Paper 6 False "/download/Successful_FPGA_Obsolescence_Form,_Fit,_and_Function_Solution_Using_a_MCM_and_DER_to_Implement_Original_Logic_Design.pdf" "Erick Spory" "2018" "" "/img/imaps.jpg"
             , Paper 7 False "/download/A_How-To_Guide_on_Addressing_and_Resolving_IC_Obsolescence.pdf" "Charlie Beebout" "2017" "" "/img/DMSMS2017.jpg"
-            , Paper 1 False "/download/Frequently_Asked_Questions.pdf" "" "" "FAQ" "/img/logo.jpg"
+            , Paper 8 False "/download/Frequently_Asked_Questions.pdf" "" "" "FAQ" "/img/logo.jpg"
             ]
       , papersPerRow = 3
       , localShared = reset shared
