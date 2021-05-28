@@ -26,6 +26,7 @@ COPY /src /usr/elm/src
 COPY /public /usr/elm/public
 COPY /elm-simple-animation /usr/elm/elm-simple-animation
 COPY elm.json /usr/elm/elm.json
+COPY version_append.sh /usr/elm/version_append.sh
 RUN mkdir /compile-path
 RUN mkdir /compile-path/server
 RUN mkdir /compile-path/elm
@@ -42,6 +43,7 @@ RUN cp ./target/x86_64-unknown-linux-musl/release/elm-spa_server /compile-path/s
 #2: Build the elm project
 WORKDIR /usr/elm
 RUN elm-spa build
+RUN bash version_append.sh
 RUN cp ./public /compile-path/elm/ -r
     # Changing the volume from within the Dockerfile: If any build steps change the data within the volume after it has been declared, those changes will be discarded. Thus:
 VOLUME /compile-path

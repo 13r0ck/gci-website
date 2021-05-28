@@ -3,8 +3,7 @@
 ## This project can be run in 3 ways
 1. Full stack locally via Docker
 ```bash
-docker build -t elm-rust-app .
-docker run --env PORT='1234' -p 1234:1234 elm-rust-app # starts this app at http://localhost:1234
+docker build -t elm-rust-app . && docker run --env PORT='1234' -p 1234:1234 elm-rust-app # starts this app at http://localhost:1234
 ```
 2. Just the front end
 > See dependecies below
