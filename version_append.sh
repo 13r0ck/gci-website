@@ -11,40 +11,38 @@
 
 shopt -s globstar
 
-files=()
-paths=()
-j=0
-for i in ./public/**/*
+changeFiles='./public/css/blur.css ./public/dist/elm.js ./public/index.html'
+#changeFiles=("./public/index.html")
+
+for file in $changeFiles
 do
-    if [ -f "$i" ];
-    then
-        #printf "Path: %s\n" "${i##/*}" # shortest suffix removal
-        hash=`sha256sum "${i##/*}" | awk '{ print $1 }'`
-        #hash= sha256sum "${i}"
-        noSrc=${i/'./src'/} # remove src
-        noPublic=${noSrc/'./public'/}
-        if [[ $noPublic == /* ]]
+    files=()
+    paths=()
+    j=0
+    for i in ./public/**/*
+    do
+        if [ -f "$i" ];
         then
-            paths[$j]="${noPublic}"
-            files[$j]="$noPublic?v=${hash:0:12}"
-            j=$((j+1))
+            #printf "Path: %s\n" "${i##/*}" # shortest suffix removal
+            hash=`sha256sum "${i##/*}" | awk '{ print $1 }'`
+            #hash= sha256sum "${i}"
+            noSrc=${i/'./src'/} # remove src
+            noPublic=${noSrc/'./public'/}
+            if [[ $noPublic == /* ]]
+            then
+                paths[$j]="${noPublic}"
+                files[$j]="$noPublic?v=${hash:0:12}"
+                j=$((j+1))
+            fi
         fi
-    fi
+    done
+    # Update the html and elm files
+    modify=`cat $file`
+    for i in $(seq 0 $j)
+    do
+        old_name=${paths[$i]}
+        new_name=${files[$i]}
+        modify=${modify//$old_name/$new_name}
+    done
+    echo $modify > $file
 done
-# Update the html and elm files
-html=`cat ./public/index.html`
-elm=`cat ./public/dist/elm.js`
-css=`cat ./public/css/blur.css`
-for i in $(seq 0 $j)
-do
-    old_name=${paths[$i]}
-    echo $old_name
-    new_name=${files[$i]}
-    echo $new_name
-    html=${html//$old_name/$new_name}
-    elm=${elm//$old_name/$new_name}
-    css=${css//$old_name/$new_name}
-done
-echo $html > ./public/index.html
-echo $elm > ./public/dist/elm.js
-echo $css > ./public/css/blur.css

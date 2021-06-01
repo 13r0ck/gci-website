@@ -1175,7 +1175,7 @@ grayQuote animateSelf shared =
 
         dynamicPadding =
             if isPhone then
-                10
+                20
 
             else
                 toFloat (min shared.width maxWidth) * 0.1 |> round
