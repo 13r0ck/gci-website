@@ -422,9 +422,42 @@
       box-shadow: -10px 10px 10px rgba(0, 0, 0, 0.3);
   }
 }
+
 .animate_float {
   -webkit-animation:animateFloat ease-in-out 1.5s forwards;
   animation:animateFloat ease-in-out 1.5s forwards;
+}
+
+.tag-wrap {
+  filter: drop-shadow(0px 8px 3px rgba(50, 50, 0, 0.5));
+}
+
+.tag {
+  background: #FFFFFF;
+  clip-path: polygon(0% 0%, 100% 0%, 97% 100%, 3% 100%);
+}
+
+.animate_tag {
+  animation: animateTag ease-out 0.8s forwards;
+  -webkit-animation: animateTag ease-out 0.8s forwards;
+}
+
+@-webkit-keyframes animateTag {
+  0% {
+    filter: drop-shadow(0px 0px 0px rgba(50, 50, 0, 0.5));
+  }
+  100% {
+    filter: drop-shadow(0px 8px 3px rgba(50, 50, 0, 0.5));
+  }
+}
+
+@keyframes animateTag {
+  0% {
+    filter: drop-shadow(0px 0px 0px rgba(50, 50, 0, 0.5));
+  }
+  100% {
+    filter: drop-shadow(0px 8px 3px rgba(50, 50, 0, 0.5));
+  }
 }
 
 .circuit_board {

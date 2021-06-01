@@ -1,15 +1,14 @@
-module Pages.Home_ exposing (Model, Msg, page, AnimationState, When(..), onScreenItemtoCmd, updateElement)
+module Pages.Home_ exposing (Model, Msg, page, AnimationState, When(..), onScreenItemtoCmd, updateElement, finalText)
 
 import Browser.Dom exposing (Viewport)
 import Browser.Events exposing (Visibility(..), onResize, onVisibilityChange)
-import Char exposing (isDigit)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
-import Element.Border as Border exposing (innerShadow, rounded, shadow, widthEach)
+import Element.Border as Border
 import Element.Events as Events
-import Element.Font as Font exposing (center)
+import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region
 import Gen.Params.Home_ exposing (Params)
@@ -19,15 +18,13 @@ import Html.Events
 import Http exposing (Error(..))
 import Json.Decode as Decode
 import Page
-import Palette exposing (FontSize(..), black, fontSize, gciBlue, gciBlueLight, maxWidth, warning, white)
-import PhoneNumber
-import PhoneNumber.Countries exposing (countryUS)
-import Ports exposing (controlVideo, recvScroll, showNav)
+import Palette exposing (FontSize(..), black, fontSize, gciBlue, gciBlueExtraLight, gciBlueLight, maxWidth, warning, white)
+import Ports exposing (controlVideo, recvScroll)
 import Request
 import Shared exposing (Msg(..), acol, ael, arow, contactUs, footer, navbar, reset)
-import Simple.Animation as Animation exposing (Animation)
-import Simple.Animation.Animated as Animated
+import Simple.Animation as Animation
 import Simple.Animation.Property as P
+import Simple.Transition exposing (color)
 import Storage exposing (Address, ContactDialogState, NavBarDisplay(..))
 import Swiper exposing (SwipingState)
 import Task
@@ -62,11 +59,13 @@ type alias Model =
     , boxes : List BoxesItem
     , name : String
     , localShared : Shared.Model
+    , finalText : String
     }
 
 
 type alias Testimonial =
-    { title : String
+    { addQuotes : Bool
+    , title : String
     , img : String
     , quote : String
     , attribution : String
@@ -140,6 +139,7 @@ init shared =
                 , ( "whatwedo", AnimationState (PercentOfViewport 30) False )
                 , ( "grayQuote", AnimationState (PercentOfViewport 50) False )
                 , ( "testimonials", AnimationState Middle False )
+                , ( "finalText", AnimationState Middle False )
                 , ( "cleanRoom", AnimationState (PercentOfViewport 40) False )
                 ]
       , onScreenTracker =
@@ -153,9 +153,9 @@ init shared =
             , SimpleBtn 4 "Technical Papers" "/papers" False Nothing
             ]
       , testimonials =
-            [ Testimonial "Sikorsky Aircraft Corperation" "/img/helicopter1.jpg" "Global Circuit Innovations provided a form, fit and function solution to keep our Black Hawk helicopters flying." "- Peter Kubik" "(Senior Staff Engineer)"
-            , Testimonial "Sikorsky Aircraft Corperation" "/img/AGM-65.jpg" "GCI is currently engineering Circuit Card solutions for the DSM-157 Test Box, Maverick Missile" "" ""
-            , Testimonial "USAF" "/img/f16.jpg" "GCI offers cost effective, proven obsolescence solutions to keep planes flying and save the US Air Force tens of millions of dollars." "- Jeffery Sillart" "(USAF Lead-Engineer, F-16)"
+            [ Testimonial True "Sikorsky Aircraft Corperation" "/img/helicopter1.jpg" "Global Circuit Innovations provided a form, fit and function solution to keep our Black Hawk helicopters flying." "- Peter Kubik" "(Senior Staff Engineer)"
+            , Testimonial False "" "/img/AGM-65.jpg" "GCI is currently engineering Circuit Card solutions for the DSM-157 Test Box, Maverick Missile" "" ""
+            , Testimonial True "USAF" "/img/f16.jpg" "GCI offers cost effective, proven obsolescence solutions to keep planes flying and save the US Air Force tens of millions of dollars." "- Jeffery Sillart" "(USAF Lead-Engineer, F-16)"
             ]
       , boxes =
             [ BoxesItem "Electronic Obsolescence Solutions" "/obsolescence" "/img/plane1.png" "/img/plane2.png" False "point_idle"
@@ -164,6 +164,7 @@ init shared =
             , BoxesItem "Research and Development" "/dev" "img/heat1.png" "/img/heat2.png" False "point_idle"
             ]
       , localShared = reset shared
+      , finalText = "GCI provides solutions for otherwise obsolete electronic systems, keeping assets fully operational for many decades in the future."
       }
     , controlVideo True |> Effect.fromCmd
     )
@@ -429,12 +430,12 @@ view shared model =
         ]
     , element =
         column [ width fill, Region.mainContent, htmlAttribute <| id "home", clip ]
-            [ column [ width (fill |> maximum maxWidth), centerX, spacing 25 ]
+            [ column [ width (fill |> maximum maxWidth), centerX, spacing 80 ]
                 [ head shared
                 , innovations (shouldAnimate "testimonials" model) shared
                 , testimonials model.testimonials model.testimonial_viewNum (shouldAnimate "testimonials" model) shared
                 , grayQuote (shouldAnimate "grayQuote" model) shared
-                , boxes (shouldAnimate "whatwedo" model) model.boxes shared
+                , boxes (shouldAnimate "whatwedo" model) (shouldAnimate "finalText" model) model shared
                 , cleanRoom shared (List.filter (\b -> b.id > 0) model.simpleBtnHoverTracker) (shouldAnimate "cleanRoom" model)
                 ]
             , footer shared ModifyLocalShared
@@ -717,11 +718,8 @@ innovations animateSelf shared =
         device =
             shared.device.class
 
-        isPhone =
-            device == Phone
-
-        isDesktop =
-            device == Desktop || device == BigDesktop
+        border =
+            { top = 0, bottom = 3, left = 0, right = 0 }
     in
     acol
         (if animateSelf then
@@ -747,7 +745,11 @@ innovations animateSelf shared =
             , fontSize device Xlg
             , Font.center
             ]
-            [ text "Our Innovations are Your Solutions." ]
+            [ text "Our "
+            , el [ Border.widthEach border, Border.color gciBlue ] (text "Innovations")
+            , text " are Your "
+            , el [ Border.widthEach border, Border.color gciBlueExtraLight ] (text "Solutions.")
+            ]
         ]
 
 
@@ -813,7 +815,13 @@ testimonials ts viewNum animateSelf shared =
                 ]
                 [ row [ Background.image t.img, height (px 200), width fill ] []
                 , column [ paddingEach { top = quotePadding, bottom = quotePadding, left = quotePadding, right = quotePadding }, height fill, width fill ]
-                    [ paragraph [ Font.medium, Font.center, fontSize device Sm, paddingXY 0 18 ] [ text ("\"" ++ t.quote ++ "\"") ]
+                    [ paragraph [ Font.medium, Font.center, fontSize device Sm, paddingXY 0 18 ]
+                        (if t.addQuotes then
+                            [ text ("\"" ++ t.quote ++ "\"") ]
+
+                         else
+                            [ text t.quote ]
+                        )
                     , paragraph [ Font.extraLight, Font.alignRight, fontSize device Xsm, alignBottom ] [ text t.attribution ]
                     , paragraph [ Font.extraLight, Font.alignRight, fontSize device Xsm, alignBottom ] [ text t.job ]
                     ]
@@ -1025,9 +1033,12 @@ cleanRoom shared btns animateSelf =
         ]
 
 
-boxes : Bool -> List BoxesItem -> Shared.Model -> Element Msg
-boxes animateSelf content shared =
+boxes : Bool -> Bool -> Model -> Shared.Model -> Element Msg
+boxes animateSelf animateFinalText model shared =
     let
+        content =
+            model.boxes
+
         device =
             shared.device.class
 
@@ -1056,7 +1067,7 @@ boxes animateSelf content shared =
                     arow
                         (if animateSelf then
                             Animation.fromTo
-                                { duration = (id + 1) * 500
+                                { duration = 500 + ((id + 1) * 200)
                                 , options = []
                                 }
                                 [ P.opacity 0, P.y 100 ]
@@ -1120,7 +1131,7 @@ boxes animateSelf content shared =
                 Animation.empty
             )
             [ centerX
-            , paddingEach { top = 64, bottom = 24, left = 0, right = 0 }
+            , paddingEach { top = 24, bottom = 24, left = 0, right = 0 }
             , fontSize device Lg
             , Font.extraLight
             ]
@@ -1144,7 +1155,7 @@ boxes animateSelf content shared =
                 ]
             )
         , el [ width (px (eachWidth * (shared.width // eachWidth))), centerX ] (wrappedRow [ centerX ] (List.map box (List.indexedMap Tuple.pair content)))
-        , paragraph [ centerX, Font.light, Font.center, fontSize device Md, padding 30, width (fill |> maximum 800) ] [ text "GCI provides solutions for otherwise obsolete electronic systems, keeping assets fully operational for many decades in the future." ]
+        , finalText shared model.finalText animateSelf animateFinalText
         ]
 
 
@@ -1233,3 +1244,57 @@ grayQuote animateSelf shared =
                 ]
             )
         ]
+
+
+finalText : Shared.Model -> String -> Bool -> Bool -> Element msg
+finalText shared t animateBoxes animateSelf =
+    let
+        device =
+            shared.device.class
+
+        w =
+            shared.width
+
+        isPhone =
+            device == Phone
+
+        pad =
+            if isPhone then
+                20
+
+            else
+                50
+    in
+    ael
+        (if animateBoxes then
+            Animation.fromTo
+                { duration = 1000
+                , options = []
+                }
+                [ P.opacity 0, P.y 100 ]
+                [ P.opacity 100, P.y 0 ]
+
+         else
+            Animation.empty
+        )
+        [ htmlAttribute <| id "finalText"
+        , transparent (not animateBoxes)
+        , centerX
+        , inFront
+            (el [ centerX, Background.gradient { angle = degrees 180, steps = [ rgba 1 1 1 1, rgba 1 1 1 1, rgba 1 1 1 0 ] }, width (px w), height fill ]
+                (paragraph [ centerX, Font.light, Font.center, fontSize device Md, padding pad, width (fill |> maximum 800) ] [ text t ])
+            )
+        ]
+        (el
+            [ htmlAttribute <|
+                class
+                    (if animateSelf then
+                        "animate_tag"
+
+                     else
+                        ""
+                    )
+            , centerX
+            ]
+            (paragraph [ htmlAttribute <| class "tag", centerX, Font.light, Font.center, fontSize device Md, padding pad, width (fill |> maximum 800) ] [ el [ transparent True ] (text t) ])
+        )

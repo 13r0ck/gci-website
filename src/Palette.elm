@@ -1,4 +1,4 @@
-module Palette exposing (FontSize(..), black, fontSize, gciBlue, gciBlueLight, maxWidth, warning, white)
+module Palette exposing (FontSize(..), black, fontSize, gciBlue, gciBlueExtraLight, gciBlueLight, maxWidth, warning, white)
 
 import Element exposing (..)
 import Element.Font as Font
@@ -127,3 +127,8 @@ gciBlue =
 gciBlueLight : Color
 gciBlueLight =
     rgb255 59 85 138
+
+
+gciBlueExtraLight : Color
+gciBlueExtraLight =
+    rgb255 84 116 182

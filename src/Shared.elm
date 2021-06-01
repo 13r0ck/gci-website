@@ -737,9 +737,9 @@ contactUs shared message =
                     , padding 10
                     , Border.widthEach { top = 1, bottom = 0, left = 0, right = 0 }
                     ]
-                    [ text address.street
+                    [ newTabLink [] { url = address.mapsLink, label = text address.street }
                     , break
-                    , text address.city
+                    , newTabLink [] { url = address.mapsLink, label = text address.city }
                     , break
                     , link [ paddingXY 10 0 ] { url = address.phoneLink, label = text address.phone }
                     , text "|"
@@ -943,14 +943,14 @@ footer shared message =
                     [ wrappedRow [ width (minimum w fill) ] (List.map (\btn -> el [ width fill ] (footerNavBtn btn)) navbtns)
                     , row [ centerX, fontSize device Md ] (List.map footerSocialBtn socials)
                     ]
-            , column [ width fill, Border.widthEach { top = 1, bottom = 1, left = 0, right = 0 }, padding 20, spacing 20 ]
+            , column [ width fill, Border.widthEach { top = 1, bottom = 1, left = 0, right = 0 }, padding 10 ]
                 [ wrappedRow [ centerX, width shrink, fontSize device Xsm ]
                     [ newTabLink [ width fill ] { url = address.mapsLink, label = el [ padding 10, centerX ] (text address.street) }
                     , newTabLink [ width fill ] { url = address.mapsLink, label = el [ padding 10, centerX ] (text address.city) }
                     , el [ width fill ] (link [ padding 10, centerX ] { label = text address.phone, url = address.phoneLink })
                     , el [ width fill ] (link [ padding 10, centerX ] { label = text address.email, url = address.emailLink })
                     ]
-                , wrappedRow [ centerX, fontSize device Xsm, spacing 20 ]
+                , wrappedRow [ centerX, fontSize device Xsm, spacing 20, padding 10 ]
                     [ el [ fontSize device Xsm ] (text "Cage: 7DGP6")
                     , el [ fontSize device Xsm ] (text "Duns: 80126549")
                     ]

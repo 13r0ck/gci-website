@@ -411,7 +411,7 @@ head shared model =
                                 { duration = 300
                                 , options = []
                                 }
-                                [ P.x -70 ]
+                                [ P.x -100 ]
                                 [ P.x 0 ]
                             )
                             [ Font.family [ Font.typeface "icons" ], centerX ]
