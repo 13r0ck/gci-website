@@ -745,6 +745,7 @@ innovations animateSelf shared =
             , Font.light
             , fontSize device Xlg
             , Font.center
+            , spacing 20
             ]
             [ text "Our "
             , el [ Border.widthEach border, Border.color gciBlue ] (text "Innovations")
