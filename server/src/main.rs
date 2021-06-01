@@ -15,7 +15,7 @@ struct CachedFile(NamedFile);
 impl<'r> Responder<'r> for CachedFile {
     fn respond_to(self, req: &Request) -> response::Result<'r> {
         Response::build_from(self.0.respond_to(req)?)
-            .raw_header("Cache-control", "max-age=86400") //  24h (24*60*60)
+            .raw_header("Cache-control", "max-age=31536000") //  1 year (24*60*60*365)
             .ok()
     }
 }
