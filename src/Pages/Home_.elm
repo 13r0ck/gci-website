@@ -160,8 +160,8 @@ init shared =
       , boxes =
             [ BoxesItem "Electronic Obsolescence Solutions" "/obsolescence" "/img/plane1.png" "/img/plane2.png" False "point_idle"
             , BoxesItem "Electronic Solutions" "/electronics" "/img/circuit1.png" "/img/circuit2.png" False "point_idle"
-            , BoxesItem "Electronics in Harsh Environments" "/oil" "img/oil1.png" "/img/oil2.png" False "point_idle"
-            , BoxesItem "Research and Development" "/dev" "img/heat1.png" "/img/heat2.png" False "point_idle"
+            , BoxesItem "Electronics in Harsh Environments" "/oil" "/img/oil1.png" "/img/oil2.png" False "point_idle"
+            , BoxesItem "Research and Development" "/dev" "/img/heat1.png" "/img/heat2.png" False "point_idle"
             ]
       , localShared = reset shared
       , finalText = "GCI provides solutions for otherwise obsolete electronic systems, keeping assets fully operational for many decades in the future."
@@ -642,7 +642,7 @@ head shared =
                 , centerX
                 , centerY
                 ]
-                { src = "/img/glass.png", description = "GCI logo on glass" }
+                { src = "/img/glass_1080.png", description = "GCI logo on glass" }
 
         logo =
             el
@@ -734,6 +734,7 @@ innovations animateSelf shared =
             Animation.empty
         )
         [ centerX
+        , Region.heading 1
         , padding 10
         , spacing 10
         , htmlAttribute <| id "testimonials"
@@ -810,7 +811,7 @@ testimonials ts viewNum animateSelf shared =
                 , Background.color white
                 , clip
                 , centerX
-                , Border.shadow { blur = 8, color = rgba 0 0 0 0.2, offset = ( -5, 8 ), size = 1 }
+                , Border.shadow { blur = 8, color = rgba 0 0 0 0.4, offset = ( -5, 8 ), size = 1 }
                 , transparent (not animateSelf)
                 ]
                 [ row [ Background.image t.img, height (px 200), width fill ] []
