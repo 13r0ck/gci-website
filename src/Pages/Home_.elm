@@ -30,6 +30,7 @@ import Swiper exposing (SwipingState)
 import Task
 import Time exposing (..)
 import View exposing (View)
+import Process
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
@@ -158,15 +159,15 @@ init shared =
             , Testimonial True "USAF" "/img/f16.jpg" "GCI offers cost effective, proven obsolescence solutions to keep planes flying and save the US Air Force tens of millions of dollars." "- Jeffery Sillart" "(USAF Lead-Engineer, F-16)"
             ]
       , boxes =
-            [ BoxesItem "Electronic Obsolescence Solutions" "/obsolescence" "/img/plane1.png" "/img/plane2.png" False "point_idle"
-            , BoxesItem "Electronic Solutions" "/electronics" "/img/circuit1.png" "/img/circuit2.png" False "point_idle"
-            , BoxesItem "Electronics in Harsh Environments" "/oil" "/img/oil1.png" "/img/oil2.png" False "point_idle"
-            , BoxesItem "Research and Development" "/dev" "/img/heat1.png" "/img/heat2.png" False "point_idle"
+            [ BoxesItem "Electronic Obsolescence Solutions" "/obsolescence" "/img/plane1.png" "/img/plane2.png" False "point_enter_down"
+            , BoxesItem "Electronic Solutions" "/electronics" "/img/circuit1.png" "/img/circuit2.png" False "point_enter_down"
+            , BoxesItem "Electronics in Harsh Environments" "/oil" "/img/oil1.png" "/img/oil2.png" False "point_enter_down"
+            , BoxesItem "Research and Development" "/dev" "/img/heat1.png" "/img/heat2.png" False "point_enter_down"
             ]
       , localShared = reset shared
       , finalText = "GCI provides solutions for otherwise obsolete electronic systems, keeping assets fully operational for many decades in the future."
       }
-    , controlVideo True |> Effect.fromCmd
+    , Effect.batch [ controlVideo True |> Effect.fromCmd, Task.perform InitBoxes (Process.sleep 100) |> Effect.fromCmd]
     )
 
 
@@ -190,6 +191,7 @@ type Msg
     | VisibilityChanged Visibility
     | ModifyLocalShared Shared.Model
     | WindowResized Int Int
+    | InitBoxes ()
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Msg )
@@ -358,6 +360,8 @@ update shared msg model =
                     { share | device = classifyDevice { width = w, height = h }, width = w, height = h }
             in
             ( { model | localShared = newModel model.localShared }, Shared.UpdateModel (newModel model.localShared) |> Effect.fromShared )
+        InitBoxes _ ->
+            ( {model | boxes = List.map (\b -> {b|class = "point_leave_down"}) model.boxes}, Effect.none)
 
 
 
