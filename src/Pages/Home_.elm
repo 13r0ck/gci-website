@@ -20,6 +20,7 @@ import Json.Decode as Decode
 import Page
 import Palette exposing (FontSize(..), black, fontSize, gciBlue, gciBlueExtraLight, gciBlueLight, maxWidth, warning, white)
 import Ports exposing (controlVideo, recvScroll)
+import Process
 import Request
 import Shared exposing (Msg(..), acol, ael, arow, contactUs, footer, navbar, reset)
 import Simple.Animation as Animation
@@ -30,7 +31,6 @@ import Swiper exposing (SwipingState)
 import Task
 import Time exposing (..)
 import View exposing (View)
-import Process
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
@@ -154,8 +154,8 @@ init shared =
             , SimpleBtn 4 "Technical Papers" "/papers" False Nothing
             ]
       , testimonials =
-            [ Testimonial True "Sikorsky Aircraft Corperation" "/img/helicopter1.jpg" "Global Circuit Innovations provided a form, fit and function solution to keep our Black Hawk helicopters flying." "- Peter Kubik" "(Senior Staff Engineer)"
-            , Testimonial False "" "/img/AGM-65.jpg" "GCI is currently engineering Circuit Card solutions for the DSM-157 Test Box, Maverick Missile" "" ""
+            [ Testimonial True "Sikorsky Aircraft Corperation" "/img/helicopter1.jpg" "Global Circuit Innovations provided a form, fit and function solution to keep our Black Hawk helicopters flying." "- Peter Kubik" "(Sikorsky Senior Staff Engineer)"
+            , Testimonial False "" "/img/AGM-65.jpg" "GCI is currently engineering Circuit Card solutions for the DSM-157 Test Box for Maverick Missile testing." "" ""
             , Testimonial True "USAF" "/img/f16.jpg" "GCI offers cost effective, proven obsolescence solutions to keep planes flying and save the US Air Force tens of millions of dollars." "- Jeffery Sillart" "(USAF Lead-Engineer, F-16)"
             ]
       , boxes =
@@ -165,9 +165,9 @@ init shared =
             , BoxesItem "Research and Development" "/dev" "/img/heat1.png" "/img/heat2.png" False "point_enter_down"
             ]
       , localShared = reset shared
-      , finalText = "GCI provides solutions for otherwise obsolete electronic systems, keeping assets fully operational for many decades in the future."
+      , finalText = "GCI provides solutions for electronic systems, keeping assets fully operational for many decades in the future."
       }
-    , Effect.batch [ controlVideo True |> Effect.fromCmd, Task.perform InitBoxes (Process.sleep 100) |> Effect.fromCmd]
+    , Effect.batch [ controlVideo True |> Effect.fromCmd, Task.perform InitBoxes (Process.sleep 100) |> Effect.fromCmd ]
     )
 
 
@@ -360,8 +360,9 @@ update shared msg model =
                     { share | device = classifyDevice { width = w, height = h }, width = w, height = h }
             in
             ( { model | localShared = newModel model.localShared }, Shared.UpdateModel (newModel model.localShared) |> Effect.fromShared )
+
         InitBoxes _ ->
-            ( {model | boxes = List.map (\b -> {b|class = "point_leave_down"}) model.boxes}, Effect.none)
+            ( { model | boxes = List.map (\b -> { b | class = "point_leave_down" }) model.boxes }, Effect.none )
 
 
 
@@ -1246,7 +1247,7 @@ grayQuote animateSelf shared =
                 , transparent (not animateSelf)
                 , paddingXY dynamicPadding 40
                 ]
-                [ text "Global Circuit Innovation's expertise has a range of digital and analog circuitry over many decades. This knowledge base is applied to develop electronic obsolescence solutions for legacy systems. Our device physics skills and experience enables us to provide environmental hardening for extremely high temperature applications."
+                [ text "Global Circuit Innovation's has a range of digital and analog circuitry expertise over many decades. This knowledge base is applied to develop electronic obsolescence solutions for legacy systems. Our device physics skills and experience enable us to provide environmental hardening for extremely demanding applications."
                 ]
             )
         ]

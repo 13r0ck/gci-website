@@ -426,11 +426,9 @@ mainText shared animateSelf =
                 none
             )
         ]
-        [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Lg ] [ text "Where Innovation and Talent Integrate" ]
+        [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Lg ] [ text "GCI Engages with the Sharing of Technical Advancements." ]
         , paragraph [ spacing 10, fontSize device Sm, Font.light, htmlAttribute <| id "mainText", width fill ]
-            [ text "Founded in 2006 in Colorado Springs, CO, what started as a small company has evolved into a Design & Manufacturing Engineering Solutions House for DoD Electronic Obsolescence and High Temperature Electronics.  GCI’s team leverages decades of experience to innovate and work tirelessly to provide solutions for even the most challenging electronics projects."
-            , html <| br [] []
-            , html <| br [] []
+            [ text "GCI is involved in the community of technical conferences and engaged in the sharing of technological advancements."
             ]
         ]
 

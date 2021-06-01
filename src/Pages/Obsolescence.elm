@@ -89,7 +89,7 @@ init shared =
                 , ( "3", AnimationState (PercentOfViewport 40) False )
                 ]
       , subTexts =
-            [ SubText 1 "GCI is a solutions provider." "/img/Power_Monitor_A1A1A5.jpg" "GCI CCA solution for Power Monitor, Maverick Missile Test Box" "GCI designs, develops and manufactures form, fit, and function drop-in replacement electronics that can be seamlessly integrated into a larger electronics system as required. The replacement electronic components will work identically to the original obsolete components.\nThe GCI approach typically saves 80% of the cost, and 75% of the schedule relative to a system redesign."
+            [ SubText 1 "GCI is a solutions provider." "/img/Power_Monitor_A1A1A5.jpg" "GCI CCA solution for Power Monitor, Maverick Missile Test Box" "GCI designs, develops and manufactures form, fit, and function drop-in replacement electronics that can be seamlessly integrated into a larger electronics system as required. The replacement electronic components work identically to the original obsolete components."
             , SubText 2 "Supporting Legacy Systems" "/img/black_circuit.jpg" "" "GCI’s engineering team has decades of experience designing electronics. Our proprietary and proven technologies provide the building blocks to engineer custom electronic solutions based upon the customer needs and requirements.\nThese drop-in replacement solutions for obsolete microcircuits improve DoD system readiness, decreasing the DMSMS issues associated with lifecycle sustainment."
             , SubText 3 "Combating Counterfeits" "/img/FPGA2.png" "GCI FPGA translation includes 17 microcircuits" "GCI only uses components from authorized, franchised distributors with full traceability. This removes any possibility of counterfeit parts entering the supply chain with GCI’s solutions. Memories and FPGAs, particularly the obsolete families, are some of the commonly identified counterfeits for military customers as reported through GIDEP.\nGCI’s strict adherence to franchised suppliers eliminates this risk."
             ]
@@ -284,7 +284,7 @@ view shared model =
                     Animation.empty
                 )
                 [ width fill, height fill, spacing 20, htmlAttribute <| id (String.fromInt item.id), transparent (not (shouldAnimate (String.fromInt item.id) model)) ]
-                [ el [ Region.heading 3, Font.extraLight, fontSize device Lg ] (text item.title)
+                [ paragraph [ Region.heading 3, Font.extraLight, fontSize device Lg ] [ text item.title ]
                 , (if isMobile then
                     column
 
@@ -610,7 +610,7 @@ mainText shared animateSelf =
         ]
         [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Xlg ] [ text "Obsolescence is a big deal" ]
         , paragraph [ spacing 10, fontSize device Sm, Font.light ]
-            [ text "Electronics obsolescence is common in sectors such as Defense, where equipment has long lead times and needs to be supported for many decades. It is not unusual that 70–80 % of the electronic components become obsolete before the system has been deployed."
+            [ text "Electronics obsolescence is common in sectors such as Defense, where equipment has long lead times and needs to be supported for many decades. It is not unusual that 70–80% of the electronic components are obsolete before the system has been deployed."
             ]
         ]
 

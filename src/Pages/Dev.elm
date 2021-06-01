@@ -280,7 +280,7 @@ view shared model =
                     Animation.empty
                 )
                 [ width fill, height fill, spacing 20, htmlAttribute <| id (String.fromInt item.id), transparent (not (shouldAnimate (String.fromInt item.id) model)) ]
-                [ el [ Region.heading 3, Font.extraLight, fontSize device Lg ] (text item.title)
+                [ paragraph [ Region.heading 3, Font.extraLight, fontSize device Lg ] [ text item.title ]
                 , (if isMobile then
                     column
 

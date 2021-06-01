@@ -130,10 +130,10 @@ init shared =
             ]
       , values =
             [ Value False "Performance" "Executional excellence in electronics solutions is our foundation."
-            , Value False "Passion" "Passion is at the heart of our company. We continue to move forward, innovate, and improve."
-            , Value False "Integrity" "We are honest, open, ethical, and fair. People trust us to adhere to our word."
+            , Value False "Passion" "Passion is at the heart of our company. We continue to advance, innovate, and improve."
+            , Value False "Integrity" "We are honest, transparent, ethical, and fair. Customers trust us to adhere to our word."
             , Value False "Diversity" "It takes people with different ideas, strengths, interests, and cultural backgrounds to make our company succeed."
-            , Value False "Accountability" "Measuring ourselves against the highest standards of integrity and fiscal responsibility."
+            , Value False "Accountability" "We measure ourselves against the highest standards of integrity and fiscal responsibility."
             ]
       , leadersPerRow = 3
       , localShared = reset shared
@@ -466,9 +466,7 @@ mainText shared animateSelf =
         ]
         [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Lg ] [ text "Where Innovation and Talent Integrate" ]
         , paragraph [ spacing 10, fontSize device Sm, Font.light, htmlAttribute <| id "mainText", width fill ]
-            [ text "Founded in 2006 in Colorado Springs, CO, what started as a small company has evolved into a Design & Manufacturing Engineering Solutions House for DoD Electronic Obsolescence and High Temperature Electronics.  GCI’s team leverages decades of experience to innovate and work tirelessly to provide solutions for even the most challenging electronics projects."
-            , html <| br [] []
-            , html <| br [] []
+            [ text "Founded in 2006 in Colorado Springs, CO, GCI has developed into an established Design & Manufacturing Engineering Solutions House for DoD Electronic Obsolescence and Electronics in Extreme Environments. GCI’s team leverages decades of experience to generate innovative solutions for the most challenging electronics requirements."
             ]
         ]
 

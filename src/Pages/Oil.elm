@@ -90,7 +90,7 @@ init shared =
       , subTexts =
             [ SubText 1 "Oil and Gas Downhole Drilling" "/img/oil1.jpg" "test" "GCI has provided over 150,000 production microcircuits to the oil and gas industry that have been in use worldwide for more than decade.\n\nGCI’s solutions extend the lifetime of standard microcircuits operating at +250°C  by more than 10,000X."
             , SubText 2 "DoD" "/img/b52.jpg" "" "The oil and gas industry has been purchasing production microcircuits using the GCI’s\u{00A0}process with excellent life-test and production application results demonstrating dramatically increased component lifetimes at elevated temperatures. GCI leverages this prove technology for DOD applications exposing microcircuits to harsh environments. Not only is the high-temperature reliability dramatically increased, but the new hermetic, ceramic package protects the microcircuit from a variety of elements and environments (e.g., corrosives and moisture)."
-            , SubText 3 "Hermetic Packaging" "/img/subtext6.jpg" "" "Global Circuit Innovations, Inc. has developed a manufacturable, cost effective solution to extract the integrated circuit from any plastic encapsulated device and subsequently repackage that device into an identical ceramic footprint, with the ability to maintain high-integrity connectivity to the device. This is a high-value added solution to provide high-temperature integrated circuits for a large spectrum of requirements: low-volume, quick-turn evaluation of integrated circuit prototyping, as well as medium to high-volume production needs for ongoing production needs."
+            , SubText 3 "Hermetic Packaging" "/img/subtext7.jpg" "" "Global Circuit Innovations, Inc. has developed a manufacturable, cost effective solution to extract the integrated circuit from any plastic encapsulated device and subsequently repackage that device into an identical ceramic footprint, with the ability to maintain high-integrity connectivity to the device. This is a high-value added solution to provide high-temperature integrated circuits for a large spectrum of requirements: low-volume, quick-turn evaluation of integrated circuit prototyping, as well as medium to high-volume production needs for ongoing production needs."
             ]
       , localShared = reset shared
       }
@@ -280,7 +280,7 @@ view shared model =
                     Animation.empty
                 )
                 [ width fill, height fill, spacing 20, htmlAttribute <| id (String.fromInt item.id), transparent (not (shouldAnimate (String.fromInt item.id) model)) ]
-                [ el [ Region.heading 3, Font.extraLight, fontSize device Lg ] (text item.title)
+                [ paragraph [ Region.heading 3, Font.extraLight, fontSize device Lg ] [ text item.title ]
                 , (if isMobile then
                     column
 

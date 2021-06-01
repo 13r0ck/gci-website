@@ -89,9 +89,9 @@ init shared =
                 , ( "3", AnimationState (PercentOfViewport 40) False )
                 ]
       , subTexts =
-            [ SubText 1 "Wide Array of Expertise." "/img/subtext6.jpg" "" "We Welcome Challenges\nGCI’s ability to solve complex problems is what sets us apart. Where others have been unable to find a solution, GCI is able to forge ahead and solve even the most difficult of problems. We work tirelessly to provide our customers with a solution to keep their assets functioning."
-            , SubText 2 "Our promise." "/img/subtext7.jpg" "" "Our experts at GCI can often find a solution that, does not require engineering.  Often times, a customer cannot find a part and believes it to be unavailable.  However, due to our knowledge base, our team can identify a similar part, perhaps with different speed grade, but that will function identically to the unavailable part.  Our philosophy it that we pass this information on to our customers, a testament to our transparency."
-            , SubText 3 "Sub text" "/img/subtext8.jpg" "" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
+            [ SubText 1 "Wide Array of Expertise." "/img/subtext6.jpg" "" "We Welcome Challenges\nGCI’s tenacity to solve complex problems is what sets us apart. Where others have been unable to find a solution, GCI forges ahead to solves even the most difficult of problems. We persevere  to provide our customers with solutions to keep their assets functioning."
+            , SubText 2 "Solving COTS Reliability Issues." "/img/subtext8.jpg" "" "Commercial Off The Shelf (COTS) electronics fail to meet reliability requirements in certain demanding environments. GCI has the ability to repackage any die from a plastic package into a hermetic ceramic package as originally required. Hermetic packaging provides superior reliability to plastic packing of ICs and are able to meet full MIL-STD-883 qualification requirements.  Typically, hermetic packaged ICs can last for many decades of use under extreme environmental conditions (e.g., salt atmosphere), often encountered with DoD applications."
+            , SubText 3 "Sub text" "/img/subtext1.jpg" "" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
             ]
       , localShared = reset shared
       }
@@ -284,7 +284,7 @@ view shared model =
                     Animation.empty
                 )
                 [ width fill, height fill, spacing 20, htmlAttribute <| id (String.fromInt item.id), transparent (not (shouldAnimate (String.fromInt item.id) model)) ]
-                [ el [ Region.heading 3, Font.extraLight, fontSize device Lg ] (text item.title)
+                [ paragraph [ Region.heading 3, Font.extraLight, fontSize device Lg ] [ text item.title ]
                 , (if isMobile then
                     column
 
@@ -434,9 +434,7 @@ mainText shared animateSelf =
         ]
         [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Xlg ] [ text "GCI’s technology can generate a broad range of solutions." ]
         , paragraph [ spacing 10, fontSize device Sm, Font.light, htmlAttribute <| id "mainText" ]
-            [ text "Our engineering experience enables us to provide solutions for electronics ranging from a resistor assembly on a B-52 Windshield Wiper Speed Control to a Variable Frequency Driver solution in a Patriot Missile battery ECU."
-            , html <| br [] []
-            , html <| br [] []
+            [ text "Our engineering experience enables us to provide solutions for electronics ranging from a resistor assembly on a B-52 Windshield Wiper Speed Control to a Variable Frequency Driver solution in a Patriot Missile Battery Environmental Control Unit."
             ]
         ]
 
