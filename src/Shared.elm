@@ -1,5 +1,6 @@
 module Shared exposing
     ( Flags
+    , FormResponse
     , Model
     , Msg(..)
     , acol
@@ -13,7 +14,6 @@ module Shared exposing
     , setPhoneCursor
     , subscriptions
     , update
-    , FormResponse
     )
 
 import Browser.Events
@@ -27,7 +27,7 @@ import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region
 import Email as Email
-import Html exposing (a, br, wbr, div, iframe, span, video)
+import Html exposing (a, br, div, iframe, span, video, wbr)
 import Html.Attributes exposing (alt, attribute, autoplay, class, classList, id, loop, property, src, style)
 import Html.Events
 import Json.Decode as Json
@@ -47,9 +47,9 @@ import Storage as Storage
         ( Address
         , BtnOptions(..)
         , ContactDialogState
-        , SendState(..)
         , NavBarDisplay(..)
         , NavItem
+        , SendState(..)
         )
 import Task
 import Time
@@ -78,10 +78,12 @@ type alias Model =
     , navHoverTracker : List NavItem
     }
 
+
 type alias FormResponse =
     { next : String
     , ok : Bool
     }
+
 
 type alias CertificationItem =
     { src : String
@@ -690,20 +692,29 @@ contactUs shared message =
                                         ]
                                     , el [ fontSize device Sm, centerX ] (paragraph [ Font.center ] [ text "We will reach back out to ", html <| br [] [], text (Maybe.withDefault "you" state.email ++ " soon!") ])
                                     ]
+
                             Waiting ->
                                 image
-                                    [width (px 120), height (px 120), centerX, centerY
-                                    , inFront (image [width (px 80), height (px 80), centerX, centerY] {src="/img/logo_sans_text.svg", description="logo"})
+                                    [ width (px 120)
+                                    , height (px 120)
+                                    , centerX
+                                    , centerY
+                                    , inFront (image [ width (px 80), height (px 80), centerX, centerY ] { src = "/img/logo_sans_text.svg", description = "logo" })
                                     ]
-                                      {src="/img/loading.svg", description="Loading..."}
+                                    { src = "/img/loading.svg", description = "Loading..." }
+
                             SendError ->
-                                link [height (px 100), htmlAttribute <| class "backgroundGrow", fontSize device Sm, centerX, mouseOver [Font.color gciBlue], padding 25] {url=(shared.address.emailLink), label =(paragraph [ Font.center] [ el [Font.color warning, fontSize device Md] (text "Send Failed!"), html <| br [] [], text "Check that your email and phone entries are valid.", html <| br [] [], html <| br [] [],  text "If that doesn't work please email us at:", html <| br [] [], text shared.address.email, html <| br [] [], text "Our appologies for the inconvenience."])}
+                                link [ height (px 100), htmlAttribute <| class "backgroundGrow", fontSize device Sm, centerX, mouseOver [ Font.color gciBlue ], padding 25 ] { url = shared.address.emailLink, label = paragraph [ Font.center ] [ el [ Font.color warning, fontSize device Md ] (text "Send Failed!"), html <| br [] [], text "Check that your email and phone entries are valid.", html <| br [] [], html <| br [] [], text "If that doesn't work please email us at:", html <| br [] [], text shared.address.email, html <| br [] [], text "Our appologies for the inconvenience." ] }
+
                             Send ->
                                 image
-                                    [width (px 120), height (px 120), centerX, centerY
-                                    , inFront (image [width (px 80), height (px 80), centerX, centerY] {src="/img/logo_sans_text.svg", description="logo"})
+                                    [ width (px 120)
+                                    , height (px 120)
+                                    , centerX
+                                    , centerY
+                                    , inFront (image [ width (px 80), height (px 80), centerX, centerY ] { src = "/img/logo_sans_text.svg", description = "logo" })
                                     ]
-                                      {src="/img/loading.svg", description="Loading..."}
+                                    { src = "/img/loading.svg", description = "Loading..." }
 
                     _ ->
                         row [] []
@@ -720,45 +731,49 @@ contactUs shared message =
                             , mouseOver [ Border.color gciBlueLight, Font.color gciBlueLight ]
                             ]
                             { onPress = Just (message (contactUsBack shared)), label = text "Back" }
-                        , (if state.send == SendError && state.currentPage == 3 then none else Input.button
-                            [ alignBottom
-                            , alignRight
-                            , paddingXY 30 10
-                            , rounded 100
-                            , Background.color gciBlue
-                            , Font.bold
-                            , Font.color white
-                            , Border.color gciBlue
-                            , mouseOver [ Border.color gciBlueLight, Background.color gciBlueLight ]
-                            , Border.width 2
-                            ]
-                            (if state.currentPage == 2 then
-                                { onPress = Just (message (setStateToSend shared)), label = text "Send!"}
-                             else
-                                { onPress = Just (message (contactUsNext shared)), label = text "Next" }
-                            )
-                        )
+                        , if state.send == SendError && state.currentPage == 3 then
+                            none
+
+                          else
+                            Input.button
+                                [ alignBottom
+                                , alignRight
+                                , paddingXY 30 10
+                                , rounded 100
+                                , Background.color gciBlue
+                                , Font.bold
+                                , Font.color white
+                                , Border.color gciBlue
+                                , mouseOver [ Border.color gciBlueLight, Background.color gciBlueLight ]
+                                , Border.width 2
+                                ]
+                                (if state.currentPage == 2 then
+                                    { onPress = Just (message (setStateToSend shared)), label = text "Send!" }
+
+                                 else
+                                    { onPress = Just (message (contactUsNext shared)), label = text "Next" }
+                                )
                         ]
 
                      else
-                        ( if state.send == Waiting || state.send == Send then
+                        if state.send == Waiting || state.send == Send then
                             [ none ]
+
                         else
-                        [ Input.button
-                            [ alignBottom
-                            , paddingXY 100 10
-                            , rounded 100
-                            , centerX
-                            , Background.color gciBlue
-                            , Font.bold
-                            , Font.color white
-                            , Border.color gciBlue
-                            , mouseOver [ Border.color gciBlueLight, Background.color gciBlueLight ]
-                            , Border.width 2
+                            [ Input.button
+                                [ alignBottom
+                                , paddingXY 100 10
+                                , rounded 100
+                                , centerX
+                                , Background.color gciBlue
+                                , Font.bold
+                                , Font.color white
+                                , Border.color gciBlue
+                                , mouseOver [ Border.color gciBlueLight, Background.color gciBlueLight ]
+                                , Border.width 2
+                                ]
+                                { onPress = Just (message (setContactUs shared False)), label = text "Close" }
                             ]
-                            { onPress = Just (message (setContactUs shared False)), label = text "Close" }
-                        ]
-                        )
                     )
                 , paragraph
                     [ alignLeft
@@ -1197,6 +1212,7 @@ setContactUs : Model -> Bool -> Model
 setContactUs model b =
     if not b && (model.contactDialogState.send == SendError || model.contactDialogState.send == SendOk) then
         { model | contactDialogState = model.contactDialogState |> (\c -> { c | showContactUs = b, name = "", email = Nothing, phone = Nothing, message = Nothing, currentPage = 0, send = Waiting }) }
+
     else
         { model | contactDialogState = model.contactDialogState |> (\c -> { c | showContactUs = b }) }
 
@@ -1284,7 +1300,6 @@ contactUsNext model =
             else
                 { model | contactDialogState = model.contactDialogState |> (\s -> { s | currentPage = s.currentPage + 1, phoneError = False, emailError = False }) }
 
-
         _ ->
             { model | contactDialogState = model.contactDialogState |> (\s -> { s | currentPage = s.currentPage + 1 }) }
 
@@ -1298,8 +1313,10 @@ setStateToSend model =
 
             else
                 { model | contactDialogState = model.contactDialogState |> (\s -> { s | currentPage = s.currentPage + 1, messageError = False, send = Send }) }
+
         _ ->
             { model | contactDialogState = model.contactDialogState |> (\s -> { s | currentPage = s.currentPage + 1 }) }
+
 
 navBtnHover : Model -> Int -> Model
 navBtnHover model id =

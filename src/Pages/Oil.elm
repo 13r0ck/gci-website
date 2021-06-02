@@ -13,22 +13,21 @@ import Element.Region as Region
 import Gen.Params.Oil exposing (Params)
 import Html exposing (br, div, iframe)
 import Html.Attributes exposing (attribute, class, id, property, src, style)
-import Json.Encode as Encode
+import Http exposing (Error(..))
 import Json.Decode as Json
+import Json.Encode as Encode
 import Page
 import Pages.Home_ exposing (AnimationState, When(..), onScreenItemtoCmd, updateElement)
 import Palette exposing (FontSize(..), black, fontSize, gciBlue, maxWidth, warning, white)
 import Ports exposing (disableScrolling, recvScroll)
 import Request
-import Shared exposing (acol, ael, contactUs, footer, navbar, reset)
+import Shared exposing (FormResponse, acol, ael, contactUs, footer, navbar, reset)
 import Simple.Animation as Animation exposing (Animation)
 import Simple.Animation.Animated as Animated
 import Simple.Animation.Property as P
 import Storage exposing (NavBarDisplay(..), SendState(..))
-import Http exposing (Error(..))
 import Task
 import View exposing (View)
-import Shared exposing (FormResponse)
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
@@ -91,7 +90,7 @@ init shared =
                 , ( "3", AnimationState (PercentOfViewport 40) False )
                 ]
       , subTexts =
-            [ SubText 1 "Oil and Gas Downhole Drilling" "/img/oil1.jpg" "test" "GCI has provided over 150,000 production microcircuits to the oil and gas industry that have been in use worldwide for more than decade.\nGCI’s solutions extend the lifetime of standard microcircuits operating at +250°C  by more than 10,000x."
+            [ SubText 1 "Oil and Gas Downhole Drilling" "/img/oil1.jpg" "" "GCI has provided over 150,000 production microcircuits to the oil and gas industry that have been in use worldwide for more than decade.\nGCI’s solutions extend the lifetime of standard microcircuits operating at +250°C  by more than 10,000x."
             , SubText 2 "DoD" "/img/b52.jpg" "" "The oil and gas industry has been purchasing production microcircuits using GCI’s process with excellent results demonstrating dramatically increased component lifetimes at elevated temperatures. GCI leverages this proven technology to DOD applications that expose microcircuits to harsh environments.\nNot only is the high-temperature reliability dramatically increased, but the new hermetic ceramic package protects the microcircuit from a variety of elements and environments ( e.g., corrosives and moisture ). These microcircuits successfully pass MIL-STD-883 qualification testing requirements."
             , SubText 3 "Hermetic Packaging" "/img/subtext1.jpg" "" "GCI has developed a manufacturable, cost effective solution to extract die from any plastic package and subsequently repackage that die into an identical ceramic footprint, with the ability to maintain a high-integrity connectivity to the device.\nThis is a high-value added solution to provide high-temperature integrated circuits for a large spectrum of requirements: low-volume, quick-turn evaluation of integrated circuit prototyping as well as medium to high-volume production needs."
             ]
@@ -177,42 +176,57 @@ update shared msg model =
             ( { model | localShared = newSharedState }
             , if not (newSharedState.contactDialogState == model.localShared.contactDialogState) then
                 Effect.batch
-                    ( if newSharedState.contactDialogState.send == Send then
-                    [ Shared.UpdateModel newSharedState |> Effect.fromShared
-                    , newSharedState.contactDialogState |> Storage.toJson |> Ports.save |> Effect.fromCmd
-                    , (Http.post
-                        { url = "https://formspree.io/f/xdoygpvp", body = Http.jsonBody
-                            <| Encode.object
-                                [ ( "name", Encode.string newSharedState.contactDialogState.name )
-                                , ( "email", nullable newSharedState.contactDialogState.email )
-                                , ( "telephone", nullable newSharedState.contactDialogState.phone )
-                                , ( "message", nullable newSharedState.contactDialogState.message )
-                                ]
-                        , expect = Http.expectJson Submited (Json.map2 FormResponse (Json.field "next" Json.string) (Json.field "ok" Json.bool))
-                        }
-                        |> Effect.fromCmd)
-                    ]
-                    else
-                    [ Shared.UpdateModel newSharedState |> Effect.fromShared
-                    , newSharedState.contactDialogState |> Storage.toJson |> Ports.save |> Effect.fromCmd
-                    ]
+                    (if newSharedState.contactDialogState.send == Send then
+                        [ Shared.UpdateModel newSharedState |> Effect.fromShared
+                        , newSharedState.contactDialogState |> Storage.toJson |> Ports.save |> Effect.fromCmd
+                        , Http.post
+                            { url = "https://formspree.io/f/xdoygpvp"
+                            , body =
+                                Http.jsonBody <|
+                                    Encode.object
+                                        [ ( "name", Encode.string newSharedState.contactDialogState.name )
+                                        , ( "email", nullable newSharedState.contactDialogState.email )
+                                        , ( "telephone", nullable newSharedState.contactDialogState.phone )
+                                        , ( "message", nullable newSharedState.contactDialogState.message )
+                                        ]
+                            , expect = Http.expectJson Submited (Json.map2 FormResponse (Json.field "next" Json.string) (Json.field "ok" Json.bool))
+                            }
+                            |> Effect.fromCmd
+                        ]
+
+                     else
+                        [ Shared.UpdateModel newSharedState |> Effect.fromShared
+                        , newSharedState.contactDialogState |> Storage.toJson |> Ports.save |> Effect.fromCmd
+                        ]
                     )
 
               else
                 Shared.UpdateModel newSharedState |> Effect.fromShared
             )
+
         Submited response ->
             let
                 newSharedState =
-                    model.localShared |> (\local -> {local | contactDialogState = local.contactDialogState |> (\state -> {state | send =
-                        case response of
-                            Ok _ ->
-                                SendOk
-                            Err _ ->
-                                SendError
-                    })})
+                    model.localShared
+                        |> (\local ->
+                                { local
+                                    | contactDialogState =
+                                        local.contactDialogState
+                                            |> (\state ->
+                                                    { state
+                                                        | send =
+                                                            case response of
+                                                                Ok _ ->
+                                                                    SendOk
+
+                                                                Err _ ->
+                                                                    SendError
+                                                    }
+                                               )
+                                }
+                           )
             in
-            ( {model | localShared = newSharedState}
+            ( { model | localShared = newSharedState }
             , Effect.batch
                 [ Shared.UpdateModel newSharedState |> Effect.fromShared
                 , newSharedState.contactDialogState |> Storage.toJson |> Ports.save |> Effect.fromCmd

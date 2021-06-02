@@ -1,4 +1,4 @@
-module Pages.Home_ exposing (Model, Msg, page, AnimationState, When(..), onScreenItemtoCmd, updateElement, finalText)
+module Pages.Home_ exposing (AnimationState, Model, Msg, When(..), finalText, onScreenItemtoCmd, page, updateElement)
 
 import Browser.Dom exposing (Viewport)
 import Browser.Events exposing (Visibility(..), onResize, onVisibilityChange)
@@ -16,13 +16,14 @@ import Html exposing (a, br, video, wbr)
 import Html.Attributes exposing (alt, attribute, autoplay, class, id, loop, src)
 import Html.Events
 import Http exposing (Error(..))
-import Json.Decode as Decode
+import Json.Decode as Json
+import Json.Encode as Encode
 import Page
 import Palette exposing (FontSize(..), black, fontSize, gciBlue, gciBlueExtraLight, gciBlueLight, maxWidth, warning, white)
 import Ports exposing (controlVideo, recvScroll)
 import Process
 import Request
-import Shared exposing (Msg(..), acol, ael, arow, contactUs, footer, navbar, reset, FormResponse)
+import Shared exposing (FormResponse, Msg(..), acol, ael, arow, contactUs, footer, navbar, reset)
 import Simple.Animation as Animation
 import Simple.Animation.Property as P
 import Simple.Transition exposing (color)
@@ -31,8 +32,6 @@ import Swiper exposing (SwipingState)
 import Task
 import Time exposing (..)
 import View exposing (View)
-import Json.Decode as Json
-import Json.Encode as Encode
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
@@ -156,9 +155,9 @@ init shared =
             , SimpleBtn 4 "Technical Papers" "/papers" False Nothing
             ]
       , testimonials =
-            [ Testimonial True "Sikorsky Aircraft Corperation" "/img/helicopter1.jpg" "Global Circuit Innovations provided a form, fit and function solution to keep our Black Hawk helicopters flying." "- Peter Kubik" "(Sikorsky Senior Staff Engineer)"
+            [ Testimonial True "Sikorsky Aircraft Corperation" "/img/helicopter1.jpg" "Global Circuit Innovations provided a form, fit and function solution to keep our Black Hawk helicopters flying." "- Peter Kubik" "Sikorsky Senior Staff Engineer"
             , Testimonial False "" "/img/AGM-65.jpg" "GCI is currently engineering Circuit Card solutions for the DSM-157 Test Box for Maverick Missile testing." "" ""
-            , Testimonial True "USAF" "/img/f16.jpg" "GCI offers cost effective, proven obsolescence solutions to keep planes flying and save the US Air Force tens of millions of dollars." "- Jeffery Sillart" "(USAF Lead-Engineer, F-16)"
+            , Testimonial True "USAF" "/img/f16.jpg" "GCI offers cost effective, proven obsolescence solutions to keep planes flying and save the USAF tens of millions of dollars." "- Jeffery Sillart" "USAF Lead-Engineer, F-16"
             ]
       , boxes =
             [ BoxesItem "Electronic Obsolescence Solutions" "/obsolescence" "/img/plane1.png" "/img/plane2.png" False "point_enter_down"
@@ -167,7 +166,7 @@ init shared =
             , BoxesItem "Research and Development" "/dev" "/img/heat1.png" "/img/heat2.png" False "point_enter_down"
             ]
       , localShared = reset shared
-      , finalText = "GCI provides solutions for electronic systems, keeping assets fully operational for many decades in the future."
+      , finalText = "GCI's hermetic products provide reliable solutions for electronic systems."
       }
     , Effect.batch [ controlVideo True |> Effect.fromCmd, Task.perform InitBoxes (Process.sleep 100) |> Effect.fromCmd ]
     )
@@ -352,42 +351,57 @@ update shared msg model =
             ( { model | localShared = newSharedState }
             , if not (newSharedState.contactDialogState == model.localShared.contactDialogState) then
                 Effect.batch
-                    ( if newSharedState.contactDialogState.send == Send then
-                    [ Shared.UpdateModel newSharedState |> Effect.fromShared
-                    , newSharedState.contactDialogState |> Storage.toJson |> Ports.save |> Effect.fromCmd
-                    , (Http.post
-                        { url = "https://formspree.io/f/xdoygpvp", body = Http.jsonBody
-                            <| Encode.object
-                                [ ( "name", Encode.string newSharedState.contactDialogState.name )
-                                , ( "email", nullable newSharedState.contactDialogState.email )
-                                , ( "telephone", nullable newSharedState.contactDialogState.phone )
-                                , ( "message", nullable newSharedState.contactDialogState.message )
-                                ]
-                        , expect = Http.expectJson Submited (Json.map2 FormResponse (Json.field "next" Json.string) (Json.field "ok" Json.bool))
-                        }
-                        |> Effect.fromCmd)
-                    ]
-                    else
-                    [ Shared.UpdateModel newSharedState |> Effect.fromShared
-                    , newSharedState.contactDialogState |> Storage.toJson |> Ports.save |> Effect.fromCmd
-                    ]
+                    (if newSharedState.contactDialogState.send == Send then
+                        [ Shared.UpdateModel newSharedState |> Effect.fromShared
+                        , newSharedState.contactDialogState |> Storage.toJson |> Ports.save |> Effect.fromCmd
+                        , Http.post
+                            { url = "https://formspree.io/f/xdoygpvp"
+                            , body =
+                                Http.jsonBody <|
+                                    Encode.object
+                                        [ ( "name", Encode.string newSharedState.contactDialogState.name )
+                                        , ( "email", nullable newSharedState.contactDialogState.email )
+                                        , ( "telephone", nullable newSharedState.contactDialogState.phone )
+                                        , ( "message", nullable newSharedState.contactDialogState.message )
+                                        ]
+                            , expect = Http.expectJson Submited (Json.map2 FormResponse (Json.field "next" Json.string) (Json.field "ok" Json.bool))
+                            }
+                            |> Effect.fromCmd
+                        ]
+
+                     else
+                        [ Shared.UpdateModel newSharedState |> Effect.fromShared
+                        , newSharedState.contactDialogState |> Storage.toJson |> Ports.save |> Effect.fromCmd
+                        ]
                     )
 
               else
                 Shared.UpdateModel newSharedState |> Effect.fromShared
             )
+
         Submited response ->
             let
                 newSharedState =
-                    model.localShared |> (\local -> {local | contactDialogState = local.contactDialogState |> (\state -> {state | send =
-                        case response of
-                            Ok _ ->
-                                SendOk
-                            Err _ ->
-                                SendError
-                    })})
+                    model.localShared
+                        |> (\local ->
+                                { local
+                                    | contactDialogState =
+                                        local.contactDialogState
+                                            |> (\state ->
+                                                    { state
+                                                        | send =
+                                                            case response of
+                                                                Ok _ ->
+                                                                    SendOk
+
+                                                                Err _ ->
+                                                                    SendError
+                                                    }
+                                               )
+                                }
+                           )
             in
-            ( {model | localShared = newSharedState}
+            ( { model | localShared = newSharedState }
             , Effect.batch
                 [ Shared.UpdateModel newSharedState |> Effect.fromShared
                 , newSharedState.contactDialogState |> Storage.toJson |> Ports.save |> Effect.fromCmd
@@ -1294,7 +1308,7 @@ grayQuote animateSelf shared =
                 , transparent (not animateSelf)
                 , paddingXY dynamicPadding 40
                 ]
-                [ text "Global Circuit Innovation's has a range of digital and analog circuitry expertise over many decades. This knowledge base is applied to develop electronic obsolescence solutions for legacy systems. Our device physics skills and experience enable us to provide environmental hardening for extremely demanding applications."
+                [ text "Global Circuit Innovation has a range of digital and analog circuitry expertise over many decades. This knowledge base is applied to develop electronic obsolescence solutions for legacy systems. Our device physics skills and experience enable us to provide environmental hardening for extremely demanding applications."
                 ]
             )
         ]

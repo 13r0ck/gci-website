@@ -2,9 +2,9 @@ module Storage exposing
     ( Address
     , BtnOptions(..)
     , ContactDialogState
-    , SendState(..)
     , NavBarDisplay(..)
     , NavItem
+    , SendState(..)
     , fromJson
     , init
     , toJson
@@ -40,11 +40,13 @@ type alias ContactDialogState =
     , showContactUs : Bool
     }
 
+
 type SendState
     = Waiting
     | Send
     | SendOk
     | SendError
+
 
 type alias Address =
     { street : String
@@ -104,16 +106,21 @@ toJson state =
                 , ( "message", nullable state.message )
                 , ( "messageError", E.bool state.messageError )
                 , ( "currentPage", E.int state.currentPage )
-                , ( "send", E.string <| case state.send of
-                        Waiting ->
-                            "Waiting"
-                        Send ->
-                            "Error"
-                        SendOk ->
-                            "Ok"
-                        SendError ->
-                            "Error"
-                   )
+                , ( "send"
+                  , E.string <|
+                        case state.send of
+                            Waiting ->
+                                "Waiting"
+
+                            Send ->
+                                "Error"
+
+                            SendOk ->
+                                "Ok"
+
+                            SendError ->
+                                "Error"
+                  )
                 ]
           )
         ]
@@ -132,18 +139,27 @@ decoder =
             |> required "message" (Json.nullable Json.string)
             |> required "messageError" Json.bool
             |> optional "currentPage" Json.int 0
-            |> required "send" (Json.string |> Json.andThen (\s -> case s of
-                    "Wating" ->
-                        Json.succeed Waiting
-                    "Send" ->
-                        Json.succeed Send
-                    "Ok" ->
-                        Json.succeed SendOk
-                    "Error" ->
-                        Json.succeed SendError
-                    _ ->
-                        Json.fail "Invalid Send State"
-               ))
+            |> required "send"
+                (Json.string
+                    |> Json.andThen
+                        (\s ->
+                            case s of
+                                "Wating" ->
+                                    Json.succeed Waiting
+
+                                "Send" ->
+                                    Json.succeed Send
+
+                                "Ok" ->
+                                    Json.succeed SendOk
+
+                                "Error" ->
+                                    Json.succeed SendError
+
+                                _ ->
+                                    Json.fail "Invalid Send State"
+                        )
+                )
             |> hardcoded False
         )
 

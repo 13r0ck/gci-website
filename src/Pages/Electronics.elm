@@ -14,22 +14,21 @@ import Element.Region as Region exposing (description)
 import Gen.Params.Electronics exposing (Params)
 import Html exposing (br, div, iframe)
 import Html.Attributes exposing (attribute, class, id, property, src, style)
-import Json.Encode as Encode
+import Http
 import Json.Decode as Json
+import Json.Encode as Encode
 import Page
 import Pages.Home_ exposing (AnimationState, When(..), onScreenItemtoCmd, updateElement)
 import Palette exposing (FontSize(..), black, fontSize, gciBlue, maxWidth, warning, white)
 import Ports exposing (disableScrolling, recvScroll)
 import Request
-import Shared exposing (acol, ael, contactUs, footer, navbar, reset)
+import Shared exposing (FormResponse, acol, ael, contactUs, footer, navbar, reset)
 import Simple.Animation as Animation exposing (Animation)
 import Simple.Animation.Animated as Animated
 import Simple.Animation.Property as P
 import Storage exposing (NavBarDisplay(..), SendState(..))
 import Task
 import View exposing (View)
-import Http
-import Shared exposing (FormResponse)
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
@@ -178,42 +177,57 @@ update shared msg model =
             ( { model | localShared = newSharedState }
             , if not (newSharedState.contactDialogState == model.localShared.contactDialogState) then
                 Effect.batch
-                    ( if newSharedState.contactDialogState.send == Send then
-                    [ Shared.UpdateModel newSharedState |> Effect.fromShared
-                    , newSharedState.contactDialogState |> Storage.toJson |> Ports.save |> Effect.fromCmd
-                    , (Http.post
-                        { url = "https://formspree.io/f/xdoygpvp", body = Http.jsonBody
-                            <| Encode.object
-                                [ ( "name", Encode.string newSharedState.contactDialogState.name )
-                                , ( "email", nullable newSharedState.contactDialogState.email )
-                                , ( "telephone", nullable newSharedState.contactDialogState.phone )
-                                , ( "message", nullable newSharedState.contactDialogState.message )
-                                ]
-                        , expect = Http.expectJson Submited (Json.map2 FormResponse (Json.field "next" Json.string) (Json.field "ok" Json.bool))
-                        }
-                        |> Effect.fromCmd)
-                    ]
-                    else
-                    [ Shared.UpdateModel newSharedState |> Effect.fromShared
-                    , newSharedState.contactDialogState |> Storage.toJson |> Ports.save |> Effect.fromCmd
-                    ]
+                    (if newSharedState.contactDialogState.send == Send then
+                        [ Shared.UpdateModel newSharedState |> Effect.fromShared
+                        , newSharedState.contactDialogState |> Storage.toJson |> Ports.save |> Effect.fromCmd
+                        , Http.post
+                            { url = "https://formspree.io/f/xdoygpvp"
+                            , body =
+                                Http.jsonBody <|
+                                    Encode.object
+                                        [ ( "name", Encode.string newSharedState.contactDialogState.name )
+                                        , ( "email", nullable newSharedState.contactDialogState.email )
+                                        , ( "telephone", nullable newSharedState.contactDialogState.phone )
+                                        , ( "message", nullable newSharedState.contactDialogState.message )
+                                        ]
+                            , expect = Http.expectJson Submited (Json.map2 FormResponse (Json.field "next" Json.string) (Json.field "ok" Json.bool))
+                            }
+                            |> Effect.fromCmd
+                        ]
+
+                     else
+                        [ Shared.UpdateModel newSharedState |> Effect.fromShared
+                        , newSharedState.contactDialogState |> Storage.toJson |> Ports.save |> Effect.fromCmd
+                        ]
                     )
 
               else
                 Shared.UpdateModel newSharedState |> Effect.fromShared
             )
+
         Submited response ->
             let
                 newSharedState =
-                    model.localShared |> (\local -> {local | contactDialogState = local.contactDialogState |> (\state -> {state | send =
-                        case response of
-                            Ok _ ->
-                                SendOk
-                            Err _ ->
-                                SendError
-                    })})
+                    model.localShared
+                        |> (\local ->
+                                { local
+                                    | contactDialogState =
+                                        local.contactDialogState
+                                            |> (\state ->
+                                                    { state
+                                                        | send =
+                                                            case response of
+                                                                Ok _ ->
+                                                                    SendOk
+
+                                                                Err _ ->
+                                                                    SendError
+                                                    }
+                                               )
+                                }
+                           )
             in
-            ( {model | localShared = newSharedState}
+            ( { model | localShared = newSharedState }
             , Effect.batch
                 [ Shared.UpdateModel newSharedState |> Effect.fromShared
                 , newSharedState.contactDialogState |> Storage.toJson |> Ports.save |> Effect.fromCmd

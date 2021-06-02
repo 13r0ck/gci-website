@@ -14,22 +14,21 @@ import Element.Region as Region exposing (description)
 import Gen.Params.Obsolescence exposing (Params)
 import Html exposing (br, div, iframe)
 import Html.Attributes exposing (attribute, class, id, property, src, style)
-import Json.Encode as Encode
+import Http exposing (Error(..))
 import Json.Decode as Json
+import Json.Encode as Encode
 import Page
 import Pages.Home_ exposing (AnimationState, When(..), onScreenItemtoCmd, updateElement)
 import Palette exposing (FontSize(..), black, fontSize, gciBlue, maxWidth, warning, white)
 import Ports exposing (disableScrolling, recvScroll)
 import Request
-import Shared exposing (acol, ael, contactUs, footer, navbar, reset)
+import Shared exposing (FormResponse, acol, ael, contactUs, footer, navbar, reset)
 import Simple.Animation as Animation exposing (Animation)
 import Simple.Animation.Animated as Animated
 import Simple.Animation.Property as P
 import Storage exposing (NavBarDisplay(..), SendState(..))
-import Http exposing (Error(..))
 import Task
 import View exposing (View)
-import Shared exposing (FormResponse)
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
@@ -93,8 +92,8 @@ init shared =
                 ]
       , subTexts =
             [ SubText 1 "GCI is a solutions provider." "/img/Power_Monitor_A1A1A5.jpg" "GCI CCA solution for Power Monitor, Maverick Missile Test Box" "GCI designs, develops and manufactures form, fit, and function drop-in replacement electronics that can be seamlessly integrated into a larger electronics system as required. The replacement electronic components work identically to the original obsolete components."
-            , SubText 2 "Supporting Legacy Systems" "/img/black_circuit.jpg" "" "GCI’s engineering team has decades of experience designing electronics. Our proprietary and proven technologies provide the building blocks to engineer custom electronic solutions based upon the customer needs and requirements.\nThese drop-in replacement solutions for obsolete microcircuits improve DoD system readiness, decreasing the DMSMS issues associated with lifecycle sustainment."
-            , SubText 3 "Combating Counterfeits" "/img/fpga.jpg" "GCI DER 4013 Open Cavity" "GCI only uses components from authorized, franchised distributors with full traceability. This removes any possibility of counterfeit parts entering the supply chain with GCI’s solutions. Memories and FPGAs, particularly the obsolete families, are some of the commonly identified counterfeits for military customers as reported through GIDEP.\nGCI’s strict adherence to franchised suppliers eliminates this risk."
+            , SubText 2 "Supporting Legacy Systems" "/img/black_circuit.jpg" "" "GCI’s engineering team has decades of experience designing electronics. Our proprietary and proven technologies provide the building blocks to engineer custom electronic solutions based upon the customer needs and requirements.\nThese drop-in replacement solutions for obsolete CCAs and microcircuits improve DoD system readiness, decreasing the DMSMS issues associated with lifecycle sustainment."
+            , SubText 3 "Combating Counterfeits" "/img/fpga.jpg" "XILINX XC4013 FPGA Open Cavity" "GCI only uses components from authorized, franchised distributors with full traceability. This removes any possibility of counterfeit parts entering the supply chain with GCI’s solutions. Memories and FPGAs, particularly the obsolete families, are some of the commonly identified counterfeits for military customers as reported through GIDEP.\nGCI’s strict adherence to franchised suppliers eliminates this risk."
             ]
       , localShared = reset shared
       }
@@ -178,42 +177,57 @@ update shared msg model =
             ( { model | localShared = newSharedState }
             , if not (newSharedState.contactDialogState == model.localShared.contactDialogState) then
                 Effect.batch
-                    ( if newSharedState.contactDialogState.send == Send then
-                    [ Shared.UpdateModel newSharedState |> Effect.fromShared
-                    , newSharedState.contactDialogState |> Storage.toJson |> Ports.save |> Effect.fromCmd
-                    , (Http.post
-                        { url = "https://formspree.io/f/xdoygpvp", body = Http.jsonBody
-                            <| Encode.object
-                                [ ( "name", Encode.string newSharedState.contactDialogState.name )
-                                , ( "email", nullable newSharedState.contactDialogState.email )
-                                , ( "telephone", nullable newSharedState.contactDialogState.phone )
-                                , ( "message", nullable newSharedState.contactDialogState.message )
-                                ]
-                        , expect = Http.expectJson Submited (Json.map2 FormResponse (Json.field "next" Json.string) (Json.field "ok" Json.bool))
-                        }
-                        |> Effect.fromCmd)
-                    ]
-                    else
-                    [ Shared.UpdateModel newSharedState |> Effect.fromShared
-                    , newSharedState.contactDialogState |> Storage.toJson |> Ports.save |> Effect.fromCmd
-                    ]
+                    (if newSharedState.contactDialogState.send == Send then
+                        [ Shared.UpdateModel newSharedState |> Effect.fromShared
+                        , newSharedState.contactDialogState |> Storage.toJson |> Ports.save |> Effect.fromCmd
+                        , Http.post
+                            { url = "https://formspree.io/f/xdoygpvp"
+                            , body =
+                                Http.jsonBody <|
+                                    Encode.object
+                                        [ ( "name", Encode.string newSharedState.contactDialogState.name )
+                                        , ( "email", nullable newSharedState.contactDialogState.email )
+                                        , ( "telephone", nullable newSharedState.contactDialogState.phone )
+                                        , ( "message", nullable newSharedState.contactDialogState.message )
+                                        ]
+                            , expect = Http.expectJson Submited (Json.map2 FormResponse (Json.field "next" Json.string) (Json.field "ok" Json.bool))
+                            }
+                            |> Effect.fromCmd
+                        ]
+
+                     else
+                        [ Shared.UpdateModel newSharedState |> Effect.fromShared
+                        , newSharedState.contactDialogState |> Storage.toJson |> Ports.save |> Effect.fromCmd
+                        ]
                     )
 
               else
                 Shared.UpdateModel newSharedState |> Effect.fromShared
             )
+
         Submited response ->
             let
                 newSharedState =
-                    model.localShared |> (\local -> {local | contactDialogState = local.contactDialogState |> (\state -> {state | send =
-                        case response of
-                            Ok _ ->
-                                SendOk
-                            Err _ ->
-                                SendError
-                    })})
+                    model.localShared
+                        |> (\local ->
+                                { local
+                                    | contactDialogState =
+                                        local.contactDialogState
+                                            |> (\state ->
+                                                    { state
+                                                        | send =
+                                                            case response of
+                                                                Ok _ ->
+                                                                    SendOk
+
+                                                                Err _ ->
+                                                                    SendError
+                                                    }
+                                               )
+                                }
+                           )
             in
-            ( {model | localShared = newSharedState}
+            ( { model | localShared = newSharedState }
             , Effect.batch
                 [ Shared.UpdateModel newSharedState |> Effect.fromShared
                 , newSharedState.contactDialogState |> Storage.toJson |> Ports.save |> Effect.fromCmd

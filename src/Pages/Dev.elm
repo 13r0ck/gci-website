@@ -13,24 +13,21 @@ import Element.Region as Region
 import Gen.Params.Dev exposing (Params)
 import Html exposing (br, div, iframe)
 import Html.Attributes exposing (attribute, class, id, property, src, style)
+import Http exposing (Error(..))
+import Json.Decode as Json
 import Json.Encode as Encode
 import Page
 import Pages.Home_ exposing (AnimationState, When(..), onScreenItemtoCmd, updateElement)
 import Palette exposing (FontSize(..), black, fontSize, gciBlue, maxWidth, warning, white)
 import Ports exposing (disableScrolling, recvScroll)
 import Request
-import Shared exposing (acol, ael, contactUs, footer, navbar, reset)
+import Shared exposing (FormResponse, acol, ael, contactUs, footer, navbar, reset)
 import Simple.Animation as Animation exposing (Animation)
-import Storage exposing (SendState(..))
-import Json.Decode as Json
-import Json.Encode as Encode
 import Simple.Animation.Animated as Animated
 import Simple.Animation.Property as P
-import Storage exposing (NavBarDisplay(..))
+import Storage exposing (NavBarDisplay(..), SendState(..))
 import Task
 import View exposing (View)
-import Shared exposing (FormResponse)
-import Http exposing (Error(..))
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
@@ -95,7 +92,7 @@ init shared =
       , subTexts =
             [ SubText 1 "Thermal 3D modeling with Ansys software" "/img/ansys.jpg" "ANSYS Temperature Modeling and Electrical Confirmation of Die Surface Temperature with Silicon PN Sensors" "GCI uses Ansys software to generate images and architectures to be predicted and verified within simulations prior to actual system design and implementation for optimal materials and design choices."
             , SubText 2 "Sub text" "/img/ansys2.jpg" "Thermal Heat Transfer Simulation Rendering for IC Package Fins within Immersion Cooler" "A liquid-cooled hermetic microelectronics packaging using diamond paste epoxies for exceptional thermal transfer overall architecture and design, cooling plates could also be targeted as a cooling solution.  However, in the best interest of maximizing omni-directional heat transfer, a high-flow rate liquid cooling mechanism is proposed."
-            , SubText 3 "Sub text" "/img/ansys3.jpg" "" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
+            , SubText 3 "" "/img/ansys3.jpg" "" "Thermal modeling of cooling fins for power IC requirements."
             ]
       , localShared = reset shared
       }
@@ -179,42 +176,57 @@ update shared msg model =
             ( { model | localShared = newSharedState }
             , if not (newSharedState.contactDialogState == model.localShared.contactDialogState) then
                 Effect.batch
-                    ( if newSharedState.contactDialogState.send == Send then
-                    [ Shared.UpdateModel newSharedState |> Effect.fromShared
-                    , newSharedState.contactDialogState |> Storage.toJson |> Ports.save |> Effect.fromCmd
-                    , (Http.post
-                        { url = "https://formspree.io/f/xdoygpvp", body = Http.jsonBody
-                            <| Encode.object
-                                [ ( "name", Encode.string newSharedState.contactDialogState.name )
-                                , ( "email", nullable newSharedState.contactDialogState.email )
-                                , ( "telephone", nullable newSharedState.contactDialogState.phone )
-                                , ( "message", nullable newSharedState.contactDialogState.message )
-                                ]
-                        , expect = Http.expectJson Submited (Json.map2 FormResponse (Json.field "next" Json.string) (Json.field "ok" Json.bool))
-                        }
-                        |> Effect.fromCmd)
-                    ]
-                    else
-                    [ Shared.UpdateModel newSharedState |> Effect.fromShared
-                    , newSharedState.contactDialogState |> Storage.toJson |> Ports.save |> Effect.fromCmd
-                    ]
+                    (if newSharedState.contactDialogState.send == Send then
+                        [ Shared.UpdateModel newSharedState |> Effect.fromShared
+                        , newSharedState.contactDialogState |> Storage.toJson |> Ports.save |> Effect.fromCmd
+                        , Http.post
+                            { url = "https://formspree.io/f/xdoygpvp"
+                            , body =
+                                Http.jsonBody <|
+                                    Encode.object
+                                        [ ( "name", Encode.string newSharedState.contactDialogState.name )
+                                        , ( "email", nullable newSharedState.contactDialogState.email )
+                                        , ( "telephone", nullable newSharedState.contactDialogState.phone )
+                                        , ( "message", nullable newSharedState.contactDialogState.message )
+                                        ]
+                            , expect = Http.expectJson Submited (Json.map2 FormResponse (Json.field "next" Json.string) (Json.field "ok" Json.bool))
+                            }
+                            |> Effect.fromCmd
+                        ]
+
+                     else
+                        [ Shared.UpdateModel newSharedState |> Effect.fromShared
+                        , newSharedState.contactDialogState |> Storage.toJson |> Ports.save |> Effect.fromCmd
+                        ]
                     )
 
               else
                 Shared.UpdateModel newSharedState |> Effect.fromShared
             )
+
         Submited response ->
             let
                 newSharedState =
-                    model.localShared |> (\local -> {local | contactDialogState = local.contactDialogState |> (\state -> {state | send =
-                        case response of
-                            Ok _ ->
-                                SendOk
-                            Err _ ->
-                                SendError
-                    })})
+                    model.localShared
+                        |> (\local ->
+                                { local
+                                    | contactDialogState =
+                                        local.contactDialogState
+                                            |> (\state ->
+                                                    { state
+                                                        | send =
+                                                            case response of
+                                                                Ok _ ->
+                                                                    SendOk
+
+                                                                Err _ ->
+                                                                    SendError
+                                                    }
+                                               )
+                                }
+                           )
             in
-            ( {model | localShared = newSharedState}
+            ( { model | localShared = newSharedState }
             , Effect.batch
                 [ Shared.UpdateModel newSharedState |> Effect.fromShared
                 , newSharedState.contactDialogState |> Storage.toJson |> Ports.save |> Effect.fromCmd
