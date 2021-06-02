@@ -89,8 +89,8 @@ init shared =
                 ]
       , subTexts =
             [ SubText 1 "Thermal 3D modeling with Ansys software" "/img/ansys.jpg" "ANSYS Temperature Modeling and Electrical Confirmation of Die Surface Temperature with Silicon PN Sensors" "GCI uses Ansys software to generate images and architectures to be predicted and verified within simulations prior to actual system design and implementation for optimal materials and design choices."
-            , SubText 2 "Sub text" "/img/ansys2.jpg" "Thermal Heat Transfer Simulation Rendering for IC Package Fins within Immersion Cooler" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
-            , SubText 3 "Sub text" "/img/subtext6.jpg" "" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
+            , SubText 2 "Sub text" "/img/ansys2.jpg" "Thermal Heat Transfer Simulation Rendering for IC Package Fins within Immersion Cooler" "A liquid-cooled hermetic microelectronics packaging using diamond paste epoxies for exceptional thermal transfer overall architecture and design, cooling plates could also be targeted as a cooling solution.  However, in the best interest of maximizing omni-directional heat transfer, a high-flow rate liquid cooling mechanism is proposed."
+            , SubText 3 "Sub text" "/img/ansys3.jpg" "" "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut."
             ]
       , localShared = reset shared
       }
