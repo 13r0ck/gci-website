@@ -502,6 +502,7 @@ core shared values animateSelf =
     in
     column
         [ width fill
+        , transparent (not animateSelf)
         , htmlAttribute <|
             class
                 (if animateSelf then
