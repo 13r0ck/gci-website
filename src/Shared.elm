@@ -13,6 +13,7 @@ module Shared exposing
     , setPhoneCursor
     , subscriptions
     , update
+    , FormResponse
     )
 
 import Browser.Events
@@ -26,7 +27,7 @@ import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region
 import Email as Email
-import Html exposing (a, br, div, iframe, span, video)
+import Html exposing (a, br, wbr, div, iframe, span, video)
 import Html.Attributes exposing (alt, attribute, autoplay, class, classList, id, loop, property, src, style)
 import Html.Events
 import Json.Decode as Json
@@ -46,6 +47,7 @@ import Storage as Storage
         ( Address
         , BtnOptions(..)
         , ContactDialogState
+        , SendState(..)
         , NavBarDisplay(..)
         , NavItem
         )
@@ -76,6 +78,10 @@ type alias Model =
     , navHoverTracker : List NavItem
     }
 
+type alias FormResponse =
+    { next : String
+    , ok : Bool
+    }
 
 type alias CertificationItem =
     { src : String
@@ -675,18 +681,34 @@ contactUs shared message =
                             ]
 
                     3 ->
-                        column
-                            [ width fill, height (px 100), Font.light, htmlAttribute <| class "backgroundGrow" ]
-                            [ row [ width fill, alignTop, centerY, padding 10 ]
-                                [ el [ fontSize device Md, centerX, centerY ] (text "Sent!")
-                                ]
-                            , el [ fontSize device Sm, centerX ] (paragraph [ Font.center ] [ text "We will reach back out to ", html <| br [] [], text (Maybe.withDefault "you" state.email ++ " soon!") ])
-                            ]
+                        case state.send of
+                            SendOk ->
+                                column
+                                    [ width fill, height (px 100), Font.light, htmlAttribute <| class "backgroundGrow" ]
+                                    [ row [ width fill, alignTop, centerY, padding 10 ]
+                                        [ el [ fontSize device Md, centerX, centerY ] (text "Sent!")
+                                        ]
+                                    , el [ fontSize device Sm, centerX ] (paragraph [ Font.center ] [ text "We will reach back out to ", html <| br [] [], text (Maybe.withDefault "you" state.email ++ " soon!") ])
+                                    ]
+                            Waiting ->
+                                image
+                                    [width (px 120), height (px 120), centerX, centerY
+                                    , inFront (image [width (px 80), height (px 80), centerX, centerY] {src="/img/logo_sans_text.svg", description="logo"})
+                                    ]
+                                      {src="/img/loading.svg", description="Loading..."}
+                            SendError ->
+                                link [height (px 100), htmlAttribute <| class "backgroundGrow", fontSize device Sm, centerX, mouseOver [Font.color gciBlue], padding 25] {url=(shared.address.emailLink), label =(paragraph [ Font.center] [ el [Font.color warning, fontSize device Md] (text "Send Failed!"), html <| br [] [], text "Check that your email and phone entries are valid.", html <| br [] [], html <| br [] [],  text "If that doesn't work please email us at:", html <| br [] [], text shared.address.email, html <| br [] [], text "Our appologies for the inconvenience."])}
+                            Send ->
+                                image
+                                    [width (px 120), height (px 120), centerX, centerY
+                                    , inFront (image [width (px 80), height (px 80), centerX, centerY] {src="/img/logo_sans_text.svg", description="logo"})
+                                    ]
+                                      {src="/img/loading.svg", description="Loading..."}
 
                     _ ->
                         row [] []
                 , row [ width fill, padding 15, alignBottom ]
-                    (if state.currentPage < 3 then
+                    (if state.currentPage < 3 || state.send == SendError then
                         [ Input.button
                             [ alignBottom
                             , alignLeft
@@ -698,7 +720,7 @@ contactUs shared message =
                             , mouseOver [ Border.color gciBlueLight, Font.color gciBlueLight ]
                             ]
                             { onPress = Just (message (contactUsBack shared)), label = text "Back" }
-                        , Input.button
+                        , (if state.send == SendError && state.currentPage == 3 then none else Input.button
                             [ alignBottom
                             , alignRight
                             , paddingXY 30 10
@@ -710,10 +732,18 @@ contactUs shared message =
                             , mouseOver [ Border.color gciBlueLight, Background.color gciBlueLight ]
                             , Border.width 2
                             ]
-                            { onPress = Just (message (contactUsNext shared)), label = text "Next" }
+                            (if state.currentPage == 2 then
+                                { onPress = Just (message (setStateToSend shared)), label = text "Send!"}
+                             else
+                                { onPress = Just (message (contactUsNext shared)), label = text "Next" }
+                            )
+                        )
                         ]
 
                      else
+                        ( if state.send == Waiting || state.send == Send then
+                            [ none ]
+                        else
                         [ Input.button
                             [ alignBottom
                             , paddingXY 100 10
@@ -728,6 +758,7 @@ contactUs shared message =
                             ]
                             { onPress = Just (message (setContactUs shared False)), label = text "Close" }
                         ]
+                        )
                     )
                 , paragraph
                     [ alignLeft
@@ -1028,49 +1059,6 @@ classifyDevice window =
     }
 
 
-calcCursor : String -> String -> Cmd msg
-calcCursor oldS newS =
-    let
-        parse val =
-            String.toList (String.filter isDigit (String.replace "+1" "" val))
-
-        index a =
-            a |> Tuple.first
-
-        one a =
-            a |> Tuple.second |> Tuple.first
-
-        two a =
-            a |> Tuple.second |> Tuple.second
-    in
-    -- creates List (index, (oldDigit, newDigit)) and filters for first change returning that number
-    -- the first difference is what matters, so we just take the head and return the modified index
-    case
-        List.head
-            (List.filterMap
-                (\a ->
-                    if not (one a == two a) then
-                        Just (index a)
-
-                    else
-                        Nothing
-                )
-                (List.indexedMap Tuple.pair (List.map2 Tuple.pair (String.toList oldS) (String.toList newS)))
-            )
-    of
-        Just i ->
-            setCursor
-                (if String.length oldS > String.length newS then
-                    i
-
-                 else
-                    i + 1
-                )
-
-        Nothing ->
-            Cmd.none
-
-
 setPhoneCursor : String -> String -> Cmd msg
 setPhoneCursor oldPhone newPhone =
     let
@@ -1207,7 +1195,10 @@ prettyPhoneNumber number =
 
 setContactUs : Model -> Bool -> Model
 setContactUs model b =
-    { model | contactDialogState = model.contactDialogState |> (\c -> { c | showContactUs = b }) }
+    if not b && (model.contactDialogState.send == SendError || model.contactDialogState.send == SendOk) then
+        { model | contactDialogState = model.contactDialogState |> (\c -> { c | showContactUs = b, name = "", email = Nothing, phone = Nothing, message = Nothing, currentPage = 0, send = Waiting }) }
+    else
+        { model | contactDialogState = model.contactDialogState |> (\c -> { c | showContactUs = b }) }
 
 
 toggleMobileNav : Model -> Model
@@ -1293,16 +1284,22 @@ contactUsNext model =
             else
                 { model | contactDialogState = model.contactDialogState |> (\s -> { s | currentPage = s.currentPage + 1, phoneError = False, emailError = False }) }
 
+
+        _ ->
+            { model | contactDialogState = model.contactDialogState |> (\s -> { s | currentPage = s.currentPage + 1 }) }
+
+
+setStateToSend : Model -> Model
+setStateToSend model =
+    case model.contactDialogState.currentPage of
         2 ->
             if Maybe.withDefault "" model.contactDialogState.message == "" then
                 { model | contactDialogState = model.contactDialogState |> (\s -> { s | messageError = True }) }
 
             else
-                { model | contactDialogState = model.contactDialogState |> (\s -> { s | currentPage = s.currentPage + 1, messageError = False }) }
-
+                { model | contactDialogState = model.contactDialogState |> (\s -> { s | currentPage = s.currentPage + 1, messageError = False, send = Send }) }
         _ ->
             { model | contactDialogState = model.contactDialogState |> (\s -> { s | currentPage = s.currentPage + 1 }) }
-
 
 navBtnHover : Model -> Int -> Model
 navBtnHover model id =
