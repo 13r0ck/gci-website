@@ -732,8 +732,8 @@ innovations animateSelf shared =
                 { duration = 500
                 , options = []
                 }
-                [ P.opacity 0 ]
-                [ P.opacity 100 ]
+                [ P.opacity 0, P.y 100 ]
+                [ P.opacity 100, P.y 0 ]
 
          else
             Animation.empty

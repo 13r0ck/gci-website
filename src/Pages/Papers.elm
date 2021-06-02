@@ -369,7 +369,7 @@ head shared model =
                 (List.intersperse (html <| br [] []) [ text "Technical", text "Papers and", text "Presentations." ])
             )
         ]
-        { src = "/img/building.jpg", description = "Picture of GCI's head quarters" }
+        { src = "/img/papers.jpg", description = "Picture of GCI's head quarters" }
 
 
 mainText : Shared.Model -> Bool -> Element Msg
