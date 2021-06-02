@@ -1,4 +1,4 @@
-module Pages.Home_ exposing (AnimationState, Model, Msg, When(..), finalText, onScreenItemtoCmd, page, updateElement)
+module Pages.Home_ exposing (Model, Msg, page, AnimationState, When(..), onScreenItemtoCmd, updateElement, finalText)
 
 import Browser.Dom exposing (Viewport)
 import Browser.Events exposing (Visibility(..), onResize, onVisibilityChange)
@@ -16,7 +16,7 @@ import Html exposing (a, br, video, wbr)
 import Html.Attributes exposing (alt, attribute, autoplay, class, id, loop, src)
 import Html.Events
 import Http exposing (Error(..))
-import Json.Decode as Json
+import Json.Decode as Decode
 import Json.Encode as Encode
 import Page
 import Palette exposing (FontSize(..), black, fontSize, gciBlue, gciBlueExtraLight, gciBlueLight, maxWidth, warning, white)
@@ -364,7 +364,7 @@ update shared msg model =
                                         , ( "telephone", nullable newSharedState.contactDialogState.phone )
                                         , ( "message", nullable newSharedState.contactDialogState.message )
                                         ]
-                            , expect = Http.expectJson Submited (Json.map2 FormResponse (Json.field "next" Json.string) (Json.field "ok" Json.bool))
+                            , expect = Http.expectJson Submited (Decode.map2 FormResponse (Decode.field "next" Decode.string) (Decode.field "ok" Decode.bool))
                             }
                             |> Effect.fromCmd
                         ]
