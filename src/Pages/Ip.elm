@@ -143,9 +143,9 @@ init shared =
             , Patent 14 False "10,115,645" "10/27/17" "Erick M. Spory" "Repackaged Reconditioned Die Method and Assembly" "/img/10115645.png" "https://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO1&Sect2=HITOFF&d=PALL&p=1&u=%2Fnetahtml%2FPTO%2Fsrchnum.htm&r=1&f=G&l=50&s1=10115645.PN.&OS=PN/10115645&RS=PN/10115645"
             ]
       , trademarks =
-            [ Trademark 0 False "DER" "5,278,571" "CLASS 37: Repair or Maintenance of Integrated Circuits Manufacturing Machines and Systems" "8/29/17" "6/15/10" "https://tmsearch.uspto.gov/bin/showfield?f=doc&state=4806:6m7zhk.4.1"
-            , Trademark 1 False "DEER" "5,400,012" "CLASS 9: Semiconductor Devices" "2/13/18" "11/1/13" "https://tmsearch.uspto.gov/bin/showfield?f=doc&state=4806:6m7zhk.5.1"
-            , Trademark 2 False "DER" "5,215,549" "CLASS 9: Electronic Chips for the Manufacture of Integrated Circuits" "5/30/17" "11/1/13" "https://tmsearch.uspto.gov/bin/showfield?f=doc&state=4806:6m7zhk.6.1"
+            [ Trademark 0 False "DER" "5,278,571" "CLASS 37: Repair or Maintenance of Integrated Circuits Manufacturing Machines and Systems" "8/29/17" "6/15/10" "/download/5278571.pdf"
+            , Trademark 1 False "DEER" "5,400,012" "CLASS 9: Semiconductor Devices" "2/13/18" "11/1/13" "/download/5400012.pdf"
+            , Trademark 2 False "DER" "5,215,549" "CLASS 9: Electronic Chips for the Manufacture of Integrated Circuits" "5/30/17" "11/1/13" "/download/5400012.pdf"
             ]
       , patentsPerRow = 3
       , localShared = reset shared
@@ -652,7 +652,7 @@ patents shared model animateSelf =
                             , html <| br [] []
                             , html <| br [] []
                             ]
-                        , newTabLink [ Font.color gciBlue, centerY, mouseOver [ Font.color gciBlueLight ], centerX, Font.bold ] { url = l.link, label = el [] (text "Read More") }
+                        , download [ Font.color gciBlue, centerY, mouseOver [ Font.color gciBlueLight ], centerX, Font.bold ] { url = l.link, label = el [] (text "Read More") }
                         ]
                     ]
                 )
