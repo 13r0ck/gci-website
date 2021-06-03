@@ -149,8 +149,8 @@ init shared =
             ]
       , simpleBtnHoverTracker =
             [ SimpleBtn 0 "Play" "#" False Nothing
-            , SimpleBtn 1 "Intellectual property" "/ip" False Nothing
-            , SimpleBtn 2 "What we do" "/#whatwedo" False Nothing
+            , SimpleBtn 1 "Intellectual Property" "/ip" False Nothing
+            , SimpleBtn 2 "What We Do" "/#whatwedo" False Nothing
             , SimpleBtn 3 "Contact Us" "" False (Just OpenContactUs)
             , SimpleBtn 4 "Technical Papers" "/papers" False Nothing
             ]

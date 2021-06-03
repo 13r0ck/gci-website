@@ -76,8 +76,8 @@ init shared =
     ( { showVimeo = False
       , simpleBtnHoverTracker =
             [ SimpleBtn 0 "Play" "#" False (Just OpenVimeo)
-            , SimpleBtn 1 "Intellectual property" "/ip" False Nothing
-            , SimpleBtn 2 "What we do" "/#whatwedo" False Nothing
+            , SimpleBtn 1 "Intellectual Property" "/ip" False Nothing
+            , SimpleBtn 2 "What We Do" "/#whatwedo" False Nothing
             , SimpleBtn 3 "Contact Us" "" False (Just OpenContactUs)
             , SimpleBtn 4 "Technical Papers" "/papers" False Nothing
             ]
@@ -495,7 +495,7 @@ mainText shared animateSelf =
         ]
         [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Xlg ] [ text "High Reliability Electronics for Harsh & Extreme Environments" ]
         , paragraph [ spacing 10, fontSize device Sm, Font.light, htmlAttribute <| id "mainText" ]
-            [ text "GCI’s technologies have been proven in the oil and gas industry providing microcircuits with high durability to harsh environmental conditions, which include extreme heat exposure (+250°C) as well as high mechanical stresses (20,000g)."
+            [ text "GCI’s technologies have been proven in the oil and gas industry providing microcircuits with high durability to harsh environmental conditions, which include extreme heat exposure (+250°C) as well as high mechanical stresses (30,000g)."
             ]
         ]
 

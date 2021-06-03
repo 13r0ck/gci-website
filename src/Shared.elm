@@ -594,7 +594,7 @@ contactUs shared message =
                                 ]
                                 { onChange = \s -> message (contactEmail shared s)
                                 , text = Maybe.withDefault "" state.email
-                                , placeholder = Just (Input.placeholder [ Font.center ] (text "name@exmaple.com"))
+                                , placeholder = Just (Input.placeholder [ Font.center ] (text "name@example.com"))
                                 , label = Input.labelHidden "Email"
                                 }
                             , Input.text

@@ -103,8 +103,8 @@ init shared =
     ( { showVimeo = False
       , simpleBtnHoverTracker =
             [ SimpleBtn 0 "Play" "#" False (Just OpenVimeo)
-            , SimpleBtn 1 "Intellectual property" "/ip" False Nothing
-            , SimpleBtn 2 "What we do" "/#whatwedo" False Nothing
+            , SimpleBtn 1 "Intellectual Property" "/ip" False Nothing
+            , SimpleBtn 2 "What We Do" "/#whatwedo" False Nothing
             , SimpleBtn 3 "Contact Us" "" False (Just OpenContactUs)
             , SimpleBtn 4 "Technical Papers" "/papers" False Nothing
             ]
@@ -536,7 +536,7 @@ mainText shared animateSelf =
         ]
         [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Xlg ] [ text "15 issued patents and counting." ]
         , paragraph [ spacing 10, fontSize device Sm, Font.light, htmlAttribute <| id "mainText", width fill ]
-            [ text "GCI’s innovations are recognized with 15 patents, 3 trademarks, and additional patents currently in process.  These technological advancements set GCI apart from its competitors."
+            [ text "GCI’s innovations are recognized with 16 patents, 3 trademarks, and additional patents currently in process.  These technological advancements set GCI apart from its competitors."
             , html <| br [] []
             , html <| br [] []
             , text "We continue to push the boundaries."
