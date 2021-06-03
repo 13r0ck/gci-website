@@ -163,7 +163,7 @@ init shared =
             [ BoxesItem "Electronic Obsolescence Solutions" "/obsolescence" "/img/plane1.png" "/img/plane2.png" False "point_enter_down"
             , BoxesItem "Electronic Solutions" "/electronics" "/img/circuit1.png" "/img/circuit2.png" False "point_enter_down"
             , BoxesItem "Electronics in Harsh Environments" "/oil" "/img/oil1.png" "/img/oil2.png" False "point_enter_down"
-            , BoxesItem "Research and Development" "/dev" "/img/heat1.png" "/img/heat2.png" False "point_enter_down"
+            , BoxesItem "Research and Development" "/rnd" "/img/heat1.png" "/img/heat2.png" False "point_enter_down"
             ]
       , localShared = reset shared
       , finalText = "GCI's hermetic products provide reliable solutions for electronic systems."
@@ -1308,7 +1308,7 @@ grayQuote animateSelf shared =
                 , transparent (not animateSelf)
                 , paddingXY dynamicPadding 40
                 ]
-                [ text "Global Circuit Innovation has a range of digital and analog circuitry expertise over many decades. This knowledge base is applied to develop electronic obsolescence solutions for legacy systems. Our device physics skills and experience enable us to provide environmental hardening for extremely demanding applications."
+                [ text "Global Circuit Innovations has a range of digital and analog circuitry experience over many decades. This knowledge base is applied to develop electronic obsolescence solutions for legacy systems. Our device physics skills and experience enable us to provide environmental hardening for extremely demanding applications."
                 ]
             )
         ]

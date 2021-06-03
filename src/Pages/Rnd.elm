@@ -1,4 +1,4 @@
-module Pages.Dev exposing (Model, Msg, page)
+module Pages.Rnd exposing (Model, Msg, page)
 
 import Browser.Dom exposing (Viewport)
 import Dict exposing (Dict)
@@ -10,7 +10,7 @@ import Element.Events as Events
 import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region
-import Gen.Params.Dev exposing (Params)
+import Gen.Params.Rnd exposing (Params)
 import Html exposing (br, div, iframe)
 import Html.Attributes exposing (attribute, class, id, property, src, style)
 import Http exposing (Error(..))
@@ -91,8 +91,8 @@ init shared =
                 ]
       , subTexts =
             [ SubText 1 "Thermal 3D modeling with Ansys software" "/img/ansys.jpg" "ANSYS Temperature Modeling and Electrical Confirmation of Die Surface Temperature with Silicon PN Sensors" "GCI uses Ansys software to generate images and architectures to be predicted and verified within simulations prior to actual system design and implementation for optimal materials and design choices."
-            , SubText 2 "Sub text" "/img/ansys2.jpg" "Thermal Heat Transfer Simulation Rendering for IC Package Fins within Immersion Cooler" "A liquid-cooled hermetic microelectronics packaging using diamond paste epoxies for exceptional thermal transfer overall architecture and design, cooling plates could also be targeted as a cooling solution.  However, in the best interest of maximizing omni-directional heat transfer, a high-flow rate liquid cooling mechanism is proposed."
-            , SubText 3 "" "/img/ansys3.jpg" "" "Thermal modeling of cooling fins for power IC requirements."
+            , SubText 2 "Thermal Heat Transfer Simulation" "/img/ansys2.jpg" "Thermal Heat Transfer Simulation Rendering for IC Package Fins within Immersion Cooler" "A liquid-cooled hermetic microelectronics packaging using diamond paste epoxies for exceptional thermal transfer overall architecture and design, cooling plates could also be targeted as a cooling solution.  However, in the best interest of maximizing omni-directional heat transfer, a high-flow rate liquid cooling mechanism is proposed."
+            , SubText 3 "" "/img/ansys3.jpg" "" "Thermal modeling of fins for power IC cooling requirements."
             ]
       , localShared = reset shared
       }
