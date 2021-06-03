@@ -90,8 +90,8 @@ init shared =
                 , ( "3", AnimationState (PercentOfViewport 40) False )
                 ]
       , subTexts =
-            [ SubText 1 "Thermal 3D modeling with Ansys software" "/img/ansys.jpg" "ANSYS Temperature Modeling and Electrical Confirmation of Die Surface Temperature with Silicon PN Sensors" "GCI uses Ansys software to generate images and architectures to be predicted and verified within simulations prior to actual system design and implementation for optimal materials and design choices."
-            , SubText 2 "Thermal Heat Transfer Simulation" "/img/ansys2.jpg" "Rendering for IC Package Fins within Immersion Cooler" "A liquid-cooled hermetic microelectronics packaging using diamond paste epoxies for exceptional thermal transfer overall architecture and design, cooling plates could also be targeted as a cooling solution.  However, in the best interest of maximizing omni-directional heat transfer, a high-flow rate liquid cooling mechanism is proposed."
+            [ SubText 1 "Thermal 3D modeling with Ansys software." "/img/ansys.jpg" "ANSYS Temperature Modeling and Electrical Confirmation of Die Surface Temperature with Silicon PN Sensors" "GCI uses Ansys software to generate images and architectures to be predicted and verified within simulations prior to actual system design and implementation for optimal materials and design choices."
+            , SubText 2 "Thermal Heat Transfer Simulation." "/img/ansys2.jpg" "Rendering for IC Package Fins within Immersion Cooler" "A liquid-cooled hermetic microelectronics packaging using diamond paste epoxies for exceptional thermal transfer overall architecture and design. Cooling plates could also be targeted as a cooling solution.  However, in the best interest of maximizing omni-directional heat transfer, a high-flow rate liquid cooling mechanism can be implemented."
             , SubText 3 "" "/img/ansys3.jpg" "" "Thermal modeling of fins for power IC cooling requirements."
             ]
       , localShared = reset shared
