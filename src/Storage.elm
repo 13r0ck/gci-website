@@ -144,7 +144,7 @@ decoder =
                     |> Json.andThen
                         (\s ->
                             case s of
-                                "Wating" ->
+                                "Waiting" ->
                                     Json.succeed Waiting
 
                                 "Send" ->
@@ -170,6 +170,9 @@ decoder =
 
 fromJson : Value -> ContactDialogState
 fromJson json =
+    let
+        _ = Debug.log "value" (json |> Json.decodeValue decoder)
+    in
     json
         |> Json.decodeValue decoder
         |> Result.withDefault init
