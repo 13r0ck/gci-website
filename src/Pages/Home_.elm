@@ -161,7 +161,7 @@ init shared =
             ]
       , boxes =
             [ BoxesItem "Electronic Obsolescence Solutions" "/obsolescence" "/img/plane1.png" "/img/plane2.png" False "point_enter_down"
-            , BoxesItem "Electronic Solutions" "/electronics" "/img/circuit1.png" "/img/circuit2.png" False "point_enter_down"
+            , BoxesItem "Electronic Systems Solutions" "/electronics" "/img/circuit1.png" "/img/circuit2.png" False "point_enter_down"
             , BoxesItem "Electronics in Harsh Environments" "/oil" "/img/oil1.png" "/img/oil2.png" False "point_enter_down"
             , BoxesItem "Research and Development" "/rnd" "/img/heat1.png" "/img/heat2.png" False "point_enter_down"
             ]
