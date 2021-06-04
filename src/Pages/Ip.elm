@@ -534,7 +534,7 @@ mainText shared animateSelf =
                 none
             )
         ]
-        [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Xlg ] [ text "15 issued patents and counting." ]
+        [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Xlg ] [ text "16 issued patents and counting." ]
         , paragraph [ spacing 10, fontSize device Sm, Font.light, htmlAttribute <| id "mainText", width fill ]
             [ text "GCI’s innovations are recognized with 16 patents, 3 trademarks, and additional patents currently in process.  These technological advancements set GCI apart from its competitors."
             , html <| br [] []
