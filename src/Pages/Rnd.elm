@@ -493,7 +493,7 @@ mainText shared animateSelf =
                 none
             )
         ]
-        [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Xlg ] [ text "Advanced Thermal Management Systems" ]
+        [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Xlg ] [ text "Advanced Thermal Management Systems." ]
         , paragraph [ spacing 10, fontSize device Sm, Font.light, htmlAttribute <| id "mainText" ]
             [ text "Current Immersion coolers are not compatible with standard electronic component packaging of ICs and CCAs. Long-term exposure of electronics to commonly used coolants, such as mineral oil, or water inevitably leads to damaged components. Non-reactive engineering fluids are available for a premium cost but do not have optimal heat transfer characteristics. Large data centers have begun implementing engineering fluids in both single-phase and two-phased immersion cooling for server racks, demonstrating a practical application of immersion cooling. GCI’s flexibility in both IC packaging material and form-factor allows for hermetically sealed, corrosion-resistant, high-reliability components that do not react with mineral oil or mater. This unique capability allows GCI to pursue immersion cooling on a scale that is compatible with SwaP-C requirements."
             ]

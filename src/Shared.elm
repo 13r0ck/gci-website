@@ -340,7 +340,7 @@ navbar shared message =
 
                                 else
                                     "/img/logo_sans_ring.svg"
-                            , description = "Global Circuit Inovations"
+                            , description = "Global Circuit Innovations"
                             }
                         )
                 }

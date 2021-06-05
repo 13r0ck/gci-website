@@ -735,7 +735,7 @@ head shared =
                             0
                         )
                     ]
-                    { src = "/img/logo_sans_ring.svg", description = "Global Circuit Inovations" }
+                    { src = "/img/logo_sans_ring.svg", description = "Global Circuit Innovations" }
                 )
 
         earthVideo =

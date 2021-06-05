@@ -488,7 +488,7 @@ mainText shared animateSelf =
                 none
             )
         ]
-        [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Lg ] [ text "GCI Engages with the Technical Community" ]
+        [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Lg ] [ text "GCI Engages with the Technical Community." ]
         , paragraph [ spacing 10, fontSize device Sm, Font.light, htmlAttribute <| id "mainText", width fill ]
             [ text "GCI regularly presents at technical conferences and routinely publishes technical papers."
             ]

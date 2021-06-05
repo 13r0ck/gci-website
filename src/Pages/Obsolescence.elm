@@ -670,7 +670,7 @@ mainText shared animateSelf =
                 none
             )
         ]
-        [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Xlg ] [ text "Obsolescence is a big deal" ]
+        [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Xlg ] [ text "Obsolescence is a big deal." ]
         , paragraph [ spacing 10, fontSize device Sm, Font.light ]
             [ text "Electronics obsolescence is common in sectors such as Defense, where equipment has long lead times and needs to be supported for many decades. It is not unusual that 70–80% of the electronic components are obsolete before the system has been deployed."
             ]

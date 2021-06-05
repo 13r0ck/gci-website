@@ -466,7 +466,7 @@ head shared model =
                         min 150 (toFloat w * 0.1) |> floor
                     )
                 ]
-                (List.intersperse (html <| br [] []) [ text "Global", text "Circuit", text "Inovations." ])
+                (List.intersperse (html <| br [] []) [ text "Global", text "Circuit", text "Innovations." ])
             )
         ]
         { src = "/img/building.jpg", description = "Picture of GCI's head quarters" }
@@ -526,7 +526,7 @@ mainText shared animateSelf =
                 none
             )
         ]
-        [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Lg ] [ text "Where Innovation and Talent Integrate" ]
+        [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Lg ] [ text "Where Innovation and Talent Integrate." ]
         , paragraph [ spacing 10, fontSize device Sm, Font.light, htmlAttribute <| id "mainText", width fill ]
             [ text "Founded in 2006 in Colorado Springs, CO, GCI is an established Design & Manufacturing Engineering Solutions House for DoD Electronic Obsolescence and Electronics in Extreme Environments. GCI’s team leverages decades of experience to generate innovative solutions for the most challenging electronics requirements."
             ]
