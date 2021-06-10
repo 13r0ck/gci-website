@@ -9,7 +9,7 @@ use serde::Serialize;
 pub struct Post {
     pub id: i32, 
     pub title: String,
-    pub images: Vec<i32>,
+    pub images: Vec<String>,
     pub content: String,
     pub posttime: NaiveDateTime,
 }
@@ -18,7 +18,7 @@ pub struct Post {
 #[table_name="posts"]
 pub struct NewPost<'x> {
     pub title: &'x str,
-    pub images: Vec<i32>,
+    pub images: Vec<String>,
     pub content: &'x str,
     pub posttime: NaiveDateTime,
 }
@@ -26,7 +26,7 @@ pub struct NewPost<'x> {
 #[derive(Debug, Queryable, Serialize)]
 pub struct Image {
     pub id: i32,
-    pub title: String,
+    pub imagename: String,
     pub main: Vec<u8>,
     pub thumbnail: Vec<u8>,
     pub showthumbnail: bool,
@@ -35,6 +35,7 @@ pub struct Image {
 #[derive(Debug, Insertable, AsChangeset)]
 #[table_name="images"]
 pub struct NewImage {
+    pub imagename: String,
     pub main: Vec<u8>,
     pub thumbnail: Vec<u8>,
     pub showthumbnail: bool,

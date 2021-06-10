@@ -789,15 +789,16 @@ leadership shared model animateSelf =
                 , el [ Font.extraLight, Font.letterSpacing 5, Font.center, centerX, fontSize device Xlg ] (text "Leadership")
                 ]
             )
-        , ( if (List.length leaders |> modBy 2 ) == 0 || (List.length leaders |> modBy  3) == 0 then
-            (el [ width (px (min (toFloat w * 0.8 |> round) (leadersPerRow * cardWidth + (leadersPerRow * cardSpacing)))), centerX ]
-                (wrappedRow [ centerX, spacing cardSpacing ] (List.map leader leaders))
-            )
-            else
+        -- if width will wrap someone to the bottom, then move Erick up rather than leave someone alone on the bottom
+        , ( if modBy ((min (toFloat w * 0.8 |> round) (leadersPerRow * cardWidth + (leadersPerRow * cardSpacing))) // cardWidth) (List.length leaders) == 1 then
             (column [ spacing cardSpacing, width (px (min (toFloat w * 0.8 |> round) (leadersPerRow * cardWidth + (leadersPerRow * cardSpacing)))), centerX ]
                 [ List.head leaders |> Maybe.withDefault (nullLeader 0) |> leader
                 , (wrappedRow [centerX, spacing cardSpacing ] (List.tail leaders |> Maybe.withDefault [(nullLeader 1)] |> List.map leader))
                 ]
+            )
+            else
+            (el [ width (px (min (toFloat w * 0.8 |> round) (leadersPerRow * cardWidth + (leadersPerRow * cardSpacing)))), centerX ]
+                (wrappedRow [ centerX, spacing cardSpacing ] (List.map leader leaders))
             )
         )
         ]

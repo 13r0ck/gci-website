@@ -1,6 +1,7 @@
 table! {
     images (id) {
         id -> Int4,
+        imagename -> Text,
         main -> Bytea,
         thumbnail -> Bytea,
         showthumbnail -> Bool,
@@ -11,9 +12,9 @@ table! {
     posts (id) {
         id -> Int4,
         title -> Text,
-        images -> Array<Int4>,
+        images -> Array<Text>,
         content -> Text,
-        posttime -> Date,
+        posttime -> Timestamptz,
     }
 }
 
