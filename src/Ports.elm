@@ -5,7 +5,11 @@ import Json.Decode as Json
 
 
 -- Ports
+port waitForId : String -> Cmd msg
 
+port idLoaded : (String -> msg) -> Sub msg
+
+port idFailed : (String -> msg) -> Sub msg
 
 port controlVideo : Bool -> Cmd msg
 

@@ -15,7 +15,7 @@ import Json.Decode as Json
 import Json.Encode as Encode
 import Page
 import Palette exposing (FontSize(..), black, fontSize, gciBlue, gciBlueLight, maxWidth, warning, white)
-import Ports exposing (recvScroll)
+import Ports exposing (recvScroll, idLoaded)
 import Request
 import Shared exposing (FormResponse, contactUs, footer, navbar, reset, acol)
 import Storage exposing (NavBarDisplay(..), SendState(..))
@@ -49,7 +49,14 @@ type alias Model =
     , posts : List Post
     , postRecvError : Bool
     , animationTracker : Dict String AnimationState
+    , loadingState : LoadingState
     }
+
+type LoadingState
+    = StartLoading
+    | RecvPosts
+    | RecvImg
+    | LoadingFailed
 
 type alias Post =
     { id : Int
@@ -69,6 +76,7 @@ init shared =
         , postRecvError = False
         , animationTracker =
                 Dict.fromList []
+        , loadingState = StartLoading
         }
         , Http.post
             { url = "http://localhost:8000/newsroom/posts?range=10"
@@ -97,6 +105,8 @@ type Msg
     | Submited (Result Http.Error FormResponse)
     | GotPosts (Result Http.Error Posts)
     | GotElement String (Result Browser.Dom.Error Browser.Dom.Element)
+    | IdLoaded String
+    | IdFailed String
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Msg )
@@ -219,9 +229,13 @@ update shared msg model =
         GotPosts response ->
             case response of
                 Ok posts ->
-                    ( {model | posts = posts, animationTracker = Dict.fromList (List.indexedMap (\i p -> (String.fromInt p.id, AnimationState (PercentOfViewport 30) (if i == 0 then True else False))) posts)}, Effect.none)
+                    ( {model | posts = posts, loadingState = RecvPosts, animationTracker = Dict.fromList (List.indexedMap (\i p -> (String.fromInt p.id, AnimationState (PercentOfViewport 30) (if i == 0 then True else False))) posts)}, posts |> List.head |> Maybe.withDefault (Post 1 "" [""] "" "") |> .images |> List.head |> Maybe.withDefault "" |> Ports.waitForId |> Effect.fromCmd)
                 Err _ ->
-                    ( { model | postRecvError = True }, Effect.none)
+                    ( { model | postRecvError = True, loadingState = LoadingFailed }, Effect.none)
+        IdLoaded _ ->
+                    ( {model | loadingState = RecvImg, animationTracker = Dict.fromList (List.indexedMap (\i p -> (String.fromInt p.id, AnimationState (PercentOfViewport 30) (if i == 0 then True else False))) model.posts)}, Effect.none)
+        IdFailed id ->
+            (model, Ports.waitForId id |> Effect.fromCmd)
         GotElement id element ->
             case element of
                 Ok e ->
@@ -240,6 +254,8 @@ subscriptions model =
     Sub.batch
         [ recvScroll Scrolled
         , Browser.Events.onResize WindowResized
+        , idLoaded IdLoaded
+        , Ports.idFailed IdFailed
         ]
 
 
@@ -267,6 +283,7 @@ view shared model =
                         [ width fill
                         , clip
                         , centerY
+                        , htmlAttribute <| id ( String.fromInt item.id )
                         , Border.rounded 10
                         , inFront
                             (el
@@ -281,6 +298,7 @@ view shared model =
                                 [ centerX
                                 , centerY
                                 , width fill
+                                , htmlAttribute <| id (item.images |> List.head |> Maybe.withDefault "")
                                 ]
                                 { src = ("http://localhost:8000/newsroom/images/" ++ (List.head item.images |> Maybe.withDefault "logo.jpg")), description = item.title }
                             )
@@ -288,8 +306,8 @@ view shared model =
                 content =
                     column [width fill, spacing 10]
                         [ paragraph [ Region.heading 3, Font.extraLight, fontSize device Xlg ] [ text item.title ]
-                        , paragraph [fontSize device Xsm, Font.color (rgb 0.1 0.1 0.13)] [text item.posttime]
-                        , paragraph [ width fill, fontSize device Lg, Font.light ] (List.concat (List.intersperse [ html <| br [] [], html <| br [] [] ] (item.content |> String.split "\n" |> List.map (\t -> [ text t ]))))
+                        , paragraph [fontSize device Xsm, Font.color (rgb 0.1 0.1 0.13)] [ item.posttime |> String.split "T" |> List.head |> Maybe.withDefault "" |> String.split "-" |> prettyDate |> text ]
+                        , paragraph [ width fill, fontSize device Md, Font.light ] (List.concat (List.intersperse [ html <| br [] [] ] (item.content |> String.split "\n" |> List.map (\t -> [ text t ]))))
                         ]
             in
             acol
@@ -309,6 +327,27 @@ view shared model =
                     [ width fill, spacing 20 ]
                     [ img, content ]
                 ]
+        loadingWheel =
+            column [centerX, height (if model.loadingState == RecvImg then shrink else (px h))]
+                [ image
+                [ width (px 120)
+                , height (px (if model.loadingState == LoadingFailed then 0 else 120))
+                , centerX
+                , inFront (image [ width (px 80), height (px 80), centerX, centerY ] { src = "/img/logo_sans_text.svg", description = "logo" })
+                ]
+                { src = "/img/loading.svg", description = "Loading..." }
+                , el [centerX, Font.center] (text (case model.loadingState of
+                    StartLoading ->
+                        "Loading..."
+                    RecvPosts ->
+                        "Finishing up..."
+                    RecvImg ->
+                        ""
+                    LoadingFailed ->
+                        "Failed. Please check your internet connection and try again."))
+                ]
+        posts =
+            column ([width fill, spacing 100 ] ++ (if model.loadingState == RecvImg then [] else [height (px 0), clip])) (List.map (\p -> post p) model.posts)
     in
     { title = "GCI - Authorized Reverse Engineering IC Solutions for Obsolescence and High Temperature Environments"
     , attributes =
@@ -335,19 +374,13 @@ view shared model =
                         )
                         0
                     , centerX
-                    , width (fill |> maximum (toFloat maxWidth * 0.7 |> round))
+                    , width (fill |> maximum (toFloat maxWidth * 0.5 |> round))
                     , spacing 50
                     ]
-                    [ el [height (px 100)] (none)
+                    [ el [height (px 50)] (none)
                     , el [ Region.heading 1, Font.extraLight, Font.extraLight, fontSize device Xlg, centerX ] (text "Newsroom")
-                    , column [width fill, spacing 100] (List.map (\p -> post p) model.posts)
-                    , image
-                        [ width (px 120)
-                        , height (px 120)
-                        , centerX
-                        , inFront (image [ width (px 80), height (px 80), centerX, centerY ] { src = "/img/logo_sans_text.svg", description = "logo" })
-                        ]
-                        { src = "/img/loading.svg", description = "Loading..." }
+                    , posts
+                    , loadingWheel
                     ]
                 ]
             , footer model.localShared ModifyLocalShared
@@ -366,3 +399,40 @@ shouldAnimate id model =
 animationTrackerToCmd : ( String, AnimationState ) -> Effect Msg
 animationTrackerToCmd ( k, _ ) =
     Task.attempt (GotElement k) (Browser.Dom.getElement k) |> Effect.fromCmd
+
+prettyDate : List String -> String
+prettyDate list =
+    let
+        year = List.head list |> Maybe.withDefault ""
+        month = List.tail list |> Maybe.withDefault ["",""] |> List.head |> Maybe.withDefault ""
+        day = List.tail list |> Maybe.withDefault ["", ""] |> List.tail |> Maybe.withDefault [""] |> List.head |> Maybe.withDefault ""
+    in
+        (case month of
+            "01" ->
+                "January"
+            "02" ->
+                "Febuary"
+            "03" ->
+                "March"
+            "04" ->
+                "April"
+            "05" ->
+                "May"
+            "06" ->
+                "June"
+            "07" ->
+                "July"
+            "08" ->
+                "August"
+            "09" ->
+                "September"
+            "10" ->
+                "October"
+            "11" ->
+                "November"
+            "12" ->
+                "December"
+            _ ->
+                ""
+        )
+        ++ " " ++ day ++ ", " ++ year

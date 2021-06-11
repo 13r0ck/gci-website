@@ -25,8 +25,8 @@ pub struct NewPost<'x> {
 
 #[derive(Debug, Queryable, Serialize)]
 pub struct Image {
-    pub id: i32,
     pub imagename: String,
+    pub caption: Option<String>,
     pub main: Vec<u8>,
     pub thumbnail: Vec<u8>,
     pub showthumbnail: bool,
@@ -37,6 +37,7 @@ pub struct Image {
 pub struct NewImage {
     pub imagename: String,
     pub main: Vec<u8>,
+    pub caption: Option<String>,
     pub thumbnail: Vec<u8>,
     pub showthumbnail: bool,
 }

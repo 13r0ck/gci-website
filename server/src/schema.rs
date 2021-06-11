@@ -1,7 +1,7 @@
 table! {
-    images (id) {
-        id -> Int4,
+    images (imagename) {
         imagename -> Text,
+        caption -> Nullable<Text>,
         main -> Bytea,
         thumbnail -> Bytea,
         showthumbnail -> Bool,
