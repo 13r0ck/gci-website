@@ -54,13 +54,11 @@ fn files(file: String) -> Option<CachedFile> {
         .or_else(|| NamedFile::open(Path::new("server/public/index.html")).ok().map(|n| CachedFile(n, 0)))
 }
 
-#[post("/newsroom/posts?<range>")]
-pub fn posts(conn: DbConn, range: i64) -> Result<Json<Vec<Post>>, String> {
+#[post("/newsroom/posts?<i>&<range>")]
+pub fn posts(conn: DbConn, i : i64, range: i64) -> Result<Json<Vec<Post>>, String> {
     use crate::schema::posts::dsl::*;
 
-    println!("{:?}", posts.order(posttime.desc()).limit(range.min(10)).load::<Post>(&conn.0).unwrap());
-    posts.order(posttime.desc()).limit(range.min(10)).load(&conn.0).map_err(|err| -> String {
-        println!("Error querying page views: {:?}", err);
+    posts.order(posttime.desc()).offset(i).limit(range.min(3)).load(&conn.0).map_err(|err| -> String {
         "Error querying page views from the database".into()
     }).map(Json)
 }
@@ -73,13 +71,11 @@ pub fn images(conn: DbConn, image: String) -> Content<Stream<Cursor<Vec<u8>>>> {
 
     match images.filter(imagename.eq(image)).load::<Image>(&conn.0) {
         Ok(imgs) => {
-            //println!("{:?}", imgs[0].main);
-            //println!("{:?}", image::load_from_memory(&imgs[0].main));
             match imgs.first() {
                 Some(_) => {
                     image::load_from_memory(
                         &base64::decode(&imgs[0].main).unwrap()
-                        ).unwrap().write_to(&mut cursor, if let Ok(format) = ImageFormat::from_path("thing.jpg"/*&imgs[0].imagename*/) {
+                        ).unwrap().write_to(&mut cursor, if let Ok(format) = ImageFormat::from_path(&imgs[0].imagename) {
                             image::ImageOutputFormat::from(format)
                         } else {image::ImageOutputFormat::Unsupported("Invalid image in database".to_string())}).expect("");
 

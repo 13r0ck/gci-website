@@ -25,9 +25,10 @@ app.ports.waitForId.subscribe((id) => {
   //app.ports.idLoaded.send(id);
   console.log(id);
   item = document.getElementById(id)
-  if (item) {
+  if (item && item.firstChild) {
     item.firstChild.onload = function(){ app.ports.idLoaded.send(id)}
-  } else {
+    item.firstChild.onerror = function(){ app.ports.idLoaded.send(id)}
+  } else if (id) {
     app.ports.idFailed.send(id);
   }
 });
