@@ -58,6 +58,7 @@ type LoadingState
     | RecvPosts
     | RecvImg
     | LoadingFailed
+    | LoadingDone
 
 
 type alias Post =
@@ -150,7 +151,7 @@ update shared msg model =
               else
                 model
             , Effect.batch
-                ((if shouldAnimate "spinner" model then
+                ((if shouldAnimate "spinner" model && not (model.loadingState == LoadingDone) then
                     Http.post
                         { url = "http://localhost:8000/newsroom/posts?i=" ++ String.fromInt model.postIndex ++ "&range=3"
                         , body = Http.emptyBody
@@ -263,7 +264,11 @@ update shared msg model =
         GotPosts response ->
             case response of
                 Ok newPosts ->
-                    ( { model | posts = model.posts ++ [ Posts newPosts False ], postIndex = model.postIndex + List.length newPosts, loadingState = RecvPosts }, newPosts |> List.head |> Maybe.withDefault (Post 1 "" [ "" ] "" "") |> .images |> List.head |> Maybe.withDefault "" |> Ports.waitForId |> Effect.fromCmd )
+                    ( if List.isEmpty newPosts then
+                        ( { model | loadingState = LoadingDone}, Effect.none )
+                    else
+                        ( { model | posts = model.posts ++ [ Posts newPosts False ], postIndex = model.postIndex + List.length newPosts, loadingState = RecvPosts }, newPosts |> List.head |> Maybe.withDefault (Post 1 "" [ "" ] "" "") |> .images |> List.head |> Maybe.withDefault "" |> Ports.waitForId |> Effect.fromCmd )
+                    )
 
                 Err _ ->
                     ( { model | postRecvError = True, loadingState = LoadingFailed }, Effect.none )
@@ -415,7 +420,7 @@ view shared model =
             column
                 [ centerX
                 , height
-                    (if model.loadingState == RecvImg then
+                    (if (List.any (\p -> p.show) model.posts) then
                         shrink
 
                      else
@@ -427,7 +432,7 @@ view shared model =
                     [ width (px 120)
                     , height
                         (px
-                            (if model.loadingState == LoadingFailed then
+                            (if model.loadingState == LoadingFailed || model.loadingState == LoadingDone then
                                 0
 
                              else
@@ -439,7 +444,7 @@ view shared model =
                     , inFront (image [ width (px 80), height (px 80), centerX, centerY ] { src = "/img/logo_sans_text.svg", description = "logo" })
                     ]
                     { src = "/img/loading.svg", description = "Loading..." }
-                , el [ centerX, Font.center ]
+                , el [ centerX, Font.center, padding 10]
                     (text
                         (case model.loadingState of
                             StartLoading ->
@@ -453,17 +458,19 @@ view shared model =
 
                             LoadingFailed ->
                                 "Failed. Please check your internet connection and try again."
+                            LoadingDone ->
+                                "Showing all posts."
                         )
                     )
                 ]
 
         posts =
-            column [ width fill, spacing 100 ]
+            column [ width fill ]
                 (List.map
                     (\postList ->
                         column
                             (if postList.show then
-                                [ width fill, spacing 100 ]
+                                [ width fill, spacing 100, paddingEach {top = 0, bottom = 100, left = 0, right = 0} ]
 
                              else
                                 [ height (px 0), clip ]
