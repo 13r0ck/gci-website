@@ -9,7 +9,7 @@
  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
    entrypoint: gcloud
    args:
-   - 'run'
+   - 'run --env DATABASE_URL=$$DATABASE_URL --env ROCKET_DATABASES=$$ROCKET_DATABASES'
    - 'deploy'
    - 'website'
    - '--image'
@@ -18,8 +18,6 @@
    - 'us-central1'
    - '--platform'
    - 'managed'
-   - 'DATABASE_URL=$$DATABASE_URL'
-   - 'ROCKET_DATABASES=$$ROCKET_DATABASES'
  availableSecrets:
    secretManager:
      - versionName: projects/904165140417/secrets/newsroomDBUrl/versions/4
