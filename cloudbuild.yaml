@@ -20,7 +20,7 @@
    - 'us-central1'
    - '--platform'
    - 'managed'
-   secretEnv: ['USERNAME', 'PASSWORD']
+   secretEnv: ['DATABASE_URL', 'ROCKET_DATABASES']
  images:
  - 'gcr.io/$PROJECT_ID/website:$COMMIT_SHA'
  timeout: 1200s
