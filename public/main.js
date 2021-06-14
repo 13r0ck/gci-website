@@ -21,6 +21,18 @@ app.ports.setCursor.subscribe((pos) => {
   } catch {}
 });
 
+app.ports.waitForId.subscribe((id) => {
+  //app.ports.idLoaded.send(id);
+  item = document.getElementById(id)
+  if (item && item.firstChild) {
+    item.firstChild.onload = function(){ app.ports.idLoaded.send(id)}
+    item.firstChild.onerror = function(){ app.ports.idLoaded.send(id)}
+  } else if (id) {
+    app.ports.idFailed.send(id);
+  }
+});
+
+
 var winX = null;
 var winY = null;
 app.ports.disableScrolling.subscribe((msg) => {

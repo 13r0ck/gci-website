@@ -75,14 +75,6 @@ type alias Testimonial =
     }
 
 
-type alias NavItem =
-    { name : String
-    , link : String
-    , hovered : Bool
-    , message : Msg
-    }
-
-
 type alias OnScreenItem =
     { id : String
     , onScreen : Bool

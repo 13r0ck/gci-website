@@ -113,8 +113,7 @@ init _ flags =
       , navHoverTracker =
             [ NavItem "WHO WE ARE" "#" False (Url "/whoweare")
             , NavItem "WHAT WE DO" "#" False (Url "/#whatwedo")
-
-            --, NavItem "NEWSROOM" "#" False (Url "/newsroom")
+            , NavItem "NEWSROOM" "#" False (Url "/newsroom")
             , NavItem "CONTACT US" "#" False (SetContactUs True)
             ]
       , address =
@@ -755,25 +754,24 @@ contactUs shared message =
                                 )
                         ]
 
-                     else
-                        if state.send == Waiting || state.send == Send then
-                            [ none ]
+                     else if state.send == Waiting || state.send == Send then
+                        [ none ]
 
-                        else
-                            [ Input.button
-                                [ alignBottom
-                                , paddingXY 100 10
-                                , rounded 100
-                                , centerX
-                                , Background.color gciBlue
-                                , Font.bold
-                                , Font.color white
-                                , Border.color gciBlue
-                                , mouseOver [ Border.color gciBlueLight, Background.color gciBlueLight ]
-                                , Border.width 2
-                                ]
-                                { onPress = Just (message (setContactUs shared False)), label = text "Close" }
+                     else
+                        [ Input.button
+                            [ alignBottom
+                            , paddingXY 100 10
+                            , rounded 100
+                            , centerX
+                            , Background.color gciBlue
+                            , Font.bold
+                            , Font.color white
+                            , Border.color gciBlue
+                            , mouseOver [ Border.color gciBlueLight, Background.color gciBlueLight ]
+                            , Border.width 2
                             ]
+                            { onPress = Just (message (setContactUs shared False)), label = text "Close" }
+                        ]
                     )
                 , paragraph
                     [ alignLeft

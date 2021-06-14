@@ -2,6 +2,7 @@
 
 ## This project can be run in 3 ways
 1. Full stack locally via Docker
+> Note: Database connections are handled via environment variables. You will have to supply your own database and configure ENV variables accordingly.
 ```bash
 docker build -t elm-rust-app . && docker run --env PORT='1234' -p 1234:1234 elm-rust-app # starts this app at http://localhost:1234
 ```
@@ -15,6 +16,7 @@ elm-spa server # starts this app at http://localhost:1234
 >[Link your Google Cloud Build with your Git Repo.](https://cloud.google.com/build/docs/automating-builds/run-builds-on-github) Then
 >[Configure the `cloudbuild.yaml` with your project-id etc](https://cloud.google.com/build/docs/configuring-builds/create-basic-configuration)
 >. Then after struggling for hours its as simple as:
+> Note: Database connections are configured with ENV variables, for google cloud those will have to be managed in the google cloud secret manager, then the cloudbuild.yaml will have to be modified to point to those.
 ```bash
 git push origin main
 ```
