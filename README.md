@@ -10,7 +10,7 @@ docker build -t elm-rust-app . && docker run --env PORT='1234' -p 1234:1234 elm-
 > See dependecies below
 ```bash
 elm-spa server # starts this app at http://localhost:1234
-```
+``` 
 3. Pushed to Google Cloud
 > This is WAY more work, but the `cloudbuild.yaml` is inciuded because I am using it. It can be ignored if using method 1 or 2. 
 >[Link your Google Cloud Build with your Git Repo.](https://cloud.google.com/build/docs/automating-builds/run-builds-on-github) Then
