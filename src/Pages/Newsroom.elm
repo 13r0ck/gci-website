@@ -8,10 +8,11 @@ import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
+import Element.Input as Input
 import Element.Region as Region
 import Gen.Params.Newsroom exposing (Params)
 import Html exposing (br)
-import Html.Attributes exposing (id)
+import Html.Attributes exposing (class, id)
 import Http exposing (Error(..))
 import Json.Decode as Json
 import Json.Encode as Encode
@@ -20,11 +21,12 @@ import Pages.Home_ exposing (AnimationState, When(..), onScreenItemtoCmd, update
 import Palette exposing (FontSize(..), black, fontSize, gciBlue, gciBlueLight, maxWidth, warning, white)
 import Ports exposing (idLoaded, recvScroll)
 import Request
-import Shared exposing (FormResponse, acol, contactUs, footer, navbar, reset)
+import Shared exposing (FormResponse, acol, ael, contactUs, footer, navbar, reset)
 import Simple.Animation as Animation exposing (Animation)
 import Simple.Animation.Animated as Animated
 import Simple.Animation.Property as P
 import Storage exposing (NavBarDisplay(..), SendState(..))
+import Swiper exposing (SwipingState)
 import Task
 import View exposing (View)
 
@@ -50,6 +52,7 @@ type alias Model =
     , animationTracker : Dict String AnimationState
     , loadingState : LoadingState
     , postIndex : Int
+    , swipingState : SwipingState
     }
 
 
@@ -67,6 +70,7 @@ type alias Post =
     , images : List String
     , content : String
     , posttime : String
+    , viewNum : Int
     }
 
 
@@ -85,6 +89,7 @@ init shared =
             Dict.fromList []
       , loadingState = StartLoading
       , postIndex = 0
+      , swipingState = Swiper.initialSwipingState
       }
     , Http.post
         { url = "http://localhost:8000/newsroom/posts?i=0&range=3"
@@ -92,12 +97,13 @@ init shared =
         , expect =
             Http.expectJson GotPosts
                 (Json.list
-                    (Json.map5 Post
+                    (Json.map6 Post
                         (Json.field "id" Json.int)
                         (Json.field "title" Json.string)
                         (Json.field "images" (Json.list Json.string))
                         (Json.field "content" Json.string)
                         (Json.field "posttime" Json.string)
+                        (Json.succeed 0)
                     )
                 )
         }
@@ -119,6 +125,9 @@ type Msg
     | GotElement String (Result Browser.Dom.Error Browser.Dom.Element)
     | IdLoaded String
     | IdFailed String
+    | MoveLeft Int
+    | MoveRight Int
+    | ImageSwiped Int Swiper.SwipeEvent
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Msg )
@@ -158,12 +167,13 @@ update shared msg model =
                         , expect =
                             Http.expectJson GotPosts
                                 (Json.list
-                                    (Json.map5 Post
+                                    (Json.map6 Post
                                         (Json.field "id" Json.int)
                                         (Json.field "title" Json.string)
                                         (Json.field "images" (Json.list Json.string))
                                         (Json.field "content" Json.string)
                                         (Json.field "posttime" Json.string)
+                                        (Json.succeed 0)
                                     )
                                 )
                         }
@@ -262,13 +272,17 @@ update shared msg model =
             ( { model | localShared = newModel model.localShared }, Shared.UpdateModel (newModel model.localShared) |> Effect.fromShared )
 
         GotPosts response ->
+            let
+                postFilter newPosts =
+                    List.filter (\newPost -> not (List.member newPost (List.foldl (\a b -> b ++ a.posts) [] model.posts))) newPosts
+            in
             case response of
                 Ok newPosts ->
-                    ( if List.isEmpty newPosts then
-                        ( { model | loadingState = LoadingDone}, Effect.none )
+                    if List.isEmpty newPosts then
+                        ( { model | loadingState = LoadingDone }, Effect.none )
+
                     else
-                        ( { model | posts = model.posts ++ [ Posts newPosts False ], postIndex = model.postIndex + List.length newPosts, loadingState = RecvPosts }, newPosts |> List.head |> Maybe.withDefault (Post 1 "" [ "" ] "" "") |> .images |> List.head |> Maybe.withDefault "" |> Ports.waitForId |> Effect.fromCmd )
-                    )
+                        ( { model | posts = model.posts ++ [ Posts (postFilter newPosts) False ], postIndex = model.postIndex + List.length (postFilter newPosts), loadingState = RecvPosts }, newPosts |> List.head |> Maybe.withDefault (Post 1 "" [ "" ] "" "" 0) |> .images |> List.head |> Maybe.withDefault "" |> Ports.waitForId |> Effect.fromCmd )
 
                 Err _ ->
                     ( { model | postRecvError = True, loadingState = LoadingFailed }, Effect.none )
@@ -298,7 +312,9 @@ update shared msg model =
 
                     else
                         Dict.union model.animationTracker
-                            (model.posts |> List.filter (\p -> not p.show) |> List.foldl (\a b -> b ++ a.posts) []
+                            (model.posts
+                                |> List.filter (\p -> not p.show)
+                                |> List.foldl (\a b -> b ++ a.posts) []
                                 |> List.indexedMap
                                     (\i p ->
                                         ( String.fromInt p.id
@@ -327,6 +343,108 @@ update shared msg model =
 
                 Err _ ->
                     ( model, Effect.none )
+
+        MoveLeft id ->
+            ( { model
+                | posts =
+                    List.map
+                        (\ps ->
+                            { ps
+                                | posts =
+                                    List.map
+                                        (\p ->
+                                            if not (p.viewNum == 0) && p.id == id then
+                                                { p | viewNum = p.viewNum - 1 }
+
+                                            else
+                                                p
+                                        )
+                                        ps.posts
+                            }
+                        )
+                        model.posts
+              }
+            , Effect.none
+            )
+
+        MoveRight id ->
+            ( { model
+                | posts =
+                    List.map
+                        (\ps ->
+                            { ps
+                                | posts =
+                                    List.map
+                                        (\p ->
+                                            if not (p.viewNum > (List.length p.images - 2)) && p.id == id then
+                                                { p | viewNum = p.viewNum + 1 }
+
+                                            else
+                                                p
+                                        )
+                                        ps.posts
+                            }
+                        )
+                        model.posts
+              }
+            , Effect.none
+            )
+
+        ImageSwiped id event ->
+            let
+                test fn =
+                    Tuple.second (fn event model.swipingState)
+            in
+            if test Swiper.hasSwipedLeft then
+                ( { model
+                    | posts =
+                        List.map
+                            (\ps ->
+                                { ps
+                                    | posts =
+                                        List.map
+                                            (\p ->
+                                                if not (p.viewNum == 0) && p.id == id then
+                                                    { p | viewNum = p.viewNum - 1 }
+
+                                                else
+                                                    p
+                                            )
+                                            ps.posts
+                                }
+                            )
+                            model.posts
+                    , swipingState = Tuple.first (Swiper.hasSwipedLeft event model.swipingState)
+                  }
+                , Effect.none
+                )
+
+            else if test Swiper.hasSwipedRight then
+                ( { model
+                    | posts =
+                        List.map
+                            (\ps ->
+                                { ps
+                                    | posts =
+                                        List.map
+                                            (\p ->
+                                                if not (p.viewNum > (List.length p.images - 2)) && p.id == id then
+                                                    { p | viewNum = p.viewNum + 1 }
+
+                                                else
+                                                    p
+                                            )
+                                            ps.posts
+                                }
+                            )
+                            model.posts
+                    , swipingState = Tuple.first (Swiper.hasSwipedRight event model.swipingState)
+                  }
+                , Effect.none
+                )
+
+            else
+                ( { model | swipingState = Tuple.first (Swiper.hasSwipedDown event model.swipingState) }, Effect.none )
 
 
 
@@ -362,33 +480,114 @@ view shared model =
         isPhone =
             shared.device.class == Phone
 
+        postWidth =
+            min 800
+                (toFloat w
+                    * (if isPhone then
+                        0.9
+
+                       else
+                        0.8
+                      )
+                    |> round
+                )
+
         post item =
             let
                 img =
                     el
-                        [ width fill
-                        , clip
-                        , centerY
-                        , htmlAttribute <| id (String.fromInt item.id)
-                        , Border.rounded 10
-                        , Background.image "/img/logo_sans_ring.svg"
-                        , height (shrink |> minimum 90)
-                        , inFront
+                        ([ width fill
+                         , clip
+                         , centerY
+                         , htmlAttribute <| id (String.fromInt item.id)
+                         , Border.rounded 10
+                         , Background.image "/img/logo_sans_text.svg"
+                         , height (shrink |> minimum 90)
+                         , inFront
                             (el
-                                [ width fill
-                                , height fill
-                                , Border.innerShadow { blur = 18, color = rgba 0 0 0 0.3, offset = ( 1, 8 ), size = 8 }
-                                ]
+                                ([ width fill
+                                 , height fill
+                                 , Border.innerShadow { blur = 18, color = rgba 0 0 0 0.3, offset = ( 1, 8 ), size = 8 }
+                                 ]
+                                    ++ List.map (\a -> htmlAttribute <| a) (Swiper.onSwipeEvents (ImageSwiped item.id))
+                                )
                                 none
                             )
-                        ]
-                        (image
-                            [ centerX
-                            , centerY
-                            , width fill
-                            , htmlAttribute <| id (item.images |> List.head |> Maybe.withDefault "")
+                         ]
+                            ++ (if List.length item.images > 1 then
+                                    [ inFront
+                                        (ael
+                                            (if item.viewNum == (List.length item.images - 1) then
+                                                Animation.fromTo
+                                                    { duration = 200
+                                                    , options = []
+                                                    }
+                                                    [ P.opacity 100, P.y 0 ]
+                                                    [ P.opacity 0, P.y 10 ]
+
+                                             else
+                                                Animation.fromTo
+                                                    { duration = 200
+                                                    , options = []
+                                                    }
+                                                    [ P.opacity 0, P.y 10 ]
+                                                    [ P.opacity 100, P.y 0 ]
+                                            )
+                                            [ centerY, Background.color white, padding 5, alignRight, Border.roundEach { topLeft = 5, topRight = 0, bottomLeft = 5, bottomRight = 0 } ]
+                                            (Input.button [ centerY ]
+                                                { onPress = Just (MoveRight item.id)
+                                                , label = image [ width (px 30), height (px 30), centerY, centerX, mouseOver [ moveRight 5 ] ] { src = "/img/right.svg", description = "right button" }
+                                                }
+                                            )
+                                        )
+                                    , inFront
+                                        (ael
+                                            (if item.viewNum == 0 then
+                                                Animation.fromTo
+                                                    { duration = 200
+                                                    , options = []
+                                                    }
+                                                    [ P.opacity 100, P.y 0 ]
+                                                    [ P.opacity 0, P.y 10 ]
+
+                                             else
+                                                Animation.fromTo
+                                                    { duration = 200
+                                                    , options = []
+                                                    }
+                                                    [ P.opacity 0, P.y 10 ]
+                                                    [ P.opacity 100, P.y 0 ]
+                                            )
+                                            [ centerY, Background.color white, padding 5, Border.roundEach { topLeft = 0, topRight = 5, bottomLeft = 0, bottomRight = 5 } ]
+                                            (Input.button [ centerY ]
+                                                { onPress = Just (MoveLeft item.id)
+                                                , label = image [ width (px 30), height (px 30), centerY, centerX, mouseOver [ moveLeft 5 ] ] { src = "/img/left.svg", description = "right button" }
+                                                }
+                                            )
+                                        )
+                                    ]
+
+                                else
+                                    []
+                               )
+                        )
+                        (el
+                            [ moveLeft ((item.viewNum * postWidth) |> toFloat)
+                            , htmlAttribute <| class "animateTransform"
                             ]
-                            { src = "http://localhost:8000/newsroom/images/" ++ (List.head item.images |> Maybe.withDefault "logo_sans_ring.svg"), description = "" }
+                            (List.foldr
+                                (\a b ->
+                                    image
+                                        [ centerY
+                                        , width (px postWidth)
+                                        , onRight b
+                                        , htmlAttribute <| id a
+                                        ]
+                                        { src = "http://localhost:8000/newsroom/images/" ++ a, description = "" }
+                                )
+                                none
+                                item.images
+                            )
                         )
 
                 content =
@@ -420,7 +619,7 @@ view shared model =
             column
                 [ centerX
                 , height
-                    (if (List.any (\p -> p.show) model.posts) then
+                    (if List.any (\p -> p.show) model.posts then
                         shrink
 
                      else
@@ -444,7 +643,7 @@ view shared model =
                     , inFront (image [ width (px 80), height (px 80), centerX, centerY ] { src = "/img/logo_sans_text.svg", description = "logo" })
                     ]
                     { src = "/img/loading.svg", description = "Loading..." }
-                , el [ centerX, Font.center, padding 10]
+                , el [ centerX, Font.center, padding 10 ]
                     (text
                         (case model.loadingState of
                             StartLoading ->
@@ -458,6 +657,7 @@ view shared model =
 
                             LoadingFailed ->
                                 "Failed. Please check your internet connection and try again."
+
                             LoadingDone ->
                                 "Showing all posts."
                         )
@@ -465,12 +665,12 @@ view shared model =
                 ]
 
         posts =
-            column [ width fill ]
+            column [ width (px postWidth), centerX ]
                 (List.map
                     (\postList ->
                         column
                             (if postList.show then
-                                [ width fill, spacing 100, paddingEach {top = 0, bottom = 100, left = 0, right = 0} ]
+                                [ width fill, spacing 100, paddingEach { top = 0, bottom = 100, left = 0, right = 0 } ]
 
                              else
                                 [ height (px 0), clip ]
@@ -496,15 +696,7 @@ view shared model =
         column [ width fill, Region.mainContent ]
             [ column [ width (fill |> maximum (min w maxWidth)), centerX, spacing 25 ]
                 [ column
-                    [ paddingXY
-                        (if isPhone then
-                            10
-
-                         else
-                            100
-                        )
-                        0
-                    , centerX
+                    [ centerX
                     , width (fill |> maximum (toFloat maxWidth * 0.5 |> round))
                     , spacing 50
                     ]

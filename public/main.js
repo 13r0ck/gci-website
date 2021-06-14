@@ -23,7 +23,6 @@ app.ports.setCursor.subscribe((pos) => {
 
 app.ports.waitForId.subscribe((id) => {
   //app.ports.idLoaded.send(id);
-  console.log(id);
   item = document.getElementById(id)
   if (item && item.firstChild) {
     item.firstChild.onload = function(){ app.ports.idLoaded.send(id)}
