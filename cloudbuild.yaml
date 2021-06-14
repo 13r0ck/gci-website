@@ -18,6 +18,12 @@
    - 'us-central1'
    - '--platform'
    - 'managed'
+   availableSecrets:
+    secretManager:
+      - versionName: projects/904165140417/secrets/newsroomDBUrl/versions/4
+        env: 'DATABASE_URL'
+      - versionName: projects/904165140417/secrets/ROCKET_DATABASES/versions/1
+        env: 'ROCKET_DATABASES'
  images:
  - 'gcr.io/$PROJECT_ID/website:$COMMIT_SHA'
  timeout: 1200s
