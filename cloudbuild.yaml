@@ -9,6 +9,8 @@
  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
    entrypoint: gcloud
    args:
+   - '-c'
+   - 'export DATABASE_URL=$$DATABASE_URL && export ROCKET_DATABASES=$$ROCKET_DATABASES'
    - 'run'
    - 'deploy'
    - 'website'
@@ -18,17 +20,13 @@
    - 'us-central1'
    - '--platform'
    - 'managed'
+   secretEnv: ['USERNAME', 'PASSWORD']
  images:
  - 'gcr.io/$PROJECT_ID/website:$COMMIT_SHA'
  timeout: 1200s
- env:
-  - name: 'DATABASE_URL'
-    valueFrom:
-      secretKeyRef:
-        key: '4'
-        name: 'newsroomDBUrl'
-  - name: 'ROCKET_DATABASES'
-    valueFrom:
-      secretKeyRef:
-        key: '1'
-        name: 'ROCKET_DATABASES'
+ availableSecrets:
+  secretManager:
+  - versionName: projects/904165140417/secrets/newsroomDBUrl/versions/4
+    env: 'DATABASE_URL'
+  - versionName: projects/904165140417/secrets/ROCKET_DATABASES/versions/1
+    env: 'ROCKET_DATABASES'
