@@ -7,10 +7,8 @@
    args: ['push', 'gcr.io/$PROJECT_ID/website:$COMMIT_SHA']
  # Deploy container image to Cloud Run
  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-   entrypoint: bash
+   entrypoint: gcloud
    args:
-   - '-c'
-   - 'export DATABASE_URL=$$DATABASE_URL && export ROCKET_DATABASES=$$ROCKET_DATABASES'
    - 'run'
    - 'deploy'
    - 'website'
@@ -20,13 +18,8 @@
    - 'us-central1'
    - '--platform'
    - 'managed'
-   secretEnv: ['DATABASE_URL', 'ROCKET_DATABASES']
+   - '--set-secrets'
+   - 'DATABASE_URL=newsroomDBUrl:latest,ROCKET_DATABASES=ROCKET_DATABASES:latest'
  images:
  - 'gcr.io/$PROJECT_ID/website:$COMMIT_SHA'
  timeout: 1200s
- availableSecrets:
-  secretManager:
-  - versionName: projects/904165140417/secrets/newsroomDBUrl/versions/4
-    env: 'DATABASE_URL'
-  - versionName: projects/904165140417/secrets/ROCKET_DATABASES/versions/1
-    env: 'ROCKET_DATABASES'
