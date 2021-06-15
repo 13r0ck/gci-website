@@ -21,6 +21,8 @@
    - 'managed'
    - '--set-secrets'
    - 'DATABASE_URL=newsroomDBUrl:latest,ROCKET_DATABASES=ROCKET_DATABASES:latest'
+   - '--command'
+   - './server/elm-spa_server'
  images:
  - 'gcr.io/$PROJECT_ID/website:$COMMIT_SHA'
  timeout: 1200s
