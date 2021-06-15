@@ -59,4 +59,4 @@ COPY --from=builder /compile-path/server /server
 COPY --from=builder /compile-path/elm/public /server/public
 RUN ls /server
 USER 1000
-CMD ROCKET_PORT=$PORT ./server/elm-spa_server
+CMD ROCKET_PORT=$PORT DATABASE_URL=$DATABASE_URL ROCKET_DATABASES=$ROCKET_DATABASES ./server/elm-spa_server
