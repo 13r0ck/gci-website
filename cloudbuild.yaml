@@ -7,9 +7,8 @@
    args: ['push', 'gcr.io/$PROJECT_ID/website:$COMMIT_SHA']
  # Deploy container image to Cloud Run
  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-   entrypoint: gcloud
+   entrypoint: 'gcloud beta'
    args:
-   - 'beta'
    - 'run'
    - 'deploy'
    - 'website'
@@ -19,6 +18,7 @@
    - 'us-central1'
    - '--platform'
    - 'managed'
+   - 'DATABASE_URL=newsroomDBUrl:latest,ROCKET_DATABASES=ROCKET_DATABASES:latest'
  images:
  - 'gcr.io/$PROJECT_ID/website:$COMMIT_SHA'
  timeout: 1200s
