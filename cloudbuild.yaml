@@ -19,6 +19,7 @@
    - 'us-central1'
    - '--platform'
    - 'managed'
+   - '--set-secrets'
    - 'DATABASE_URL=newsroomDBUrl:latest,ROCKET_DATABASES=ROCKET_DATABASES:latest'
  images:
  - 'gcr.io/$PROJECT_ID/website:$COMMIT_SHA'
