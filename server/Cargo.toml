@@ -9,7 +9,7 @@ edition = "2018"
 [dependencies]
 rocket = "0.4.7"
 chrono = { version = "0.4.18", features = ["serde"] }
-diesel = { version = "1.4.7", features = ["chrono"] }
+diesel = { version = "1.4.7", features = ["chrono", "postgres"] }
 rocket_contrib = { version = "0.4.10", features = ["diesel_postgres_pool"] }
 serde = "1.0.126"
 serde_json = "1.0.64"

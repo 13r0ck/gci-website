@@ -36,9 +36,9 @@ WORKDIR /usr/server
 #RUN cargo install --target x86_64-unknown-linux-musl --path .
 
 # 1d: Build the exe using the actual source code
-RUN cargo install --target x86_64-unknown-linux-musl --path .
-#RUN cargo build --release
-RUN cp ./target/x86_64-unknown-linux-musl/release/elm-spa_server /compile-path/server/
+#RUN cargo install --target x86_64-unknown-linux-musl --path .
+RUN cargo build --release
+RUN cp ./target/release/elm-spa_server /compile-path/server/ -r
 
 #2: Build the elm project
 WORKDIR /usr/elm
@@ -53,7 +53,8 @@ VOLUME /compile-path
 # // This docker container works with `FROM scratch` to save on image size, though using google cloud run requires that the port be $PORT
 # // as seen in `CMD ROCKET_PORT=$PORT`, but I have not figured out how to either compile rocket in a way or to add an enironment variable
 # // to a scratch image. Hopefully I will figure that out eventually
-FROM alpine:latest
+FROM ubuntu:latest
+RUN apt-get update && apt-get install libpq5 -y
 COPY --from=builder /compile-path/server /server
 COPY --from=builder /compile-path/elm/public /server/public
 RUN ls /server
