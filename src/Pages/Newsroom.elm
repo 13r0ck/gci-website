@@ -92,7 +92,7 @@ init shared =
       , swipingState = Swiper.initialSwipingState
       }
     , Http.post
-        { url = "http://localhost:8000/newsroom/posts?i=0&range=3"
+        { url = "/newsroom/posts?i=0&range=3"
         , body = Http.emptyBody
         , expect =
             Http.expectJson GotPosts
@@ -162,7 +162,7 @@ update shared msg model =
             , Effect.batch
                 ((if shouldAnimate "spinner" model && not (model.loadingState == LoadingDone) then
                     Http.post
-                        { url = "http://localhost:8000/newsroom/posts?i=" ++ String.fromInt model.postIndex ++ "&range=3"
+                        { url = "/newsroom/posts?i=" ++ String.fromInt model.postIndex ++ "&range=3"
                         , body = Http.emptyBody
                         , expect =
                             Http.expectJson GotPosts
