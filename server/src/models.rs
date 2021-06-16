@@ -3,7 +3,7 @@ use crate::schema::*;
 use chrono::NaiveDateTime;
 
 /* For beeing able to serialize */
-use serde::Serialize;
+//use serde::Serialize;
 
 #[derive(Debug, Queryable, Serialize)]
 pub struct Post {

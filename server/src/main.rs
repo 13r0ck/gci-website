@@ -47,8 +47,8 @@ fn index() -> Option<CachedFile> {
     NamedFile::open(Path::new("server/public/index.html")).ok().map(|n| CachedFile(n, 0))
 }
 
-#[get("/<file>", rank = 10)]
-fn files(file: String) -> Option<CachedFile> {
+#[get("/<file..>", rank = 10)]
+fn files(file: PathBuf) -> Option<CachedFile> {
     NamedFile::open(Path::new("server/public/").join(file))
         .ok().map(|n| CachedFile(n, 31536000)) //  1 year (24*60*60*365)
         .or_else(|| NamedFile::open(Path::new("server/public/index.html")).ok().map(|n| CachedFile(n, 0)))
@@ -58,7 +58,7 @@ fn files(file: String) -> Option<CachedFile> {
 pub fn posts(conn: DbConn, i : i64, range: i64) -> Result<Json<Vec<Post>>, String> {
     use crate::schema::posts::dsl::*;
 
-    posts.order(posttime.desc()).offset(i).limit(range.min(3)).load(&conn.0).map_err(|err| -> String {
+    posts.order(posttime.desc()).offset(i).limit(range.min(3)).load(&conn.0).map_err(|_err| -> String {
         "Error querying page views from the database".into()
     }).map(Json)
 }

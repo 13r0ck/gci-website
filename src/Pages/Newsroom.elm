@@ -583,7 +583,7 @@ view shared model =
                                         , onRight b
                                         , htmlAttribute <| id a
                                         ]
-                                        { src = "http://localhost:8000/newsroom/images/" ++ a, description = "" }
+                                        { src = "/newsroom/images/" ++ a, description = "" }
                                 )
                                 none
                                 item.images
