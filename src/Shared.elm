@@ -35,7 +35,7 @@ import Json.Encode as Encode
 import Palette exposing (FontSize(..), black, fontSize, gciBlue, gciBlueLight, maxWidth, warning, white)
 import PhoneNumber
 import PhoneNumber.Countries exposing (countryUS)
-import Ports exposing (disableScrolling, recvScroll, setCursor, showNav)
+import Ports exposing (disableScrolling, google, recvScroll, setCursor, showNav)
 import Process
 import Request exposing (Request)
 import Set exposing (Set)
@@ -76,6 +76,7 @@ type alias Model =
     , contactDialogState : ContactDialogState
     , showMobileNav : Bool
     , navHoverTracker : List NavItem
+    , user : Maybe String
     }
 
 
@@ -140,6 +141,7 @@ init _ flags =
       , height = flags.height
       , contactDialogState = store
       , showMobileNav = False
+      , user = Nothing
       }
     , Cmd.none
     )
@@ -147,6 +149,7 @@ init _ flags =
 
 type Msg
     = UpdateModel Model
+    | Google String
 
 
 update : Request -> Msg -> Model -> ( Model, Cmd Msg )
@@ -174,10 +177,13 @@ update _ msg model =
             else
                 ( newModel, Cmd.none )
 
+        Google idToken ->
+            ( { model | user = Just idToken }, Cmd.none )
+
 
 subscriptions : Request -> Model -> Sub Msg
 subscriptions _ _ =
-    Sub.none
+    google Google
 
 
 
@@ -997,6 +1003,7 @@ footer shared message =
                 , wrappedRow [ centerX, fontSize device Xsm, spacing 20, padding 10 ]
                     [ el [ fontSize device Xsm ] (text "Cage: 7DGP6")
                     , el [ fontSize device Xsm ] (text "Duns: 80126549")
+                    , el [ fontSize device Xsm, inFront (el [ centerX, alignBottom, transparent True, mouseOver [ transparent False ], htmlAttribute <| class "g-signin2", htmlAttribute <| attribute "data-onsuccess" "onSignIn" ] none) ] (text "Login")
                     ]
                 ]
             , column [ fontSize device Xsm, paddingXY 200 20, centerX, spacing 10 ]

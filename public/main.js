@@ -90,3 +90,7 @@ app.ports.onUrlChange.subscribe((_) => {
   setTimeout(scrollToHash, 400);
   enableRecvScroll = true;
 });
+
+function onSignIn(googleUser) {
+  app.ports.google.send(googleUser.getAuthResponse().id_token)
+}

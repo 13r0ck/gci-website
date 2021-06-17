@@ -1,12 +1,8 @@
 #![feature(proc_macro_hygiene, decl_macro)]
-use rocket::Request;
-use rocket::Response;
-use rocket::response::Responder;
 use self::diesel::prelude::*;
 
 #[macro_use]
 extern crate rocket;
-use rocket::response;
 use rocket::response::NamedFile;
 use std::path::{Path, PathBuf};
 extern crate chrono;
@@ -22,6 +18,8 @@ use rocket_contrib::json::Json;
 pub mod models;
 pub mod schema;
 pub mod cors;
+pub mod types;
+use types::{CachedFile, Admin};
 use models::{Post, Image};
 use rocket::response::Content;
 use rocket::http::ContentType;
@@ -29,15 +27,8 @@ use rocket::response::Stream;
 use std::io::Cursor;
 use image::ImageFormat;
 
-pub struct CachedFile(NamedFile, usize);
 
-impl<'r> Responder<'r> for CachedFile {
-    fn respond_to(self, req: &Request) -> response::Result<'r> {
-        Response::build_from(self.0.respond_to(req)?)
-            .raw_header("Cache-control", format!("max-age={}", self.1))
-            .ok()
-    }
-}
+
 
 #[database("newsroom")]
 pub struct DbConn(diesel::PgConnection);
@@ -63,7 +54,44 @@ pub fn posts(conn: DbConn, i : i64, range: i64) -> Result<Json<Vec<Post>>, Strin
     }).map(Json)
 }
 
-#[get("/newsroom/images/<image>")]
+#[post("/newsroom/getimages")]
+pub fn get_images(conn: DbConn, admin: Admin) -> Result<Json<Vec<String>>, String> {
+    use crate::schema::images::dsl::*;
+    match images.load::<Image>(&conn.0) {
+        Ok(imgs) => Ok(Json(imgs.into_iter().map(|img| img.imagename).collect::<Vec<String>>())),
+        Err(_) => Err("Invalid request".to_string()),
+    }
+}
+
+#[get("/newsroom/thumbnail/<image>", rank = 2)]
+pub fn thumbnails(conn: DbConn, image: String) -> Content<Stream<Cursor<Vec<u8>>>> {
+    use crate::schema::images::dsl::*;
+    let mut buffer: Vec<u8> = Vec::new();
+    let mut cursor = Cursor::new(buffer);
+
+    match images.filter(imagename.eq(image)).load::<Image>(&conn.0) {
+        Ok(imgs) => {
+            match imgs.first() {
+                Some(_) => {
+                    image::load_from_memory(
+                        &base64::decode(&imgs[0].thumbnail).unwrap()
+                        ).unwrap().write_to(&mut cursor, if let Ok(format) = ImageFormat::from_path(&imgs[0].imagename) {
+                            image::ImageOutputFormat::from(format)
+                        } else {image::ImageOutputFormat::Unsupported("Invalid image in database".to_string())}).expect("");
+
+                    }
+                None => ()
+            }
+            cursor.set_position(0);
+            Content(ContentType::Binary, Stream::from(cursor))
+        }
+        Err(_) => {
+            cursor.set_position(0);
+            Content(ContentType::Binary, Stream::from(cursor))
+        }
+    }
+}
+#[get("/newsroom/images/<image>", rank = 1)]
 pub fn images(conn: DbConn, image: String) -> Content<Stream<Cursor<Vec<u8>>>> {
     use crate::schema::images::dsl::*;
     let mut buffer: Vec<u8> = Vec::new();
@@ -84,10 +112,6 @@ pub fn images(conn: DbConn, image: String) -> Content<Stream<Cursor<Vec<u8>>>> {
             }
             cursor.set_position(0);
             Content(ContentType::Binary, Stream::from(cursor))
-            /*
-            NamedFile::open(Path::new("../public/img/logo.jpg"))
-                .ok().map(|n| CachedFile(n, 0)).or_else(|| None)
-                */
         }
         Err(_) => {
             cursor.set_position(0);
@@ -98,7 +122,7 @@ pub fn images(conn: DbConn, image: String) -> Content<Stream<Cursor<Vec<u8>>>> {
 
 fn main() {
     rocket::ignite()
-        .mount("/", routes![files, index, posts, images])
+        .mount("/", routes![files, index, posts, images, thumbnails, get_images])
         .attach(DbConn::fairing())
         .attach(cors::CorsFairing)
         .launch();

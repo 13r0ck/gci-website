@@ -7,19 +7,19 @@ import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
-import Element.Font as Font
+import Element.Font as Font exposing (center)
 import Element.Input as Input
 import Element.Region as Region
 import Gen.Params.Newsroom exposing (Params)
 import Html exposing (br)
 import Html.Attributes exposing (class, id)
-import Http exposing (Error(..))
-import Json.Decode as Json
+import Http exposing (Error(..), expectJson)
+import Json.Decode as Json exposing (Decoder)
 import Json.Encode as Encode
 import Page
 import Pages.Home_ exposing (AnimationState, When(..), onScreenItemtoCmd, updateElement)
 import Palette exposing (FontSize(..), black, fontSize, gciBlue, gciBlueLight, maxWidth, warning, white)
-import Ports exposing (idLoaded, recvScroll)
+import Ports exposing (google, idLoaded, recvScroll)
 import Request
 import Shared exposing (FormResponse, acol, ael, contactUs, footer, navbar, reset)
 import Simple.Animation as Animation exposing (Animation)
@@ -29,6 +29,10 @@ import Storage exposing (NavBarDisplay(..), SendState(..))
 import Swiper exposing (SwipingState)
 import Task
 import View exposing (View)
+
+
+serverUrl =
+    ""
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
@@ -53,6 +57,7 @@ type alias Model =
     , loadingState : LoadingState
     , postIndex : Int
     , swipingState : SwipingState
+    , thumbnails : List String
     }
 
 
@@ -71,7 +76,13 @@ type alias Post =
     , content : String
     , posttime : String
     , viewNum : Int
+    , state : PostState
     }
+
+
+type PostState
+    = Idle
+    | Editing
 
 
 type alias Posts =
@@ -90,20 +101,22 @@ init shared =
       , loadingState = StartLoading
       , postIndex = 0
       , swipingState = Swiper.initialSwipingState
+      , thumbnails = []
       }
     , Http.post
-        { url = "/newsroom/posts?i=0&range=3"
+        { url = serverUrl ++ "/newsroom/posts?i=0&range=3"
         , body = Http.emptyBody
         , expect =
             Http.expectJson GotPosts
                 (Json.list
-                    (Json.map6 Post
+                    (Json.map7 Post
                         (Json.field "id" Json.int)
                         (Json.field "title" Json.string)
                         (Json.field "images" (Json.list Json.string))
                         (Json.field "content" Json.string)
                         (Json.field "posttime" Json.string)
                         (Json.succeed 0)
+                        (Json.succeed Idle)
                     )
                 )
         }
@@ -128,10 +141,31 @@ type Msg
     | MoveLeft Int
     | MoveRight Int
     | ImageSwiped Int Swiper.SwipeEvent
+    | Google String
+    | GetImages
+    | GotImages (Result Http.Error (List String))
+    | Edit Int
+    | Add Int String
+    | Subtract Int String
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Msg )
 update shared msg model =
+    let
+        getThumbnails =
+            Http.request
+                { method = "POST"
+                , headers = [ Http.header "idToken" (Maybe.withDefault "" model.localShared.user) ]
+                , url = serverUrl ++ "/newsroom/getimages"
+                , body = Http.emptyBody
+                , expect =
+                    Http.expectJson GotImages
+                        (Json.list Json.string)
+                , timeout = Nothing
+                , tracker = Nothing
+                }
+                |> Effect.fromCmd
+    in
     case msg of
         Scrolled distance ->
             let
@@ -162,18 +196,19 @@ update shared msg model =
             , Effect.batch
                 ((if shouldAnimate "spinner" model && not (model.loadingState == LoadingDone) then
                     Http.post
-                        { url = "/newsroom/posts?i=" ++ String.fromInt model.postIndex ++ "&range=3"
+                        { url = serverUrl ++ "/newsroom/posts?i=" ++ String.fromInt model.postIndex ++ "&range=3"
                         , body = Http.emptyBody
                         , expect =
                             Http.expectJson GotPosts
                                 (Json.list
-                                    (Json.map6 Post
+                                    (Json.map7 Post
                                         (Json.field "id" Json.int)
                                         (Json.field "title" Json.string)
                                         (Json.field "images" (Json.list Json.string))
                                         (Json.field "content" Json.string)
                                         (Json.field "posttime" Json.string)
                                         (Json.succeed 0)
+                                        (Json.succeed Idle)
                                     )
                                 )
                         }
@@ -282,7 +317,7 @@ update shared msg model =
                         ( { model | loadingState = LoadingDone }, Effect.none )
 
                     else
-                        ( { model | posts = model.posts ++ [ Posts (postFilter newPosts) False ], postIndex = model.postIndex + List.length (postFilter newPosts), loadingState = RecvPosts }, newPosts |> List.head |> Maybe.withDefault (Post 1 "" [ "" ] "" "" 0) |> .images |> List.head |> Maybe.withDefault "" |> Ports.waitForId |> Effect.fromCmd )
+                        ( { model | posts = model.posts ++ [ Posts (postFilter newPosts) False ], postIndex = model.postIndex + List.length (postFilter newPosts), loadingState = RecvPosts }, newPosts |> List.head |> Maybe.withDefault (Post 1 "" [ "" ] "" "" 0 Idle) |> .images |> List.head |> Maybe.withDefault "" |> Ports.waitForId |> Effect.fromCmd )
 
                 Err _ ->
                     ( { model | postRecvError = True, loadingState = LoadingFailed }, Effect.none )
@@ -446,6 +481,60 @@ update shared msg model =
             else
                 ( { model | swipingState = Tuple.first (Swiper.hasSwipedDown event model.swipingState) }, Effect.none )
 
+        Google idToken ->
+            let
+                newSharedState =
+                    model.localShared |> (\l -> { l | user = Just idToken })
+            in
+            ( { model | localShared = newSharedState }
+            , Shared.UpdateModel newSharedState |> Effect.fromShared
+            )
+
+        GetImages ->
+            ( model
+            , getThumbnails
+            )
+
+        GotImages result ->
+            case result of
+                Ok thumbnails ->
+                    ( { model | thumbnails = thumbnails }, Effect.none )
+
+                Err _ ->
+                    ( model, Effect.none )
+
+        Edit id ->
+            ( { model
+                | posts =
+                    List.map
+                        (\ps ->
+                            { ps
+                                | posts =
+                                    List.map
+                                        (\p ->
+                                            { p
+                                                | state =
+                                                    if p.id == id then
+                                                        Editing
+
+                                                    else
+                                                        Idle
+                                            }
+                                        )
+                                        ps.posts
+                            }
+                        )
+                        model.posts
+              }
+            , getThumbnails
+            )
+
+        Add id img ->
+            ( { model | posts = List.map (\ps -> { ps | posts = List.map (\p -> { p | images = p.images ++ [ img ] }) ps.posts }) model.posts }, getThumbnails )
+
+        Subtract id img ->
+            ( { model | posts = List.map (\ps -> { ps | posts = List.map (\p -> { p | images = List.filter (\pi -> not (pi == img)) p.images }) ps.posts }) model.posts }, getThumbnails )
+
 
 
 -- SUBSCRIPTIONS
@@ -458,6 +547,7 @@ subscriptions model =
         , Browser.Events.onResize WindowResized
         , idLoaded IdLoaded
         , Ports.idFailed IdFailed
+        , google Google
         ]
 
 
@@ -494,6 +584,30 @@ view shared model =
 
         post item =
             let
+                editImg =
+                    el
+                        [ width fill
+                        , clip
+                        , centerY
+                        , htmlAttribute <| id (String.fromInt item.id)
+                        , Border.rounded 10
+                        , Background.gradient { angle = degrees 45, steps = [ rgb255 17 24 39, rgb255 87 83 78 ] }
+                        , height (shrink |> minimum 90)
+                        ]
+                        (el
+                            [ width (px postWidth)
+                            , inFront
+                                (column [ fontSize device Md, Font.bold, Font.color white, centerY, centerX, spacing 20 ]
+                                    [ el [ centerX ] (text "Selected:")
+                                    , el [ width (px postWidth), scrollbarX, height (px 150), clipY ] (row [ height (px 100), spacing 20 ] (List.map (\i -> el [ width (px 100), height (px 100), inFront (Input.button [ width fill, height fill ] { label = el [ width fill, height fill, transparent True, htmlAttribute <| class "animateTransformFast", mouseOver [ transparent False ], below (el [ Background.color (rgb255 87 83 78), width fill, Font.center, padding 8, Border.roundEach { topLeft = 0, topRight = 0, bottomLeft = 8, bottomRight = 8 }, clip ] (text (i |> String.split "." |> List.head |> Maybe.withDefault ""))) ] (image [ width fill, height fill, Background.color (rgba255 254 202 202 0.8) ] { src = "/img/down.svg", description = "" }), onPress = Just (Subtract item.id i) }) ] (image [ width fill, height (px 100) ] { src = serverUrl ++ "/newsroom/thumbnail/" ++ i, description = i })) item.images))
+                                    , el [ centerX ] (text "Options:")
+                                    , el [ width (px postWidth), scrollbarX, height (px 150), clipY ] (row [ height (px 100), spacing 20 ] (List.map (\i -> el [ width (px 100), height (px 100), inFront (Input.button [ width fill, height fill ] { label = el [ width fill, height fill, transparent True, htmlAttribute <| class "animateTransformFast", mouseOver [ transparent False ], below (el [ Background.color (rgb255 87 83 78), width fill, Font.center, padding 8, Border.roundEach { topLeft = 0, topRight = 0, bottomLeft = 8, bottomRight = 8 }, clip ] (text (i |> String.split "." |> List.head |> Maybe.withDefault ""))) ] (image [ width fill, height fill, Background.color (rgba255 217 249 157 0.8) ] { src = "/img/up.svg", description = "" }), onPress = Just (Add item.id i) }) ] (image [ width fill, height (px 100) ] { src = serverUrl ++ "/newsroom/thumbnail/" ++ i, description = i })) (List.filter (\t -> not (List.member t item.images)) model.thumbnails)))
+                                    ]
+                                )
+                            ]
+                            (image [ transparent True, width fill, height (shrink |> minimum 600) ] { src = serverUrl ++ "/newsroom/thumbnail/" ++ (item.images |> List.head |> Maybe.withDefault ""), description = "" })
+                        )
+
                 img =
                     el
                         ([ width fill
@@ -501,8 +615,8 @@ view shared model =
                          , centerY
                          , htmlAttribute <| id (String.fromInt item.id)
                          , Border.rounded 10
-                         , Background.image "/img/logo_sans_text.svg"
-                         , height (shrink |> minimum 90)
+                         , Background.gradient { angle = degrees 45, steps = [ rgb255 161 161 170, rgb255 82 82 91, gciBlue, gciBlue ] }
+                         , height (shrink |> minimum 100)
                          , inFront
                             (el
                                 ([ width fill
@@ -583,7 +697,7 @@ view shared model =
                                         , onRight b
                                         , htmlAttribute <| id a
                                         ]
-                                        { src = "/newsroom/images/" ++ a, description = "" }
+                                        { src = serverUrl ++ "/newsroom/images/" ++ a, description = "" }
                                 )
                                 none
                                 item.images
@@ -591,9 +705,32 @@ view shared model =
                         )
 
                 content =
+                    let
+                        date =
+                            paragraph [ fontSize device Xsm, Font.color (rgb 0.1 0.1 0.13) ] [ item.posttime |> String.split "T" |> List.head |> Maybe.withDefault "" |> String.split "-" |> prettyDate |> text ]
+
+                        edit =
+                            Input.button [] { label = el [ Background.color gciBlue, Font.color white, paddingXY 20 5, mouseOver [ Background.color gciBlueLight ], Border.rounded 5 ] (text "Edit"), onPress = Just (Edit item.id) }
+
+                        save =
+                            Input.button [] { label = el [ Background.color (rgb255 77 124 15), Font.color white, paddingXY 20 5, mouseOver [ Background.color (rgb255 101 163 13) ], Border.rounded 5 ] (text "Save"), onPress = Just (Edit item.id) }
+                    in
                     column [ width fill, spacing 10 ]
                         [ paragraph [ Region.heading 3, Font.extraLight, fontSize device Lg ] [ text item.title ]
-                        , paragraph [ fontSize device Xsm, Font.color (rgb 0.1 0.1 0.13) ] [ item.posttime |> String.split "T" |> List.head |> Maybe.withDefault "" |> String.split "-" |> prettyDate |> text ]
+                        , case model.localShared.user of
+                            Just _ ->
+                                row [ spacing 20 ]
+                                    [ date
+                                    , case item.state of
+                                        Editing ->
+                                            save
+
+                                        Idle ->
+                                            edit
+                                    ]
+
+                            Nothing ->
+                                date
                         , paragraph [ width fill, fontSize device Sm, Font.light ] (List.concat (List.intersperse [ html <| br [] [] ] (item.content |> String.split "\n" |> List.map (\t -> [ text t ]))))
                         ]
             in
@@ -612,7 +749,13 @@ view shared model =
                 [ width fill, height fill, spacing 20, htmlAttribute <| id (String.fromInt item.id), transparent (not (shouldAnimate (String.fromInt item.id) model)) ]
                 [ column
                     [ width fill, spacing 20 ]
-                    [ img, content ]
+                    (case item.state of
+                        Editing ->
+                            [ editImg, content ]
+
+                        Idle ->
+                            [ img, content ]
+                    )
                 ]
 
         loadingSpinner =
@@ -643,8 +786,8 @@ view shared model =
                     , inFront (image [ width (px 80), height (px 80), centerX, centerY ] { src = "/img/logo_sans_text.svg", description = "logo" })
                     ]
                     { src = "/img/loading.svg", description = "Loading..." }
-                , el [ centerX, Font.center, padding 10 ]
-                    (text
+                , paragraph [ centerX, Font.center, padding 10 ]
+                    [ text
                         (case model.loadingState of
                             StartLoading ->
                                 "Loading..."
@@ -661,7 +804,7 @@ view shared model =
                             LoadingDone ->
                                 "Showing all posts."
                         )
-                    )
+                    ]
                 ]
 
         posts =
@@ -701,7 +844,15 @@ view shared model =
                     , spacing 50
                     ]
                     [ el [ height (px 50) ] none
-                    , el [ Region.heading 1, Font.extraLight, Font.extraLight, fontSize device Xlg, centerX ] (text "Newsroom")
+                    , case model.localShared.user of
+                        Nothing ->
+                            el [ Region.heading 1, Font.extraLight, Font.extraLight, fontSize device Xlg, centerX ] (text "Newsroom")
+
+                        Just _ ->
+                            row [ spacing 20, centerX ]
+                                [ el [ Region.heading 1, Font.extraLight, Font.extraLight, fontSize device Xlg, centerX ] (text "Newsroom")
+                                , Input.button [] { label = el [ Background.color gciBlue, Font.color white, paddingXY 20 5, mouseOver [ Background.color gciBlueLight ], Border.rounded 5 ] (text "New"), onPress = Just GetImages }
+                                ]
                     , posts
                     , loadingSpinner
                     ]

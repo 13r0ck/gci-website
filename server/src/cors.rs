@@ -10,6 +10,7 @@ impl Fairing for CorsFairing {
             "Access-Control-Allow-Origin",
             "*",
         ));
+        response.adjoin_header(rocket::http::Header::new("Access-Control-Allow-Headers","idToken"));
 
         // Respond to all `OPTIONS` requests with a `204` (no content) status
         if response.status() == Status::NotFound && request.method() == Method::Options {

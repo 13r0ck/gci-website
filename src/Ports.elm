@@ -38,3 +38,6 @@ port onUrlChange : () -> Cmd msg
 
 
 port showNav : (Bool -> msg) -> Sub msg
+
+
+port google : (String -> msg) -> Sub msg

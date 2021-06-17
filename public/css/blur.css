@@ -238,6 +238,9 @@
 .animateTransform {
   transition: all 0.5s ease-in-out;
 }
+.animateTransformFast {
+  transition: all 0.2s ease-in-out;
+}
 
 .letterSpacing {
   letter-spacing: normal;
@@ -246,6 +249,10 @@
 
 .letterSpacing:hover {
     letter-spacing: 3px;
+}
+
+.avoid-clicks {
+  pointer-events: none;
 }
 
 .clip_top {
