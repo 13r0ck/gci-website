@@ -335,7 +335,70 @@ update shared msg model =
                         ( { model | loadingState = LoadingDone }, Effect.none )
 
                     else
-                        ( { model | posts = model.posts ++ [ Posts (postFilter newPosts) False ], postIndex = model.postIndex + List.length (postFilter newPosts), loadingState = RecvPosts }, newPosts |> List.head |> Maybe.withDefault (Post 1 "" Nothing [ "" ] [] "" Nothing "" Nothing Nothing 0 Idle) |> .images |> List.head |> Maybe.withDefault "" |> Ports.waitForId |> Effect.fromCmd )
+                        newPosts
+                            |> List.head
+                            |> Maybe.map .images
+                            |> Maybe.andThen List.head
+                            |> (\maybeId ->
+                                    case maybeId of
+                                        Just id ->
+                                            -- If the lead post of the section has at least one image we want to wait until at least that post has its image loaded
+                                            ( { model
+                                                | posts = model.posts ++ [ Posts (postFilter newPosts) False ]
+                                                , postIndex = model.postIndex + List.length (postFilter newPosts)
+                                                , loadingState = RecvPosts
+                                              }
+                                            , Ports.waitForId id |> Effect.fromCmd
+                                            )
+
+                                        Nothing ->
+                                            -- head post has no image, so we are just going to show posts immediately.
+                                            ( { model
+                                                | posts = model.posts ++ [ Posts (postFilter newPosts) True ]
+                                                , loadingState = RecvImg
+                                                , postIndex = model.postIndex + List.length (postFilter newPosts)
+                                                , animationTracker =
+                                                    if Dict.isEmpty model.animationTracker then
+                                                        Dict.fromList
+                                                            (( "spinner", AnimationState (PercentOfViewport 1) False )
+                                                                :: List.indexedMap
+                                                                    (\i p ->
+                                                                        ( String.fromInt p.id
+                                                                        , AnimationState (PercentOfViewport 20)
+                                                                            (if i == 0 then
+                                                                                True
+
+                                                                             else
+                                                                                False
+                                                                            )
+                                                                        )
+                                                                    )
+                                                                    (model.posts |> List.foldl (\a b -> b ++ a.posts) [])
+                                                            )
+
+                                                    else
+                                                        Dict.union model.animationTracker
+                                                            ((model.posts ++ [ Posts (postFilter newPosts) False ])
+                                                                |> List.filter (\p -> not p.show)
+                                                                |> List.foldl (\a b -> b ++ a.posts) []
+                                                                |> List.indexedMap
+                                                                    (\i p ->
+                                                                        ( String.fromInt p.id
+                                                                        , AnimationState (PercentOfViewport 20)
+                                                                            (if i == 0 then
+                                                                                True
+
+                                                                             else
+                                                                                False
+                                                                            )
+                                                                        )
+                                                                    )
+                                                                |> Dict.fromList
+                                                            )
+                                              }
+                                            , Effect.none
+                                            )
+                               )
 
                 Err _ ->
                     ( { model | postRecvError = True, loadingState = LoadingFailed }, Effect.none )
