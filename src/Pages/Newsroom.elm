@@ -167,6 +167,7 @@ type Msg
     | GotUpload File
     | PublishPost Int
     | Reload (Result Http.Error ())
+    | New
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Msg )
@@ -642,10 +643,11 @@ update shared msg model =
                                     List.map
                                         (\p -> { p | state = Idle, editPosttime = Nothing, date = Nothing })
                                         ps.posts
-                                        |> List.filter (\p -> not (p.id < 0))
                             }
                         )
                         model.posts
+                        -- remove any "new" posts
+                        |> List.filter (\ps -> List.any (\p -> p.id > 0) ps.posts)
               }
             , getThumbnails
             )
@@ -784,8 +786,13 @@ update shared msg model =
             )
 
         Reload _ ->
-            --( model, Effect.none)
             ( model, Browser.Navigation.reload |> Effect.fromCmd )
+        New ->
+            ( {model | posts = (Posts [Post -1 "" (Just "") [] [] "" (Just "") "" Nothing Nothing 0 Editing] True) :: model.posts
+                     , animationTracker = Dict.insert "-1" (AnimationState Middle True) model.animationTracker
+              }
+              , getThumbnails
+            )
 
 
 
@@ -881,7 +888,7 @@ view shared model =
                             Input.button [] { label = el [ Background.color warning, Font.color white, paddingXY 20 5, mouseOver [ Background.color (rgb255 224 71 71) ], Border.rounded 5 ] (text "Cancel"), onPress = Just Cancel }
                     in
                     column [ width fill, spacing 10 ]
-                        [ Input.multiline [ Region.heading 3, fontSize device Sm, Border.color gciBlue, Border.rounded 5 ] { onChange = TitleChanged item.id, text = Maybe.withDefault "" item.editTitle, placeholder = Just (Input.placeholder [] (paragraph [] [])), label = Input.labelHidden "", spellcheck = True }
+                        [ Input.multiline [ Region.heading 3, fontSize device Sm, Border.color gciBlue, Border.rounded 5 ] { onChange = TitleChanged item.id, text = Maybe.withDefault "" item.editTitle, placeholder = Just (Input.placeholder [] (paragraph [] [text "Title"])), label = Input.labelHidden "", spellcheck = True }
                         , wrappedRow [ spacing 20 ]
                             [ case item.editPosttime of
                                 Just picker ->
@@ -892,7 +899,7 @@ view shared model =
                             , save
                             , cancel
                             ]
-                        , Input.multiline [ Font.light, fontSize device Sm, Border.color gciBlue, Border.rounded 5 ] { onChange = ContentChanged item.id, text = Maybe.withDefault "" item.editContent, placeholder = Just (Input.placeholder [] (paragraph [] [])), label = Input.labelHidden "", spellcheck = True }
+                        , Input.multiline [ Font.light, fontSize device Sm, Border.color gciBlue, Border.rounded 5, height (shrink |> minimum 150)] { onChange = ContentChanged item.id, text = Maybe.withDefault "" item.editContent, placeholder = Just (Input.placeholder [] (paragraph [] [text "What do you want to talk about today?"])), label = Input.labelHidden "", spellcheck = True }
                         ]
 
                 img =
@@ -1127,9 +1134,14 @@ view shared model =
 
                         Just _ ->
                             row [ spacing 20, centerX ]
-                                [ el [ Region.heading 1, Font.extraLight, Font.extraLight, fontSize device Xlg, centerX ] (text "Newsroom")
-                                , Input.button [] { label = el [ Background.color gciBlue, Font.color white, paddingXY 20 5, mouseOver [ Background.color gciBlueLight ], Border.rounded 5 ] (text "New"), onPress = Just GetImages }
-                                ]
+                                ( if (model.posts |> List.foldl (\a b -> b ++ a.posts) [] |> List.any (\p -> p.id == -1 || p.state == Editing)) then
+                                    [ el [ Region.heading 1, Font.extraLight, Font.extraLight, fontSize device Xlg, centerX ] (text "Newsroom")
+                                    ]
+                                    else
+                                    [ el [ Region.heading 1, Font.extraLight, Font.extraLight, fontSize device Xlg, centerX ] (text "Newsroom")
+                                    , Input.button [] { label = el [ Background.color gciBlue, Font.color white, paddingXY 20 5, mouseOver [ Background.color gciBlueLight ], Border.rounded 5 ] (text "New"), onPress = Just New }
+                                    ]
+                                )
                     , posts
                     , loadingSpinner
                     ]
