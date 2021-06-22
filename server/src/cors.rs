@@ -1,5 +1,5 @@
 use rocket::fairing::{Fairing, Info, Kind};
-use rocket::{http::Method, http::Status, Request, Response};
+use rocket::{http::Header, http::Method, http::Status, Request, Response};
 
 pub struct CorsFairing;
 
@@ -10,7 +10,9 @@ impl Fairing for CorsFairing {
             "Access-Control-Allow-Origin",
             "*",
         ));
-        response.adjoin_header(rocket::http::Header::new("Access-Control-Allow-Headers","idToken"));
+        response.adjoin_header(Header::new("Access-Control-Allow-Headers", "idToken"));
+        response.adjoin_header(Header::new("Access-Control-Allow-Headers", "content-type"));
+        response.adjoin_header(Header::new("Access-Control-Allow-Headers", "file-name"));
 
         // Respond to all `OPTIONS` requests with a `204` (no content) status
         if response.status() == Status::NotFound && request.method() == Method::Options {

@@ -2,6 +2,9 @@ module Pages.Newsroom exposing (Model, Msg, page)
 
 import Browser.Dom exposing (Viewport)
 import Browser.Events
+import Browser.Navigation
+import Date exposing (Date, day, month, weekday, year)
+import DatePicker exposing (DateEvent(..), DatePicker, defaultSettings)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Element exposing (..)
@@ -10,6 +13,8 @@ import Element.Border as Border
 import Element.Font as Font exposing (center)
 import Element.Input as Input
 import Element.Region as Region
+import File exposing (File)
+import File.Select as Select
 import Gen.Params.Newsroom exposing (Params)
 import Html exposing (br)
 import Html.Attributes exposing (class, id)
@@ -32,7 +37,7 @@ import View exposing (View)
 
 
 serverUrl =
-    ""
+    "http://localhost:8000"
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
@@ -72,9 +77,14 @@ type LoadingState
 type alias Post =
     { id : Int
     , title : String
+    , editTitle : Maybe String
     , images : List String
+    , editImages : List String
     , content : String
+    , editContent : Maybe String
     , posttime : String
+    , editPosttime : Maybe DatePicker
+    , date : Maybe Date
     , viewNum : Int
     , state : PostState
     }
@@ -93,6 +103,10 @@ type alias Posts =
 
 init : Shared.Model -> ( Model, Effect Msg )
 init shared =
+    let
+        ( datePicker, datePickerCmd ) =
+            DatePicker.init
+    in
     ( { localShared = reset shared
       , posts = []
       , postRecvError = False
@@ -109,14 +123,12 @@ init shared =
         , expect =
             Http.expectJson GotPosts
                 (Json.list
-                    (Json.map7 Post
+                    (Json.map5 (\id title images content posttime -> Post id title Nothing images [] content Nothing posttime Nothing Nothing 0 Idle)
                         (Json.field "id" Json.int)
                         (Json.field "title" Json.string)
                         (Json.field "images" (Json.list Json.string))
                         (Json.field "content" Json.string)
                         (Json.field "posttime" Json.string)
-                        (Json.succeed 0)
-                        (Json.succeed Idle)
                     )
                 )
         }
@@ -147,6 +159,14 @@ type Msg
     | Edit Int
     | Add Int String
     | Subtract Int String
+    | TitleChanged Int String
+    | ContentChanged Int String
+    | Cancel
+    | SetDatePicker Int DatePicker.Msg
+    | GetUpload
+    | GotUpload File
+    | PublishPost Int
+    | Reload (Result Http.Error ())
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Msg )
@@ -201,14 +221,12 @@ update shared msg model =
                         , expect =
                             Http.expectJson GotPosts
                                 (Json.list
-                                    (Json.map7 Post
+                                    (Json.map5 (\id title images content posttime -> Post id title Nothing images [] content Nothing posttime Nothing Nothing 0 Idle)
                                         (Json.field "id" Json.int)
                                         (Json.field "title" Json.string)
                                         (Json.field "images" (Json.list Json.string))
                                         (Json.field "content" Json.string)
                                         (Json.field "posttime" Json.string)
-                                        (Json.succeed 0)
-                                        (Json.succeed Idle)
                                     )
                                 )
                         }
@@ -317,7 +335,7 @@ update shared msg model =
                         ( { model | loadingState = LoadingDone }, Effect.none )
 
                     else
-                        ( { model | posts = model.posts ++ [ Posts (postFilter newPosts) False ], postIndex = model.postIndex + List.length (postFilter newPosts), loadingState = RecvPosts }, newPosts |> List.head |> Maybe.withDefault (Post 1 "" [ "" ] "" "" 0 Idle) |> .images |> List.head |> Maybe.withDefault "" |> Ports.waitForId |> Effect.fromCmd )
+                        ( { model | posts = model.posts ++ [ Posts (postFilter newPosts) False ], postIndex = model.postIndex + List.length (postFilter newPosts), loadingState = RecvPosts }, newPosts |> List.head |> Maybe.withDefault (Post 1 "" Nothing [ "" ] [] "" Nothing "" Nothing Nothing 0 Idle) |> .images |> List.head |> Maybe.withDefault "" |> Ports.waitForId |> Effect.fromCmd )
 
                 Err _ ->
                     ( { model | postRecvError = True, loadingState = LoadingFailed }, Effect.none )
@@ -504,6 +522,10 @@ update shared msg model =
                     ( model, Effect.none )
 
         Edit id ->
+            let
+                ( datePicker, datePickerFx ) =
+                    DatePicker.init
+            in
             ( { model
                 | posts =
                     List.map
@@ -512,14 +534,32 @@ update shared msg model =
                                 | posts =
                                     List.map
                                         (\p ->
-                                            { p
-                                                | state =
-                                                    if p.id == id then
-                                                        Editing
+                                            if p.id == id then
+                                                { p
+                                                    | state = Editing
+                                                    , editTitle = Just p.title
+                                                    , editPosttime =
+                                                        Just
+                                                            (case String.split "T" p.posttime |> List.head |> Maybe.withDefault "" |> Date.fromIsoString of
+                                                                Ok date ->
+                                                                    DatePicker.initFromDate date
 
-                                                    else
-                                                        Idle
-                                            }
+                                                                Err _ ->
+                                                                    datePicker
+                                                            )
+                                                    , date =
+                                                        case String.split "T" p.posttime |> List.head |> Maybe.withDefault "" |> Date.fromIsoString of
+                                                            Ok date ->
+                                                                Just date
+
+                                                            Err _ ->
+                                                                Nothing
+                                                    , editContent = Just p.content
+                                                    , editImages = p.images
+                                                }
+
+                                            else
+                                                { p | state = Idle }
                                         )
                                         ps.posts
                             }
@@ -529,11 +569,160 @@ update shared msg model =
             , getThumbnails
             )
 
+        Cancel ->
+            ( { model
+                | posts =
+                    List.map
+                        (\ps ->
+                            { ps
+                                | posts =
+                                    List.map
+                                        (\p -> { p | state = Idle, editPosttime = Nothing, date = Nothing })
+                                        ps.posts
+                                        |> List.filter (\p -> not (p.id < 0))
+                            }
+                        )
+                        model.posts
+              }
+            , getThumbnails
+            )
+
         Add id img ->
-            ( { model | posts = List.map (\ps -> { ps | posts = List.map (\p -> { p | images = p.images ++ [ img ] }) ps.posts }) model.posts }, getThumbnails )
+            ( { model | posts = List.map (\ps -> { ps | posts = List.map (\p -> { p | editImages = p.editImages ++ [ img ] }) ps.posts }) model.posts }, Effect.none )
 
         Subtract id img ->
-            ( { model | posts = List.map (\ps -> { ps | posts = List.map (\p -> { p | images = List.filter (\pi -> not (pi == img)) p.images }) ps.posts }) model.posts }, getThumbnails )
+            ( { model | posts = List.map (\ps -> { ps | posts = List.map (\p -> { p | editImages = List.filter (\pi -> not (pi == img)) p.editImages }) ps.posts }) model.posts }, Effect.none )
+
+        TitleChanged id newTitle ->
+            ( { model | posts = List.map (\ps -> { ps | posts = List.map (\p -> { p | editTitle = Just newTitle }) ps.posts }) model.posts }, Effect.none )
+
+        ContentChanged id newContent ->
+            ( { model | posts = List.map (\ps -> { ps | posts = List.map (\p -> { p | editContent = Just newContent }) ps.posts }) model.posts }, Effect.none )
+
+        SetDatePicker id subMsg ->
+            let
+                picker =
+                    model.posts |> List.foldl (\a b -> b ++ a.posts) [] |> List.filter (\p -> p.id == id) |> List.head
+            in
+            case picker of
+                Just picky ->
+                    case picky.editPosttime of
+                        Just pik ->
+                            let
+                                ( newDatePicker, dateEvent ) =
+                                    DatePicker.update settings subMsg pik
+
+                                date =
+                                    case dateEvent of
+                                        Picked newDate ->
+                                            Just newDate
+
+                                        _ ->
+                                            Nothing
+                            in
+                            ( { model
+                                | posts =
+                                    List.map
+                                        (\ps ->
+                                            { ps
+                                                | posts =
+                                                    List.map
+                                                        (\p ->
+                                                            if p.id == id then
+                                                                { p | date = date, editPosttime = Just newDatePicker }
+
+                                                            else
+                                                                p
+                                                        )
+                                                        ps.posts
+                                            }
+                                        )
+                                        model.posts
+                              }
+                            , Effect.none
+                            )
+
+                        Nothing ->
+                            ( model, Effect.none )
+
+                Nothing ->
+                    ( model, Effect.none )
+
+        GetUpload ->
+            ( model, Select.file [ "image/png", "image/jpg", "image/gif", "image/webp" ] GotUpload |> Effect.fromCmd )
+
+        GotUpload file ->
+            ( model
+            , Http.request
+                { method = "POST"
+                , headers = [ Http.header "idToken" (Maybe.withDefault "" model.localShared.user), Http.header "File-Name" (File.name file) ]
+                , url = serverUrl ++ "/newsroom/upload/image"
+                , body = Http.fileBody file
+                , expect =
+                    Http.expectJson GotImages
+                        (Json.list Json.string)
+                , timeout = Nothing
+                , tracker = Nothing
+                }
+                |> Effect.fromCmd
+            )
+
+        PublishPost id ->
+            let
+                publishing =
+                    model.posts |> List.foldl (\a b -> b ++ a.posts) [] |> List.filter (\p -> p.id == id) |> List.head
+
+                nullable : Maybe String -> Encode.Value
+                nullable a =
+                    case a of
+                        Nothing ->
+                            Encode.null
+
+                        Just str ->
+                            Encode.string str
+            in
+            ( { model
+                | posts =
+                    List.map
+                        (\ps ->
+                            { ps
+                                | posts =
+                                    List.map
+                                        (\p -> { p | state = Idle, editPosttime = Nothing, date = Nothing })
+                                        ps.posts
+                                        |> List.filter (\p -> not (p.id < 0))
+                            }
+                        )
+                        model.posts
+              }
+            , case publishing of
+                Just editedPost ->
+                    Http.request
+                        { method = "POST"
+                        , headers = [ Http.header "idToken" (Maybe.withDefault "" model.localShared.user) ]
+                        , url = serverUrl ++ "/newsroom/upload/post"
+                        , body =
+                            Http.jsonBody <|
+                                Encode.object
+                                    [ ( "id", Encode.int editedPost.id )
+                                    , ( "title", Encode.string (Maybe.withDefault "" editedPost.editTitle) )
+                                    , ( "content", Encode.string (Maybe.withDefault "" editedPost.editContent) )
+                                    , ( "posttime", nullable (editedPost.date |> Maybe.map (\date -> Date.toIsoString date ++ "T13:00:00")) )
+                                    , ( "images", Encode.list Encode.string editedPost.editImages )
+                                    ]
+                        , expect = Http.expectWhatever Reload
+                        , timeout = Nothing
+                        , tracker = Nothing
+                        }
+                        |> Effect.fromCmd
+
+                Nothing ->
+                    Effect.none
+            )
+
+        Reload _ ->
+            --( model, Effect.none)
+            ( model, Browser.Navigation.reload |> Effect.fromCmd )
 
 
 
@@ -599,14 +788,49 @@ view shared model =
                             , inFront
                                 (column [ fontSize device Md, Font.bold, Font.color white, centerY, centerX, spacing 20 ]
                                     [ el [ centerX ] (text "Selected:")
-                                    , el [ width (px postWidth), scrollbarX, height (px 150), clipY ] (row [ height (px 100), spacing 20 ] (List.map (\i -> el [ width (px 100), height (px 100), inFront (Input.button [ width fill, height fill ] { label = el [ width fill, height fill, transparent True, htmlAttribute <| class "animateTransformFast", mouseOver [ transparent False ], below (el [ Background.color (rgb255 87 83 78), width fill, Font.center, padding 8, Border.roundEach { topLeft = 0, topRight = 0, bottomLeft = 8, bottomRight = 8 }, clip ] (text (i |> String.split "." |> List.head |> Maybe.withDefault ""))) ] (image [ width fill, height fill, Background.color (rgba255 254 202 202 0.8) ] { src = "/img/down.svg", description = "" }), onPress = Just (Subtract item.id i) }) ] (image [ width fill, height (px 100) ] { src = serverUrl ++ "/newsroom/thumbnail/" ++ i, description = i })) item.images))
+                                    , el [ width (px postWidth), scrollbarX, height (px 150), clipY ] (row [ height (px 100), spacing 20 ] (List.map (\i -> el [ width (px 100), height (px 100), inFront (Input.button [ width fill, height fill ] { label = el [ fontSize device Sm, width fill, height fill, transparent True, htmlAttribute <| class "animateTransformFast", mouseOver [ transparent False ], below (el [ Background.color (rgb255 87 83 78), width fill, Font.center, padding 8, Border.roundEach { topLeft = 0, topRight = 0, bottomLeft = 8, bottomRight = 8 }, clip ] (text (i |> String.split "." |> List.head |> Maybe.withDefault ""))) ] (image [ width fill, height fill, Background.color (rgba255 254 202 202 0.8) ] { src = "/img/down.svg", description = "" }), onPress = Just (Subtract item.id i) }) ] (image [ width fill, height (px 100) ] { src = serverUrl ++ "/newsroom/thumbnail/" ++ i, description = i })) item.editImages))
                                     , el [ centerX ] (text "Options:")
-                                    , el [ width (px postWidth), scrollbarX, height (px 150), clipY ] (row [ height (px 100), spacing 20 ] (List.map (\i -> el [ width (px 100), height (px 100), inFront (Input.button [ width fill, height fill ] { label = el [ width fill, height fill, transparent True, htmlAttribute <| class "animateTransformFast", mouseOver [ transparent False ], below (el [ Background.color (rgb255 87 83 78), width fill, Font.center, padding 8, Border.roundEach { topLeft = 0, topRight = 0, bottomLeft = 8, bottomRight = 8 }, clip ] (text (i |> String.split "." |> List.head |> Maybe.withDefault ""))) ] (image [ width fill, height fill, Background.color (rgba255 217 249 157 0.8) ] { src = "/img/up.svg", description = "" }), onPress = Just (Add item.id i) }) ] (image [ width fill, height (px 100) ] { src = serverUrl ++ "/newsroom/thumbnail/" ++ i, description = i })) (List.filter (\t -> not (List.member t item.images)) model.thumbnails)))
+                                    , el [ width (px postWidth), scrollbarX, height (px 150), clipY ] (row [ height (px 100), spacing 20 ] (List.map (\i -> el [ width (px 100), height (px 100), inFront (Input.button [ width fill, height fill ] { label = el [ fontSize device Sm, width fill, height fill, transparent True, htmlAttribute <| class "animateTransformFast", mouseOver [ transparent False ], below (el [ Background.color (rgb255 87 83 78), width fill, Font.center, padding 8, Border.roundEach { topLeft = 0, topRight = 0, bottomLeft = 8, bottomRight = 8 }, clip ] (text (i |> String.split "." |> List.head |> Maybe.withDefault ""))) ] (image [ width fill, height fill, Background.color (rgba255 217 249 157 0.8) ] { src = "/img/up.svg", description = "" }), onPress = Just (Add item.id i) }) ] (image [ width fill, height (px 100) ] { src = serverUrl ++ "/newsroom/thumbnail/" ++ i, description = i })) (List.filter (\t -> not (List.member t item.editImages)) model.thumbnails)))
+                                    , Input.button [ centerX ] { label = el [ Background.color white, Font.color gciBlue, paddingXY 40 10, mouseOver [ Font.color gciBlueLight ], Border.rounded 5 ] (text "Upload"), onPress = Just GetUpload }
                                     ]
                                 )
                             ]
-                            (image [ transparent True, width fill, height (shrink |> minimum 600) ] { src = serverUrl ++ "/newsroom/thumbnail/" ++ (item.images |> List.head |> Maybe.withDefault ""), description = "" })
+                            (image [ transparent True, width fill, height (shrink |> minimum 600) ] { src = serverUrl ++ "/newsroom/images/" ++ (item.images |> List.head |> Maybe.withDefault ""), description = "" })
                         )
+
+                editContent =
+                    let
+                        date picker =
+                            el []
+                                (html <|
+                                    Html.map (\message -> SetDatePicker item.id message)
+                                        (DatePicker.view
+                                            item.date
+                                            settings
+                                            picker
+                                        )
+                                )
+
+                        save =
+                            Input.button [] { label = el [ Background.color (rgb255 77 124 15), Font.color white, paddingXY 20 5, mouseOver [ Background.color (rgb255 101 163 13) ], Border.rounded 5 ] (text "Publish This Post"), onPress = Just (PublishPost item.id) }
+
+                        cancel =
+                            Input.button [] { label = el [ Background.color warning, Font.color white, paddingXY 20 5, mouseOver [ Background.color (rgb255 224 71 71) ], Border.rounded 5 ] (text "Cancel"), onPress = Just Cancel }
+                    in
+                    column [ width fill, spacing 10 ]
+                        [ Input.multiline [ Region.heading 3, fontSize device Sm, Border.color gciBlue, Border.rounded 5 ] { onChange = TitleChanged item.id, text = Maybe.withDefault "" item.editTitle, placeholder = Just (Input.placeholder [] (paragraph [] [])), label = Input.labelHidden "", spellcheck = True }
+                        , wrappedRow [ spacing 20 ]
+                            [ case item.editPosttime of
+                                Just picker ->
+                                    date picker
+
+                                Nothing ->
+                                    none
+                            , save
+                            , cancel
+                            ]
+                        , Input.multiline [ Font.light, fontSize device Sm, Border.color gciBlue, Border.rounded 5 ] { onChange = ContentChanged item.id, text = Maybe.withDefault "" item.editContent, placeholder = Just (Input.placeholder [] (paragraph [] [])), label = Input.labelHidden "", spellcheck = True }
+                        ]
 
                 img =
                     el
@@ -711,23 +935,13 @@ view shared model =
 
                         edit =
                             Input.button [] { label = el [ Background.color gciBlue, Font.color white, paddingXY 20 5, mouseOver [ Background.color gciBlueLight ], Border.rounded 5 ] (text "Edit"), onPress = Just (Edit item.id) }
-
-                        save =
-                            Input.button [] { label = el [ Background.color (rgb255 77 124 15), Font.color white, paddingXY 20 5, mouseOver [ Background.color (rgb255 101 163 13) ], Border.rounded 5 ] (text "Save"), onPress = Just (Edit item.id) }
                     in
                     column [ width fill, spacing 10 ]
                         [ paragraph [ Region.heading 3, Font.extraLight, fontSize device Lg ] [ text item.title ]
                         , case model.localShared.user of
                             Just _ ->
                                 row [ spacing 20 ]
-                                    [ date
-                                    , case item.state of
-                                        Editing ->
-                                            save
-
-                                        Idle ->
-                                            edit
-                                    ]
+                                    [ date, edit ]
 
                             Nothing ->
                                 date
@@ -751,7 +965,7 @@ view shared model =
                     [ width fill, spacing 20 ]
                     (case item.state of
                         Editing ->
-                            [ editImg, content ]
+                            [ editImg, editContent ]
 
                         Idle ->
                             [ img, content ]
@@ -933,3 +1147,8 @@ prettyDate list =
         ++ day
         ++ ", "
         ++ year
+
+
+settings : DatePicker.Settings
+settings =
+    { defaultSettings | dateFormatter = \date -> prettyDate (Date.toIsoString date |> String.split "-") }

@@ -1,8 +1,7 @@
 -- Your SQL goes here
 CREATE TABLE images (
     imageName TEXT NOT NULL PRIMARY KEY,
-    caption TEXT,
+    postat TIMESTAMPTZ NOT NULL,
     main BYTEA NOT NULL,
-    thumbnail BYTEA NOT NULL,
-    showThumbnail BOOLEAN NOT NULL
+    thumbnail BYTEA NOT NULL
 )

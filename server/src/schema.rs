@@ -1,10 +1,9 @@
 table! {
     images (imagename) {
         imagename -> Text,
-        caption -> Nullable<Text>,
+        postat -> Timestamptz,
         main -> Bytea,
         thumbnail -> Bytea,
-        showthumbnail -> Bool,
     }
 }
 
@@ -18,7 +17,4 @@ table! {
     }
 }
 
-allow_tables_to_appear_in_same_query!(
-    images,
-    posts,
-);
+allow_tables_to_appear_in_same_query!(images, posts,);
