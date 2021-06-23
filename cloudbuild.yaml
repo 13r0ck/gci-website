@@ -2,7 +2,7 @@
  # Build the container image
  - name: 'gcr.io/cloud-builders/docker'
    entrypoint: 'bash'
-   args: ['-c', 'docker build -t gcr.io/$PROJECT_ID/website:$COMMIT_SHA --build-arg ADMINS=$$ADMINS .' ]
+   args: ['-c', 'docker build --build-arg ADMINS=$$ADMINS .' ]
    secretEnv: ['ADMINS']
  # Push the container image to Container Registry
  - name: 'gcr.io/cloud-builders/docker'
