@@ -18,8 +18,10 @@ fn is_valid(token: &str) -> Option<String> {
     let id_info = client
         .get_slow_unverified(token)
         .expect("Expected token to exist");
+    let mut admins = ADMINS.to_lowercase().to_string();
+    admins.retain(|c| ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', ','].contains(&c));
     if id_info.verify(&client).is_ok()
-        && ADMINS
+        && admins
             .split(",")
             .into_iter()
             .any(|admin_sub| admin_sub == id_info.sub)

@@ -132,6 +132,10 @@ pub fn upload_image(
 pub fn upload_post(conn: DbConn, _admin: Admin, new_post: Json<Post>) -> Status {
     use crate::schema::posts::dsl::*;
     if new_post.id < 0 {
+        println!(
+            "{} {} {:?} {} {}",
+            new_post.id, new_post.title, new_post.images, new_post.content, new_post.posttime
+        );
         insert_into(posts)
             .values((
                 title.eq(&new_post.title),
@@ -142,9 +146,7 @@ pub fn upload_post(conn: DbConn, _admin: Admin, new_post: Json<Post>) -> Status 
             .execute(&conn.0)
             .unwrap();
     } else {
-        println!("in the else");
         let target = posts.filter(id.eq(new_post.id));
-        println!("{:?}", target);
         diesel::update(target)
             .set((
                 title.eq(&new_post.title),

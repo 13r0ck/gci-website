@@ -63,6 +63,7 @@ type alias Model =
     , postIndex : Int
     , swipingState : SwipingState
     , thumbnails : List String
+    , today : Maybe Date
     }
 
 
@@ -103,10 +104,6 @@ type alias Posts =
 
 init : Shared.Model -> ( Model, Effect Msg )
 init shared =
-    let
-        ( datePicker, datePickerCmd ) =
-            DatePicker.init
-    in
     ( { localShared = reset shared
       , posts = []
       , postRecvError = False
@@ -116,23 +113,27 @@ init shared =
       , postIndex = 0
       , swipingState = Swiper.initialSwipingState
       , thumbnails = []
+      , today = Nothing
       }
-    , Http.post
-        { url = serverUrl ++ "/newsroom/posts?i=0&range=3"
-        , body = Http.emptyBody
-        , expect =
-            Http.expectJson GotPosts
-                (Json.list
-                    (Json.map5 (\id title images content posttime -> Post id title Nothing images [] content Nothing posttime Nothing Nothing 0 Idle)
-                        (Json.field "id" Json.int)
-                        (Json.field "title" Json.string)
-                        (Json.field "images" (Json.list Json.string))
-                        (Json.field "content" Json.string)
-                        (Json.field "posttime" Json.string)
+    , Effect.batch
+        [ Http.post
+            { url = serverUrl ++ "/newsroom/posts?i=0&range=3"
+            , body = Http.emptyBody
+            , expect =
+                Http.expectJson GotPosts
+                    (Json.list
+                        (Json.map5 (\id title images content posttime -> Post id title Nothing images [] content Nothing posttime Nothing Nothing 0 Idle)
+                            (Json.field "id" Json.int)
+                            (Json.field "title" Json.string)
+                            (Json.field "images" (Json.list Json.string))
+                            (Json.field "content" Json.string)
+                            (Json.field "posttime" Json.string)
+                        )
                     )
-                )
-        }
-        |> Effect.fromCmd
+            }
+            |> Effect.fromCmd
+        , Date.today |> Task.perform GotDate |> Effect.fromCmd
+        ]
     )
 
 
@@ -168,6 +169,7 @@ type Msg
     | PublishPost Int
     | Reload (Result Http.Error ())
     | New
+    | GotDate Date
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Msg )
@@ -374,7 +376,7 @@ update shared msg model =
                                                                             )
                                                                         )
                                                                     )
-                                                                    (model.posts |> List.foldl (\a b -> b ++ a.posts) [])
+                                                                    ((model.posts ++ [ Posts (postFilter newPosts) False ]) |> List.foldl (\a b -> b ++ a.posts) [])
                                                             )
 
                                                     else
@@ -787,12 +789,21 @@ update shared msg model =
 
         Reload _ ->
             ( model, Browser.Navigation.reload |> Effect.fromCmd )
+
         New ->
-            ( {model | posts = (Posts [Post -1 "" (Just "") [] [] "" (Just "") "" Nothing Nothing 0 Editing] True) :: model.posts
-                     , animationTracker = Dict.insert "-1" (AnimationState Middle True) model.animationTracker
+            let
+                ( datePicker, datePickerFx ) =
+                    DatePicker.init
+            in
+            ( { model
+                | posts = Posts [ Post -1 "" (Just "") [] [] "" (Just "") "" (Maybe.map DatePicker.initFromDate model.today) model.today 0 Editing ] True :: model.posts
+                , animationTracker = Dict.insert "-1" (AnimationState Middle True) model.animationTracker
               }
-              , getThumbnails
+            , getThumbnails
             )
+
+        GotDate date ->
+            ( { model | today = Just date }, Effect.none )
 
 
 
@@ -888,7 +899,7 @@ view shared model =
                             Input.button [] { label = el [ Background.color warning, Font.color white, paddingXY 20 5, mouseOver [ Background.color (rgb255 224 71 71) ], Border.rounded 5 ] (text "Cancel"), onPress = Just Cancel }
                     in
                     column [ width fill, spacing 10 ]
-                        [ Input.multiline [ Region.heading 3, fontSize device Sm, Border.color gciBlue, Border.rounded 5 ] { onChange = TitleChanged item.id, text = Maybe.withDefault "" item.editTitle, placeholder = Just (Input.placeholder [] (paragraph [] [text "Title"])), label = Input.labelHidden "", spellcheck = True }
+                        [ Input.multiline [ Region.heading 3, fontSize device Sm, Border.color gciBlue, Border.rounded 5 ] { onChange = TitleChanged item.id, text = Maybe.withDefault "" item.editTitle, placeholder = Just (Input.placeholder [] (paragraph [] [ text "Title" ])), label = Input.labelHidden "", spellcheck = True }
                         , wrappedRow [ spacing 20 ]
                             [ case item.editPosttime of
                                 Just picker ->
@@ -899,7 +910,7 @@ view shared model =
                             , save
                             , cancel
                             ]
-                        , Input.multiline [ Font.light, fontSize device Sm, Border.color gciBlue, Border.rounded 5, height (shrink |> minimum 150)] { onChange = ContentChanged item.id, text = Maybe.withDefault "" item.editContent, placeholder = Just (Input.placeholder [] (paragraph [] [text "What do you want to talk about today?"])), label = Input.labelHidden "", spellcheck = True }
+                        , Input.multiline [ Font.light, fontSize device Sm, Border.color gciBlue, Border.rounded 5, height (shrink |> minimum 150) ] { onChange = ContentChanged item.id, text = Maybe.withDefault "" item.editContent, placeholder = Just (Input.placeholder [] (paragraph [] [ text "What do you want to talk about today?" ])), label = Input.labelHidden "", spellcheck = True }
                         ]
 
                 img =
@@ -1134,10 +1145,11 @@ view shared model =
 
                         Just _ ->
                             row [ spacing 20, centerX ]
-                                ( if (model.posts |> List.foldl (\a b -> b ++ a.posts) [] |> List.any (\p -> p.id == -1 || p.state == Editing)) then
+                                (if model.posts |> List.foldl (\a b -> b ++ a.posts) [] |> List.any (\p -> p.id == -1 || p.state == Editing) then
                                     [ el [ Region.heading 1, Font.extraLight, Font.extraLight, fontSize device Xlg, centerX ] (text "Newsroom")
                                     ]
-                                    else
+
+                                 else
                                     [ el [ Region.heading 1, Font.extraLight, Font.extraLight, fontSize device Xlg, centerX ] (text "Newsroom")
                                     , Input.button [] { label = el [ Background.color gciBlue, Font.color white, paddingXY 20 5, mouseOver [ Background.color gciBlueLight ], Border.rounded 5 ] (text "New"), onPress = Just New }
                                     ]
