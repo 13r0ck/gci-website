@@ -38,6 +38,7 @@ fn is_valid(token: &str) -> Option<String> {
             id_info.email.unwrap_or("No email provided".to_string()),
             id_info.sub
         );
+        println!(" valid ADMINS {}", ADMINS);
         None
     }
 }

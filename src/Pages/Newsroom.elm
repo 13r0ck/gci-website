@@ -37,7 +37,7 @@ import View exposing (View)
 
 
 serverUrl =
-    ""
+    "http://localhost:8000"
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
