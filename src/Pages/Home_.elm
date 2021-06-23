@@ -149,7 +149,7 @@ init shared =
       , testimonials =
             [ Testimonial True "Sikorsky Aircraft Corperation" "/img/helicopter1.jpg" "Global Circuit Innovations provided a form, fit and function solution to keep our Black Hawk helicopters flying." "- Peter Kubik" "Sikorsky Senior Staff Engineer"
             , Testimonial False "" "/img/AGM-65.jpg" "GCI is currently engineering Circuit Card solutions for the DSM-157 Test Box for Maverick Missile testing." "" ""
-            , Testimonial True "USAF" "/img/f16.jpg" "GCI offers cost effective, proven obsolescence solutions to keep planes flying and save the USAF tens of millions of dollars." "- Jeffery Sillart" "USAF Lead-Engineer, F-16"
+            , Testimonial True "USAF" "/img/f16.jpg" "GCI offers cost effective, proven obsolescence solutions to keep planes flying and save the USAF tens of millions of dollars." "- Jeffery Sillart" "USAF Chief Avionics Engineer, F-16"
             ]
       , boxes =
             [ BoxesItem "Electronic Obsolescence Solutions" "/obsolescence" "/img/plane1.png" "/img/plane2.png" False "point_enter_down"

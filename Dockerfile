@@ -37,6 +37,7 @@ WORKDIR /usr/server
 
 # 1d: Build the exe using the actual source code
 #RUN cargo install --target x86_64-unknown-linux-musl --path .
+ARG ADMINS
 RUN cargo build --release
 RUN cp ./target/release/elm-spa_server /compile-path/server/ -r
 
