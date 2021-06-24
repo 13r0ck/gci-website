@@ -39,7 +39,7 @@ import Browser.Navigation as Nav
 
 
 serverUrl =
-    "http://localhost:8000"
+    ""
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
