@@ -162,20 +162,23 @@ update _ msg model =
 
                 newPhone =
                     newModel.contactDialogState.phone
+
+                newSafeModel =
+                    {newModel | user = model.user}
             in
             if not (oldPhone == newPhone) then
-                ( newModel
+                ( newSafeModel
                 , setPhoneCursor (Maybe.withDefault "" oldPhone) (Maybe.withDefault "" newPhone)
                 )
 
             else if newModel.contactDialogState.showContactUs && not model.contactDialogState.showContactUs then
-                ( newModel, disableScrolling True )
+                ( newSafeModel, disableScrolling True )
 
             else if not newModel.contactDialogState.showContactUs && model.contactDialogState.showContactUs then
-                ( newModel, disableScrolling False )
+                ( newSafeModel, disableScrolling False )
 
             else
-                ( newModel, Cmd.none )
+                ( newSafeModel, Cmd.none )
 
         Google idToken ->
             ( { model | user = Just idToken }, Cmd.none )
@@ -1003,7 +1006,11 @@ footer shared message =
                 , wrappedRow [ centerX, fontSize device Xsm, spacing 20, padding 10 ]
                     [ el [ fontSize device Xsm ] (text "Cage: 7DGP6")
                     , el [ fontSize device Xsm ] (text "Duns: 80126549")
-                    , el [ fontSize device Xsm, inFront (el [ centerX, alignBottom, transparent True, mouseOver [ transparent False ], htmlAttribute <| class "g-signin2", htmlAttribute <| attribute "data-onsuccess" "onSignIn" ] none) ] (text "Login")
+                    , el [ fontSize device Xsm, inFront (el [ centerX, alignBottom, transparent True, mouseOver [ transparent False ], htmlAttribute <| class "g-signin2", htmlAttribute <| attribute "data-onsuccess" "onSignIn" ] none) ] (text (case shared.user of
+                       Just u ->
+                        "Signed In"
+                       Nothing ->
+                        "Login"))
                     ]
                 ]
             , column [ fontSize device Xsm, paddingXY 200 20, centerX, spacing 10 ]

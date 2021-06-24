@@ -35,10 +35,11 @@ import Storage exposing (NavBarDisplay(..), SendState(..))
 import Swiper exposing (SwipingState)
 import Task
 import View exposing (View)
+import Browser.Navigation as Nav
 
 
 serverUrl =
-    ""
+    "http://localhost:8000"
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
@@ -200,6 +201,7 @@ type Msg
 update : Shared.Model -> Maybe Int -> Msg -> Model -> ( Model, Effect Msg )
 update shared linkedPost msg model =
     let
+
         getThumbnails =
             Http.request
                 { method = "POST"
