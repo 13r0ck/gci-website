@@ -42,9 +42,13 @@ serverUrl =
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
+    let
+        linkedPost =
+            req.url.query |> Maybe.andThen String.toInt
+    in
     Page.advanced
-        { init = init shared
-        , update = update shared
+        { init = init shared linkedPost
+        , update = update shared linkedPost
         , view = view shared
         , subscriptions = subscriptions
         }
@@ -102,8 +106,8 @@ type alias Posts =
     }
 
 
-init : Shared.Model -> ( Model, Effect Msg )
-init shared =
+init : Shared.Model -> Maybe Int -> ( Model, Effect Msg )
+init shared linkedPost =
     ( { localShared = reset shared
       , posts = []
       , postRecvError = False
@@ -117,7 +121,12 @@ init shared =
       }
     , Effect.batch
         [ Http.post
-            { url = serverUrl ++ "/newsroom/posts?i=0&range=3"
+            { url = serverUrl ++ (case linkedPost of
+                Just id ->
+                    "/newsroom/posts?linkedPost=" ++ (String.fromInt id)
+                Nothing ->
+                    "/newsroom/posts?i=0&range=3"
+            )
             , body = Http.emptyBody
             , expect =
                 Http.expectJson GotPosts
@@ -173,8 +182,8 @@ type Msg
     | Delete Int
 
 
-update : Shared.Model -> Msg -> Model -> ( Model, Effect Msg )
-update shared msg model =
+update : Shared.Model -> Maybe Int -> Msg -> Model -> ( Model, Effect Msg )
+update shared linkedPost msg model =
     let
         getThumbnails =
             Http.request
@@ -220,7 +229,14 @@ update shared msg model =
             , Effect.batch
                 ((if shouldAnimate "spinner" model && not (model.loadingState == LoadingDone) then
                     Http.post
-                        { url = serverUrl ++ "/newsroom/posts?i=" ++ String.fromInt model.postIndex ++ "&range=3"
+                        { url = serverUrl ++ "/newsroom/posts?i=" ++ String.fromInt (case linkedPost of
+                           Just id ->
+                            if model.postIndex == 1 then
+                                0
+                            else model.postIndex
+                           Nothing ->
+                                model.postIndex
+                            ) ++ "&range=3"
                         , body = Http.emptyBody
                         , expect =
                             Http.expectJson GotPosts
@@ -339,7 +355,7 @@ update shared msg model =
                         ( { model | loadingState = LoadingDone }, Effect.none )
 
                     else
-                        newPosts
+                        postFilter newPosts
                             |> List.head
                             |> Maybe.map .images
                             |> Maybe.andThen List.head

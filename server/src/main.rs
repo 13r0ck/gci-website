@@ -67,6 +67,16 @@ pub fn posts(conn: DbConn, i: i64, range: i64) -> Result<Json<Vec<Post>>, String
         .map(Json)
 }
 
+#[post("/newsroom/posts?<linkedPost>", rank = 2)]
+pub fn linked_post(conn: DbConn, linkedPost: i32) -> Result<Json<Vec<Post>>, String> {
+    use crate::schema::posts::dsl::*;
+    posts
+        .filter(id.eq(linkedPost))
+        .load(&conn.0)
+        .map_err(|_err| -> String { "Error querying page views from the database".into() })
+        .map(Json)
+}
+
 #[post("/newsroom/getimages")]
 pub fn get_images(conn: DbConn, _admin: Admin) -> Result<Json<Vec<String>>, String> {
     use crate::schema::images::dsl::*;
@@ -256,6 +266,7 @@ fn main() {
                 upload_image,
                 upload_post,
                 delete_post,
+                linked_post,
             ],
         )
         .attach(DbConn::fairing())

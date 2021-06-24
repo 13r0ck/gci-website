@@ -6,7 +6,7 @@ import Json.Decode as Json
 
 -- Ports
 
-
+port modifyUrl : String -> Cmd msg
 port waitForId : String -> Cmd msg
 
 
