@@ -59,7 +59,7 @@ pub fn posts(conn: DbConn, i: i64, range: i64) -> Result<Json<Vec<Post>>, String
     use crate::schema::posts::dsl::*;
 
     posts
-        .order(posttime.desc())
+        .order((posttime.desc(), id.desc()))
         .offset(i)
         .limit(range.min(3))
         .load(&conn.0)
@@ -175,7 +175,7 @@ pub fn delete_post(conn: DbConn, _admin: Admin, post_id: i32) -> Status {
     use crate::schema::posts::dsl::*;
     match diesel::delete(posts.filter(id.eq(post_id))).execute(&conn.0) {
         Ok(_) => Status::Accepted,
-        Err(_) => Status::BadRequest
+        Err(_) => Status::BadRequest,
     }
 }
 

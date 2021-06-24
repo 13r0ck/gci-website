@@ -6,7 +6,13 @@ import Json.Decode as Json
 
 -- Ports
 
-port modifyUrl : String -> Cmd msg
+
+port copyText : String -> Cmd msg
+
+
+port successfulCopy : (Bool -> msg) -> Sub msg
+
+
 port waitForId : String -> Cmd msg
 
 

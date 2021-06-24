@@ -23,8 +23,9 @@ import Json.Decode as Json exposing (Decoder)
 import Json.Encode as Encode
 import Page
 import Pages.Home_ exposing (AnimationState, When(..), onScreenItemtoCmd, updateElement)
-import Palette exposing (FontSize(..), black, fontSize, gciBlue, gciBlueLight, maxWidth, warning, white)
+import Palette exposing (FontSize(..), black, fontSize, gciBlue, gciBlueLight, green500, maxWidth, warning, white)
 import Ports exposing (google, idLoaded, recvScroll)
+import Process
 import Request
 import Shared exposing (FormResponse, acol, ael, contactUs, footer, navbar, reset)
 import Simple.Animation as Animation exposing (Animation)
@@ -68,6 +69,7 @@ type alias Model =
     , swipingState : SwipingState
     , thumbnails : List String
     , today : Maybe Date
+    , alertCopy : Alert
     }
 
 
@@ -106,6 +108,12 @@ type alias Posts =
     }
 
 
+type Alert
+    = Good String
+    | Bad String
+    | None
+
+
 init : Shared.Model -> Maybe Int -> ( Model, Effect Msg )
 init shared linkedPost =
     ( { localShared = reset shared
@@ -118,15 +126,19 @@ init shared linkedPost =
       , swipingState = Swiper.initialSwipingState
       , thumbnails = []
       , today = Nothing
+      , alertCopy = None
       }
     , Effect.batch
         [ Http.post
-            { url = serverUrl ++ (case linkedPost of
-                Just id ->
-                    "/newsroom/posts?linkedPost=" ++ (String.fromInt id)
-                Nothing ->
-                    "/newsroom/posts?i=0&range=3"
-            )
+            { url =
+                serverUrl
+                    ++ (case linkedPost of
+                            Just id ->
+                                "/newsroom/posts?linkedPost=" ++ String.fromInt id
+
+                            Nothing ->
+                                "/newsroom/posts?i=0&range=3"
+                       )
             , body = Http.emptyBody
             , expect =
                 Http.expectJson GotPosts
@@ -180,6 +192,9 @@ type Msg
     | New
     | GotDate Date
     | Delete Int
+    | CopyText String
+    | AlertCopy Bool
+    | ClearCopy ()
 
 
 update : Shared.Model -> Maybe Int -> Msg -> Model -> ( Model, Effect Msg )
@@ -229,14 +244,22 @@ update shared linkedPost msg model =
             , Effect.batch
                 ((if shouldAnimate "spinner" model && not (model.loadingState == LoadingDone) then
                     Http.post
-                        { url = serverUrl ++ "/newsroom/posts?i=" ++ String.fromInt (case linkedPost of
-                           Just id ->
-                            if model.postIndex == 1 then
-                                0
-                            else model.postIndex
-                           Nothing ->
-                                model.postIndex
-                            ) ++ "&range=3"
+                        { url =
+                            serverUrl
+                                ++ "/newsroom/posts?i="
+                                ++ String.fromInt
+                                    (case linkedPost of
+                                        Just id ->
+                                            if model.postIndex == 1 then
+                                                0
+
+                                            else
+                                                model.postIndex
+
+                                        Nothing ->
+                                            model.postIndex
+                                    )
+                                ++ "&range=3"
                         , body = Http.emptyBody
                         , expect =
                             Http.expectJson GotPosts
@@ -733,7 +756,7 @@ update shared linkedPost msg model =
                     ( model, Effect.none )
 
         GetUpload ->
-            ( model, Select.file [ "image/png", "image/jpg", "image/gif", "image/webp" ] GotUpload |> Effect.fromCmd )
+            ( model, Select.file [ "image/png", "image/jpg", "image/gif" ] GotUpload |> Effect.fromCmd )
 
         GotUpload file ->
             ( model
@@ -821,12 +844,13 @@ update shared linkedPost msg model =
 
         GotDate date ->
             ( { model | today = Just date }, Effect.none )
+
         Delete id ->
-            (model
+            ( model
             , Http.request
                 { method = "POST"
                 , headers = [ Http.header "idToken" (Maybe.withDefault "" model.localShared.user) ]
-                , url = serverUrl ++ "/newsroom/delete/post?post_id=" ++ (String.fromInt id)
+                , url = serverUrl ++ "/newsroom/delete/post?post_id=" ++ String.fromInt id
                 , body = Http.emptyBody
                 , expect = Http.expectWhatever Reload
                 , timeout = Nothing
@@ -834,6 +858,24 @@ update shared linkedPost msg model =
                 }
                 |> Effect.fromCmd
             )
+
+        CopyText s ->
+            ( model, Ports.copyText s |> Effect.fromCmd )
+
+        AlertCopy b ->
+            ( { model
+                | alertCopy =
+                    if b then
+                        Good ""
+
+                    else
+                        Bad ""
+              }
+            , Task.perform ClearCopy (Process.sleep 2000) |> Effect.fromCmd
+            )
+
+        ClearCopy _ ->
+            ( { model | alertCopy = None }, Effect.none )
 
 
 
@@ -848,6 +890,7 @@ subscriptions model =
         , idLoaded IdLoaded
         , Ports.idFailed IdFailed
         , google Google
+        , Ports.successfulCopy (\c -> AlertCopy c)
         ]
 
 
@@ -928,6 +971,7 @@ view shared model =
                         delete =
                             if item.id > 0 then
                                 Input.button [] { label = el [ Background.color warning, Font.color white, paddingXY 20 5, mouseOver [ Background.color (rgb255 224 71 71) ], Border.rounded 5 ] (text "Delete"), onPress = Just (Delete item.id) }
+
                             else
                                 none
 
@@ -1053,16 +1097,20 @@ view shared model =
 
                         edit =
                             Input.button [] { label = el [ Background.color gciBlue, Font.color white, paddingXY 20 5, mouseOver [ Background.color gciBlueLight ], Border.rounded 5 ] (text "Edit"), onPress = Just (Edit item.id) }
+
+                        share =
+                            Input.button [] { label = el [ fontSize device Xsm, Font.color (rgb 0.1 0.1 0.13), paddingXY 20 5, mouseOver [ Font.color (rgb 0.5 0.5 0.53) ] ] (text "Share"), onPress = Just (CopyText ("https://gci-global.com/newsroom?" ++ String.fromInt item.id)) }
                     in
                     column [ width fill, spacing 10 ]
                         [ paragraph [ Region.heading 3, Font.extraLight, fontSize device Lg ] [ text item.title ]
                         , case model.localShared.user of
                             Just _ ->
-                                row [ spacing 20 ]
-                                    [ date, edit ]
+                                wrappedRow [ spacing 20 ]
+                                    [ date, share, edit ]
 
                             Nothing ->
-                                date
+                                wrappedRow [ spacing 10 ]
+                                    [ date, share ]
                         , paragraph [ width fill, fontSize device Sm, Font.light ] (List.concat (List.intersperse [ html <| br [] [] ] (item.content |> String.split "\n" |> List.map (\t -> [ text t ]))))
                         ]
             in
@@ -1165,6 +1213,7 @@ view shared model =
              else
                 none
             )
+        , inFront (copyalert device model.alertCopy)
         , clip
         ]
     , element =
@@ -1276,3 +1325,16 @@ prettyDate list =
 settings : DatePicker.Settings
 settings =
     { defaultSettings | dateFormatter = \date -> prettyDate (Date.toIsoString date |> String.split "-") }
+
+
+copyalert : DeviceClass -> Alert -> Element Msg
+copyalert device state =
+    case state of
+        Good _ ->
+            el [ htmlAttribute <| class "slide_up_and_out", width fill, paddingXY 0 25, alignBottom, Font.color white, fontSize device Lg, Font.center, Background.color green500 ] (paragraph [] [ text "Link Copied to Clipboard!" ])
+
+        Bad _ ->
+            el [ htmlAttribute <| class "slide_up_and_out", width fill, paddingXY 0 25, alignBottom, Font.color white, fontSize device Lg, Font.center, Background.color warning ] (text "Copy Failed.")
+
+        None ->
+            Element.none

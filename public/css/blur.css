@@ -542,3 +542,22 @@
     color: #EEE; }
   .elm-datepicker--other-month.elm-datepicker--picked {
     color: white; }
+
+@keyframes slideUpAndOut {
+  0% {
+      transform: translateY(100%);
+  }
+  10% {
+      transform: translateY(0%);
+  }
+  90% {
+      transform: translateY(0%);
+  }
+  100% {
+      transform: translateY(100%);
+  }
+}
+.slide_up_and_out {
+  -webkit-animation: slideUpAndOut ease-in-out 2s forwards;
+  animation: slideUpAndOut ease-in-out 2s forwards;
+}
