@@ -37,7 +37,7 @@ import View exposing (View)
 
 
 serverUrl =
-    ""
+    "http://localhost:8000"
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
@@ -170,6 +170,7 @@ type Msg
     | Reload (Result Http.Error ())
     | New
     | GotDate Date
+    | Delete Int
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Msg )
@@ -804,6 +805,19 @@ update shared msg model =
 
         GotDate date ->
             ( { model | today = Just date }, Effect.none )
+        Delete id ->
+            (model
+            , Http.request
+                { method = "POST"
+                , headers = [ Http.header "idToken" (Maybe.withDefault "" model.localShared.user) ]
+                , url = serverUrl ++ "/newsroom/delete/post?post_id=" ++ (String.fromInt id)
+                , body = Http.emptyBody
+                , expect = Http.expectWhatever Reload
+                , timeout = Nothing
+                , tracker = Nothing
+                }
+                |> Effect.fromCmd
+            )
 
 
 
@@ -895,8 +909,14 @@ view shared model =
                         save =
                             Input.button [] { label = el [ Background.color (rgb255 77 124 15), Font.color white, paddingXY 20 5, mouseOver [ Background.color (rgb255 101 163 13) ], Border.rounded 5 ] (text "Publish This Post"), onPress = Just (PublishPost item.id) }
 
+                        delete =
+                            if item.id > 0 then
+                                Input.button [] { label = el [ Background.color warning, Font.color white, paddingXY 20 5, mouseOver [ Background.color (rgb255 224 71 71) ], Border.rounded 5 ] (text "Delete"), onPress = Just (Delete item.id) }
+                            else
+                                none
+
                         cancel =
-                            Input.button [] { label = el [ Background.color warning, Font.color white, paddingXY 20 5, mouseOver [ Background.color (rgb255 224 71 71) ], Border.rounded 5 ] (text "Cancel"), onPress = Just Cancel }
+                            Input.button [] { label = el [ Background.color gciBlue, Font.color white, paddingXY 20 5, mouseOver [ Background.color gciBlueLight ], Border.rounded 5 ] (text "Cancel"), onPress = Just Cancel }
                     in
                     column [ width fill, spacing 10 ]
                         [ Input.multiline [ Region.heading 3, fontSize device Sm, Border.color gciBlue, Border.rounded 5 ] { onChange = TitleChanged item.id, text = Maybe.withDefault "" item.editTitle, placeholder = Just (Input.placeholder [] (paragraph [] [ text "Title" ])), label = Input.labelHidden "", spellcheck = True }
@@ -909,6 +929,7 @@ view shared model =
                                     none
                             , save
                             , cancel
+                            , delete
                             ]
                         , Input.multiline [ Font.light, fontSize device Sm, Border.color gciBlue, Border.rounded 5, height (shrink |> minimum 150) ] { onChange = ContentChanged item.id, text = Maybe.withDefault "" item.editContent, placeholder = Just (Input.placeholder [] (paragraph [] [ text "What do you want to talk about today?" ])), label = Input.labelHidden "", spellcheck = True }
                         ]

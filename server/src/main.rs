@@ -160,6 +160,15 @@ pub fn upload_post(conn: DbConn, _admin: Admin, new_post: Json<Post>) -> Status 
     Status::Accepted
 }
 
+#[post("/newsroom/delete/post?<post_id>")]
+pub fn delete_post(conn: DbConn, _admin: Admin, post_id: i32) -> Status {
+    use crate::schema::posts::dsl::*;
+    match diesel::delete(posts.filter(id.eq(post_id))).execute(&conn.0) {
+        Ok(_) => Status::Accepted,
+        Err(_) => Status::BadRequest
+    }
+}
+
 #[get("/newsroom/thumbnail/<image>", rank = 2)]
 pub fn thumbnails(conn: DbConn, image: String) -> Content<Stream<Cursor<Vec<u8>>>> {
     use crate::schema::images::dsl::*;
@@ -245,7 +254,8 @@ fn main() {
                 thumbnails,
                 get_images,
                 upload_image,
-                upload_post
+                upload_post,
+                delete_post,
             ],
         )
         .attach(DbConn::fairing())
