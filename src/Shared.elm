@@ -164,7 +164,7 @@ update _ msg model =
                     newModel.contactDialogState.phone
 
                 newSafeModel =
-                    {newModel | user = model.user}
+                    { newModel | user = model.user }
             in
             if not (oldPhone == newPhone) then
                 ( newSafeModel
@@ -1006,11 +1006,16 @@ footer shared message =
                 , wrappedRow [ centerX, fontSize device Xsm, spacing 20, padding 10 ]
                     [ el [ fontSize device Xsm ] (text "Cage: 7DGP6")
                     , el [ fontSize device Xsm ] (text "Duns: 80126549")
-                    , el [ fontSize device Xsm, inFront (el [ centerX, alignBottom, transparent True, mouseOver [ transparent False ], htmlAttribute <| class "g-signin2", htmlAttribute <| attribute "data-onsuccess" "onSignIn" ] none) ] (text (case shared.user of
-                       Just u ->
-                        "Signed In"
-                       Nothing ->
-                        "Login"))
+                    , el [ fontSize device Xsm, inFront (el [ centerX, alignBottom, transparent True, mouseOver [ transparent False ], htmlAttribute <| class "g-signin2", htmlAttribute <| attribute "data-onsuccess" "onSignIn" ] none) ]
+                        (text
+                            (case shared.user of
+                                Just _ ->
+                                    "Signed In"
+
+                                Nothing ->
+                                    "Login"
+                            )
+                        )
                     ]
                 ]
             , column [ fontSize device Xsm, paddingXY 200 20, centerX, spacing 10 ]

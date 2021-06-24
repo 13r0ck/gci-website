@@ -2,7 +2,7 @@ module Pages.Newsroom exposing (Model, Msg, page)
 
 import Browser.Dom exposing (Viewport)
 import Browser.Events
-import Browser.Navigation
+import Browser.Navigation as Nav
 import Date exposing (Date, day, month, weekday, year)
 import DatePicker exposing (DateEvent(..), DatePicker, defaultSettings)
 import Dict exposing (Dict)
@@ -10,6 +10,7 @@ import Effect exposing (Effect)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
+import Element.Events as Events
 import Element.Font as Font exposing (center)
 import Element.Input as Input
 import Element.Region as Region
@@ -17,7 +18,7 @@ import File exposing (File)
 import File.Select as Select
 import Gen.Params.Newsroom exposing (Params)
 import Html exposing (br)
-import Html.Attributes exposing (class, id)
+import Html.Attributes exposing (class, classList, id)
 import Http exposing (Error(..), expectJson)
 import Json.Decode as Json exposing (Decoder)
 import Json.Encode as Encode
@@ -35,11 +36,10 @@ import Storage exposing (NavBarDisplay(..), SendState(..))
 import Swiper exposing (SwipingState)
 import Task
 import View exposing (View)
-import Browser.Navigation as Nav
 
 
 serverUrl =
-    ""
+    "http://localhost:8000"
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
@@ -71,6 +71,7 @@ type alias Model =
     , thumbnails : List String
     , today : Maybe Date
     , alertCopy : Alert
+    , confirmDelete : Maybe Int
     }
 
 
@@ -128,6 +129,7 @@ init shared linkedPost =
       , thumbnails = []
       , today = Nothing
       , alertCopy = None
+      , confirmDelete = Nothing
       }
     , Effect.batch
         [ Http.post
@@ -196,12 +198,13 @@ type Msg
     | CopyText String
     | AlertCopy Bool
     | ClearCopy ()
+    | CancelDelete
+    | AskDelete Int
 
 
 update : Shared.Model -> Maybe Int -> Msg -> Model -> ( Model, Effect Msg )
 update shared linkedPost msg model =
     let
-
         getThumbnails =
             Http.request
                 { method = "POST"
@@ -879,6 +882,12 @@ update shared linkedPost msg model =
         ClearCopy _ ->
             ( { model | alertCopy = None }, Effect.none )
 
+        CancelDelete ->
+            ( { model | confirmDelete = Nothing }, Effect.none )
+
+        AskDelete id ->
+            ( { model | confirmDelete = Just id }, Effect.none )
+
 
 
 -- SUBSCRIPTIONS
@@ -957,22 +966,63 @@ view shared model =
                 editContent =
                     let
                         date picker =
-                            el []
-                                (html <|
+                            row []
+                                [ html <|
                                     Html.map (\message -> SetDatePicker item.id message)
                                         (DatePicker.view
                                             item.date
                                             settings
                                             picker
                                         )
-                                )
+
+                                -- this next el exists simply to not have the css be removed by
+                                -- elm-spa build
+                                , el
+                                    [ htmlAttribute <|
+                                        classList
+                                            [ ( ".elm-datepicker--container", True )
+                                            , ( ".elm-datepicker--input:focus", True )
+                                            , ( ".elm-datepicker--picker", True )
+                                            , ( ".elm-datepicker--picker-header", True )
+                                            , ( ".elm-datepicker--weekdays", True )
+                                            , ( ".elm-datepicker--picker-header", True )
+                                            , ( ".elm-datepicker--prev-container", True )
+                                            , ( ".elm-datepicker--next-container", True )
+                                            , ( ".elm-datepicker--month-container", True )
+                                            , ( ".elm-datepicker--month", True )
+                                            , ( ".elm-datepicker--year", True )
+                                            , ( ".elm-datepicker--year", True )
+                                            , ( ".elm-datepicker--prev", True )
+                                            , ( ".elm-datepicker--next", True )
+                                            , ( ".elm-datepicker--prev", True )
+                                            , ( ".elm-datepicker--prev:hover", True )
+                                            , ( ".elm-datepicker—next", True )
+                                            , ( ".elm-datepicker--next:hover", True )
+                                            , ( ".elm-datepicker--table", True )
+                                            , ( ".elm-datepicker--table", True )
+                                            , ( ".elm-datepicker--row", True )
+                                            , ( ".elm-datepicker--dow", True )
+                                            , ( ".elm-datepicker--day", True )
+                                            , ( ".elm-datepicker--day:hover", True )
+                                            , ( ".elm-datepicker--disabled", True )
+                                            , ( ".elm-datepicker--disabled:hover", True )
+                                            , ( ".elm-datepicker--picked", True )
+                                            , ( ".elm-datepicker--picked:hover", True )
+                                            , ( ".elm-datepicker--today", True )
+                                            , ( ".elm-datepicker--other-month", True )
+                                            , ( ".elm-datepicker--other-month.elm-datepicker--disabled", True )
+                                            , ( ".elm-datepicker--other-month.elm-datepicker--picked", True )
+                                            ]
+                                    ]
+                                    none
+                                ]
 
                         save =
                             Input.button [] { label = el [ Background.color (rgb255 77 124 15), Font.color white, paddingXY 20 5, mouseOver [ Background.color (rgb255 101 163 13) ], Border.rounded 5 ] (text "Publish This Post"), onPress = Just (PublishPost item.id) }
 
                         delete =
                             if item.id > 0 then
-                                Input.button [] { label = el [ Background.color warning, Font.color white, paddingXY 20 5, mouseOver [ Background.color (rgb255 224 71 71) ], Border.rounded 5 ] (text "Delete"), onPress = Just (Delete item.id) }
+                                Input.button [] { label = el [ Background.color warning, Font.color white, paddingXY 20 5, mouseOver [ Background.color (rgb255 224 71 71) ], Border.rounded 5 ] (text "Delete"), onPress = Just (AskDelete item.id) }
 
                             else
                                 none
@@ -1216,6 +1266,14 @@ view shared model =
                 none
             )
         , inFront (copyalert device model.alertCopy)
+        , inFront
+            (case model.confirmDelete of
+                Just id ->
+                    deleteConfirm model id
+
+                Nothing ->
+                    none
+            )
         , clip
         ]
     , element =
@@ -1340,3 +1398,69 @@ copyalert device state =
 
         None ->
             Element.none
+
+
+deleteConfirm : Model -> Int -> Element Msg
+deleteConfirm model id =
+    let
+        device =
+            model.localShared.device.class
+
+        w =
+            model.localShared.width
+
+        h =
+            model.localShared.height
+
+        isPhone =
+            device == Phone
+
+        isBigDesktop =
+            device == BigDesktop
+
+        isDesktop =
+            device == Desktop
+    in
+    el
+        [ width fill
+        , height fill
+        , behindContent
+            (el
+                [ width fill
+                , height fill
+                , Background.gradient
+                    { angle = degrees 165
+                    , steps = [ rgba255 87 83 78 0.7, rgba255 17 24 39 0.9 ]
+                    }
+                , Events.onClick CancelDelete
+                ]
+                none
+            )
+        ]
+        (column
+            [ Background.color white
+            , width (px (min 600 w))
+            , height (px (min h 600))
+            , centerX
+            , centerY
+            , padding 25
+            , spacing 50
+            , Border.shadow { blur = 20, color = rgb 0.25 0.25 0.3, offset = ( 0, 0 ), size = 1 }
+            , Border.rounded 25
+            , clip
+            ]
+            [ el [ centerX, Font.color warning, Font.extraBold, fontSize device Xlg ] (text "DELETE?")
+            , paragraph [ Font.center, width (fill |> maximum 400), centerX, fontSize device Md ]
+                [ text
+                    (case model.posts |> List.foldl (\a b -> b ++ a.posts) [] |> List.filter (\p -> p.id == id) |> List.head |> Maybe.map .title of
+                        Just title ->
+                            title
+
+                        Nothing ->
+                            "Error: Failed to get post title. You probably don't want to delete this, the result is unpredictable."
+                    )
+                ]
+            , Input.button [ centerX, Font.color white, Font.extraBold, fontSize device Xlg, Background.color warning, Border.rounded 6, padding 20, mouseOver [ Background.color (rgb255 224 71 71) ] ] { label = text "DELETE.", onPress = Just (Delete id) }
+            , Input.button [ centerX, Font.color white, Font.extraBold, fontSize device Xlg, Background.color gciBlue, Border.rounded 6, padding 20, mouseOver [ Background.color gciBlueLight ] ] { label = text "Cancel!", onPress = Just CancelDelete }
+            ]
+        )

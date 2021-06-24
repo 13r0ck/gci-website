@@ -538,9 +538,9 @@
 
 .elm-datepicker--other-month {
   color: #AAA; }
-  .elm-datepicker--other-month.elm-datepicker--disabled {
+.elm-datepicker--other-month.elm-datepicker--disabled {
     color: #EEE; }
-  .elm-datepicker--other-month.elm-datepicker--picked {
+.elm-datepicker--other-month.elm-datepicker--picked {
     color: white; }
 
 @keyframes slideUpAndOut {

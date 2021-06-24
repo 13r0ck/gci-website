@@ -91,9 +91,9 @@ init shared =
                 , ( "3", AnimationState (PercentOfViewport 40) False )
                 ]
       , subTexts =
-            [ SubText 1 "Wide Array of Expertise." "/img/subtext6.jpg" "" "We Welcome Challenges\nGCI’s tenacity to solve complex problems is what sets us apart. Where others have been unable to find a solution, GCI forges ahead to solve even the most difficult of problems. We persevere  to provide our customers with solutions to keep their assets functioning."
-            , SubText 2 "Solving COTS Reliability Issues." "/img/subtext8.jpg" "" "Commercial Off The Shelf (COTS) electronics fail to meet reliability requirements in certain demanding environments. GCI has the ability to repackage any die from a plastic package into a hermetic ceramic package as originally required. Hermetic packaging provides superior reliability to plastic packaging of ICs and are able to meet full MIL-STD-883 qualification requirements.\nTypically, hermetic packaged ICs can last for many decades of use under extreme environmental conditions (e.g., salt atmosphere), often encountered with DoD applications."
-            , SubText 3 "GCI supports DoD needs." "/img/subtext7.jpg" "" "GCI often supports DoD needs through both SBIR/STTR and RIF projects. This has enabled GCI to provide solutions for a myriad of DoD application where there were no other options."
+            [ SubText 1 "Wide Array of Expertise." "/img/subtext6.jpg" "" "We Welcome Challenges.\nGCI’s tenacity to solve complex problems is what sets us apart. Where others have been unable to find a solution, GCI forges ahead to solve even the most difficult of problems. We persevere  to provide our customers with solutions to keep their assets functioning."
+            , SubText 2 "Solving COTS Reliability Issues." "/img/subtext8.jpg" "" "Commercial Off The Shelf (COTS) electronics fail to meet reliability requirements in certain demanding environments. GCI has the ability to repackage any die from a plastic package into a hermetic ceramic package as originally required. Hermetic packaging provides superior reliability to plastic packaging of integrated circuits (IC) and are able to meet full MIL‑STD‑883 qualification requirements.\nTypically, hermetic packaged ICs can last for many decades of use under extreme environmental conditions (e.g., salt atmosphere), often encountered with DoD applications."
+            , SubText 3 "GCI supports DoD needs." "/img/subtext7.jpg" "" "GCI often supports DoD needs through both SBIR/STTR and RIF funded projects. This has enabled GCI to provide solutions for myriad DoD applications where there were no other options."
             ]
       , localShared = reset shared
       }
@@ -496,7 +496,7 @@ mainText shared animateSelf =
         ]
         [ paragraph [ Font.extraLight, Region.heading 1, fontSize device Xlg ] [ text "GCI’s technology can generate a broad range of solutions." ]
         , paragraph [ spacing 10, fontSize device Sm, Font.light, htmlAttribute <| id "mainText" ]
-            [ text "Our engineering experience enables us to provide solutions for electronics ranging from a resistor assembly on a B-52 Windshield Wiper Speed Control to a Variable Frequency Driver solution in a Patriot Missile Battery Environmental Control Unit."
+            [ text "Our engineering experience enables us to provide solutions for electronics ranging from a resistor assembly on a B‑52 Windshield Wiper Speed Control to a Variable Frequency Driver solution in a Patriot Missile Battery Environmental Control Unit."
             ]
         ]
 
