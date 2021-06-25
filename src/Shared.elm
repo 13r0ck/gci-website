@@ -127,7 +127,7 @@ init _ flags =
                 "info@gci-global.com"
                 "mailto:info@gci-global.com"
       , socialMedia =
-            [ SocialMediaItem "\u{F09A}" (rgb255 59 89 152) "#"
+            [ SocialMediaItem "\u{F09A}" (rgb255 59 89 152) "https://www.facebook.com/globalcircuitinnovations"
             , SocialMediaItem "\u{F099}" (rgb255 29 161 242) "https://twitter.com/dieextraction"
             , SocialMediaItem "\u{F30C}" (rgb255 0 119 181) "https://www.linkedin.com/company/4804252"
             ]
