@@ -6,8 +6,10 @@ app.ports.controlVideo.subscribe((message) => {
   var vid = document.getElementById("earthVideo");
   window.requestAnimationFrame(function() {
     if (message) {
+      if (vid) {
         vid.muted = true;
         vid.play();
+      }
     } else vid.pause();
   });
 });

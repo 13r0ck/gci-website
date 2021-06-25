@@ -343,7 +343,6 @@ update shared linkedPost msg model =
                                                             case response of
                                                                 Ok _ ->
                                                                     SendOk
-
                                                                 Err _ ->
                                                                     SendError
                                                     }
@@ -833,7 +832,7 @@ update shared linkedPost msg model =
             )
 
         Reload _ ->
-            ( model, Browser.Navigation.reload |> Effect.fromCmd )
+            ( model, Nav.reload |> Effect.fromCmd )
 
         New ->
             let
