@@ -11,8 +11,8 @@
 
 shopt -s globstar
 
-changeFiles='./public/css/blur.css ./public/dist/elm.js ./public/index.html'
-#changeFiles=("./public/index.html")
+#changeFiles='./public/css/blur.css ./public/dist/elm.js ./public/index.html'
+changeFiles=("./public/css/blur.css")
 
 for file in $changeFiles
 do
@@ -38,11 +38,14 @@ do
     done
     # Update the html and elm files
     modify=`cat $file`
+    echo $modify
     for i in $(seq 0 $j)
     do
         old_name=${paths[$i]}
         new_name=${files[$i]}
         modify=${modify//$old_name/$new_name}
     done
-    echo $modify > $file
+    echo "----------"
+    echo $modify
+    #echo $modify > $file
 done
