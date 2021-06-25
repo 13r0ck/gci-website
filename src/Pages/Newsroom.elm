@@ -1260,46 +1260,6 @@ view shared model =
                                 )
                     , posts
                     , loadingSpinner
-                    -- this next el exists simply to not have the css be removed by
-                    -- elm-spa build
-                    , el
-                        [ htmlAttribute <|
-                            classList
-                                [ ( ".elm-datepicker--container", True )
-                                , ( ".elm-datepicker--input:focus", True )
-                                , ( ".elm-datepicker--picker", True )
-                                , ( ".elm-datepicker--picker-header", True )
-                                , ( ".elm-datepicker--weekdays", True )
-                                , ( ".elm-datepicker--picker-header", True )
-                                , ( ".elm-datepicker--prev-container", True )
-                                , ( ".elm-datepicker--next-container", True )
-                                , ( ".elm-datepicker--month-container", True )
-                                , ( ".elm-datepicker--month", True )
-                                , ( ".elm-datepicker--year", True )
-                                , ( ".elm-datepicker--year", True )
-                                , ( ".elm-datepicker--prev", True )
-                                , ( ".elm-datepicker--next", True )
-                                , ( ".elm-datepicker--prev", True )
-                                , ( ".elm-datepicker--prev:hover", True )
-                                , ( ".elm-datepicker—next", True )
-                                , ( ".elm-datepicker--next:hover", True )
-                                , ( ".elm-datepicker--table", True )
-                                , ( ".elm-datepicker--table", True )
-                                , ( ".elm-datepicker--row", True )
-                                , ( ".elm-datepicker--dow", True )
-                                , ( ".elm-datepicker--day", True )
-                                , ( ".elm-datepicker--day:hover", True )
-                                , ( ".elm-datepicker--disabled", True )
-                                , ( ".elm-datepicker--disabled:hover", True )
-                                , ( ".elm-datepicker--picked", True )
-                                , ( ".elm-datepicker--picked:hover", True )
-                                , ( ".elm-datepicker--today", True )
-                                , ( ".elm-datepicker--other-month", True )
-                                , ( ".elm-datepicker--other-month.elm-datepicker--disabled", True )
-                                , ( ".elm-datepicker--other-month.elm-datepicker--picked", True )
-                                ]
-                        ]
-                        none
                     ]
                 ]
             , footer model.localShared ModifyLocalShared

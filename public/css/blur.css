@@ -472,7 +472,8 @@
 
 .elm-datepicker--picker-header,
 .elm-datepicker--weekdays {
-  background: #F2F2F2; }
+  background: rgb(29, 55, 108);
+  color: white; }
 
 .elm-datepicker--picker-header {
   display: flex;
