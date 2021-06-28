@@ -62,6 +62,7 @@ type alias Model =
     , name : String
     , localShared : Shared.Model
     , finalText : String
+    , easterEgg : Int
     }
 
 
@@ -127,6 +128,7 @@ init shared =
       , showContactUs = False
       , name = ""
       , testimonial_viewNum = 1
+      , easterEgg = 0
       , animationTracker =
             Dict.fromList
                 [ ( "gciBar", AnimationState Middle False )
@@ -186,6 +188,7 @@ type Msg
     | WindowResized Int Int
     | InitBoxes ()
     | Submited (Result Http.Error FormResponse)
+    | EasterEgg
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Msg )
@@ -416,6 +419,13 @@ update shared msg model =
 
         InitBoxes _ ->
             ( { model | boxes = List.map (\b -> { b | class = "point_leave_down" }) model.boxes }, Effect.none )
+
+        EasterEgg ->
+            if model.easterEgg >= 4 then
+                ( { model | animationTracker = Dict.update "testimonials" (Maybe.map (\_ -> AnimationState Middle True)) model.animationTracker, localShared = model.localShared |> (\l -> { l | navbarDisplay = Hide }) }, Effect.none )
+
+            else
+                ( { model | easterEgg = model.easterEgg + 1 }, Effect.none )
 
 
 
@@ -676,7 +686,7 @@ point_down scrolled =
         ]
 
 
-head : Shared.Model -> Element msg
+head : Shared.Model -> Element Msg
 head shared =
     let
         w =
@@ -708,6 +718,7 @@ head shared =
                 , height (px videoHeight)
                 , centerX
                 , centerY
+                , Events.onClick EasterEgg
                 ]
                 (image
                     [ width

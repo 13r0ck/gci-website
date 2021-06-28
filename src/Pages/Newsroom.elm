@@ -39,7 +39,7 @@ import View exposing (View)
 
 
 serverUrl =
-    ""
+    "http://localhost:8000"
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
@@ -137,7 +137,7 @@ init shared linkedPost =
                 serverUrl
                     ++ (case linkedPost of
                             Just id ->
-                                "/newsroom/posts?linkedPost=" ++ String.fromInt id
+                                "/newsroom/posts?linked_post=" ++ String.fromInt id
 
                             Nothing ->
                                 "/newsroom/posts?i=0&range=3"
@@ -343,6 +343,7 @@ update shared linkedPost msg model =
                                                             case response of
                                                                 Ok _ ->
                                                                     SendOk
+
                                                                 Err _ ->
                                                                     SendError
                                                     }
@@ -966,7 +967,7 @@ view shared model =
                     let
                         date picker =
                             el []
-                                ( html <|
+                                (html <|
                                     Html.map (\message -> SetDatePicker item.id message)
                                         (DatePicker.view
                                             item.date

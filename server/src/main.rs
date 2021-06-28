@@ -28,9 +28,12 @@ use rocket::http::Status;
 use rocket::response::Content;
 use rocket::response::Stream;
 use rocket::Data;
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 use std::io::Cursor;
 use std::time::{SystemTime, UNIX_EPOCH};
-use types::{Admin, CachedFile, FileName};
+use types::{Admin, CachedFile, CachedImage, FileName};
+extern crate base64;
 
 #[database("newsroom")]
 pub struct DbConn(diesel::PgConnection);
@@ -67,11 +70,11 @@ pub fn posts(conn: DbConn, i: i64, range: i64) -> Result<Json<Vec<Post>>, String
         .map(Json)
 }
 
-#[post("/newsroom/posts?<linkedPost>", rank = 2)]
-pub fn linked_post(conn: DbConn, linkedPost: i32) -> Result<Json<Vec<Post>>, String> {
+#[post("/newsroom/posts?<linked_post>", rank = 2)]
+pub fn linked_post(conn: DbConn, linked_post: i32) -> Result<Json<Vec<Post>>, String> {
     use crate::schema::posts::dsl::*;
     posts
-        .filter(id.eq(linkedPost))
+        .filter(id.eq(linked_post))
         .load(&conn.0)
         .map_err(|_err| -> String { "Error querying page views from the database".into() })
         .map(Json)
@@ -99,9 +102,14 @@ pub fn upload_image(
 ) -> Result<Json<Vec<String>>, String> {
     use crate::schema::images::dsl::*;
     let mut vec = Vec::new();
-    upload.stream_to(&mut vec);
+    upload.stream_to(&mut vec).unwrap();
     let new_image = image::load_from_memory(&vec).unwrap();
     let mut thumbnail_data = Vec::new();
+    let mut hasher = DefaultHasher::new();
+    new_image.hash(&mut hasher);
+    let mut hash_v = base64::encode(hasher.finish().to_le_bytes());
+    hash_v.truncate(11);
+    let new_name = format!("{}?v={}", file_name.0, hash_v);
     new_image
         .thumbnail(100, 100)
         .write_to(
@@ -115,7 +123,7 @@ pub fn upload_image(
         .expect("");
     insert_into(images)
         .values((
-            imagename.eq(file_name.0),
+            imagename.eq(new_name),
             postat.eq(NaiveDateTime::from_timestamp(
                 SystemTime::now()
                     .duration_since(UNIX_EPOCH)
@@ -180,9 +188,9 @@ pub fn delete_post(conn: DbConn, _admin: Admin, post_id: i32) -> Status {
 }
 
 #[get("/newsroom/thumbnail/<image>", rank = 2)]
-pub fn thumbnails(conn: DbConn, image: String) -> Content<Stream<Cursor<Vec<u8>>>> {
+pub fn thumbnails(conn: DbConn, image: String) -> CachedImage {
     use crate::schema::images::dsl::*;
-    let mut buffer: Vec<u8> = Vec::new();
+    let buffer: Vec<u8> = Vec::new();
     let mut cursor = Cursor::new(buffer);
 
     match images.filter(imagename.eq(image)).load::<Image>(&conn.0) {
@@ -208,18 +216,18 @@ pub fn thumbnails(conn: DbConn, image: String) -> Content<Stream<Cursor<Vec<u8>>
                 None => (),
             }
             cursor.set_position(0);
-            Content(ContentType::Binary, Stream::from(cursor))
+            CachedImage(Content(ContentType::Binary, Stream::from(cursor)), 31536000)
         }
         Err(_) => {
             cursor.set_position(0);
-            Content(ContentType::Binary, Stream::from(cursor))
+            CachedImage(Content(ContentType::Binary, Stream::from(cursor)), 0)
         }
     }
 }
 #[get("/newsroom/images/<image>", rank = 1)]
-pub fn images(conn: DbConn, image: String) -> Content<Stream<Cursor<Vec<u8>>>> {
+pub fn images(conn: DbConn, image: String) -> CachedImage {
     use crate::schema::images::dsl::*;
-    let mut buffer: Vec<u8> = Vec::new();
+    let buffer: Vec<u8> = Vec::new();
     let mut cursor = Cursor::new(buffer);
 
     match images.filter(imagename.eq(image)).load::<Image>(&conn.0) {
@@ -243,11 +251,11 @@ pub fn images(conn: DbConn, image: String) -> Content<Stream<Cursor<Vec<u8>>>> {
                 None => (),
             }
             cursor.set_position(0);
-            Content(ContentType::Binary, Stream::from(cursor))
+            CachedImage(Content(ContentType::Binary, Stream::from(cursor)), 31536000)
         }
         Err(_) => {
             cursor.set_position(0);
-            Content(ContentType::Binary, Stream::from(cursor))
+            CachedImage(Content(ContentType::Binary, Stream::from(cursor)), 0)
         }
     }
 }

@@ -419,7 +419,11 @@ view shared model =
                     , spacing 50
                     ]
                     [ mainText shared (shouldAnimate "mainText" model)
-                    , (if not isPhone then core shared model.values (shouldAnimate "core" model) else none)
+                    , if not isPhone then
+                        core shared model.values (shouldAnimate "core" model)
+
+                      else
+                        none
                     ]
                 , leadership shared model (shouldAnimate "leadership" model)
                 , bottomButtons shared (List.filter (\b -> b.id > 0) model.simpleBtnHoverTracker) (shouldAnimate "bottomButtons" model)

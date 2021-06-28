@@ -1,10 +1,12 @@
 use google_signin;
 use rocket::http::Status;
-use rocket::request::Form;
 use rocket::request::{self, FromRequest, Request};
 use rocket::response;
+use rocket::response::Content;
+use rocket::response::Stream;
 use rocket::response::{NamedFile, Responder, Response};
 use rocket::Outcome;
+use std::io::Cursor;
 
 const GOOGLE_CLIENT_ID: &str =
     "904165140417-upr6ca4hqgharv344ocq3dbrh7c3ns7k.apps.googleusercontent.com";
@@ -89,6 +91,16 @@ impl<'a, 'r> FromRequest<'a, 'r> for FileName {
 pub struct CachedFile(pub NamedFile, pub usize);
 
 impl<'r> Responder<'r> for CachedFile {
+    fn respond_to(self, req: &Request) -> response::Result<'r> {
+        Response::build_from(self.0.respond_to(req)?)
+            .raw_header("Cache-control", format!("max-age={}", self.1))
+            .ok()
+    }
+}
+
+pub struct CachedImage(pub Content<Stream<Cursor<Vec<u8>>>>, pub usize);
+
+impl<'r> Responder<'r> for CachedImage {
     fn respond_to(self, req: &Request) -> response::Result<'r> {
         Response::build_from(self.0.respond_to(req)?)
             .raw_header("Cache-control", format!("max-age={}", self.1))
