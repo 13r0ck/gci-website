@@ -238,7 +238,7 @@ update shared linkedPost msg model =
                            )
             in
             ( if abs (distance - model.localShared.scrolledDistance) > 3 then
-                if distance > model.localShared.scrolledDistance then
+                if distance > model.localShared.scrolledDistance && distance > 300 then
                     { model | localShared = modifyNavbarDisplay Hide, animationTracker = Dict.update "spinner" (Maybe.map (\_ -> AnimationState (PercentOfViewport 1) False)) model.animationTracker }
 
                 else
