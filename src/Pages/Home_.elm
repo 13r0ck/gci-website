@@ -484,7 +484,7 @@ subscriptions model =
 
 view : Shared.Model -> Model -> View Msg
 view shared model =
-    { title = "GCI - Authorized Reverse Engineering IC Solutions for Obsolescence and High Temperature Environments"
+    { title = "GCI - Reverse Engineering IC for Obsolescence and High Temperatures"
     , attributes =
         [ inFront (navbar model.localShared ModifyLocalShared)
         , inFront (point_down (shouldAnimate "testimonials" model))

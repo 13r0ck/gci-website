@@ -358,7 +358,7 @@ view shared model =
                     )
                 ]
     in
-    { title = "GCI - Authorized Reverse Engineering IC Solutions for Obsolescence and High Temperature Environments"
+    { title = "GCI - Reverse Engineering IC for Obsolescence and High Temperatures"
     , attributes =
         [ inFront (navbar model.localShared ModifyLocalShared)
         , inFront
