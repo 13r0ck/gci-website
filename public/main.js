@@ -121,3 +121,9 @@ app.ports.copyText.subscribe((text) => {
       }
   }
 });
+
+
+app.ports.signOut.subscribe((_) => {
+  var auth2 = gapi.auth2.getAuthInstance();
+  auth2.signOut()
+});

@@ -164,21 +164,40 @@ update _ msg model =
                     newModel.contactDialogState.phone
 
                 newSafeModel =
-                    { newModel | user = model.user }
+                    { newModel | user = if userWantsSignOut then Nothing else model.user }
+
+                userWantsSignOut =
+                    case model.user of
+                        Just _ ->
+                            case newModel.user of
+                                Just _ ->
+                                    False
+                                Nothing  ->
+                                    True
+                        _ ->
+                            False
+
+                signOutUser =
+                    if userWantsSignOut then
+                        Ports.signOut ()
+                    else
+                        Cmd.none
+                
+
             in
             if not (oldPhone == newPhone) then
                 ( newSafeModel
-                , setPhoneCursor (Maybe.withDefault "" oldPhone) (Maybe.withDefault "" newPhone)
+                , Cmd.batch [ setPhoneCursor (Maybe.withDefault "" oldPhone) (Maybe.withDefault "" newPhone), signOutUser ]
                 )
 
             else if newModel.contactDialogState.showContactUs && not model.contactDialogState.showContactUs then
-                ( newSafeModel, disableScrolling True )
+                ( newSafeModel, Cmd.batch [ disableScrolling True, signOutUser ] )
 
             else if not newModel.contactDialogState.showContactUs && model.contactDialogState.showContactUs then
-                ( newSafeModel, disableScrolling False )
+                ( newSafeModel, Cmd.batch [ disableScrolling False, signOutUser ] )
 
             else
-                ( newSafeModel, Cmd.none )
+                ( newSafeModel, Cmd.batch [ Cmd.none, signOutUser ] )
 
         Google idToken ->
             ( { model | user = Just idToken }, Cmd.none )
@@ -1006,16 +1025,12 @@ footer shared message =
                 , wrappedRow [ centerX, fontSize device Xsm, spacing 20, padding 10 ]
                     [ el [ fontSize device Xsm ] (text "Cage: 7DGP6")
                     , el [ fontSize device Xsm ] (text "Duns: 80126549")
-                    , el [ fontSize device Xsm, inFront (el [ centerX, alignBottom, transparent True, mouseOver [ transparent False ], htmlAttribute <| class "g-signin2", htmlAttribute <| attribute "data-onsuccess" "onSignIn" ] none) ]
-                        (text
-                            (case shared.user of
-                                Just _ ->
-                                    "Signed In"
-
-                                Nothing ->
-                                    "Login"
-                            )
-                        )
+                    , ( case shared.user of
+                       Nothing ->
+                            el [ fontSize device Xsm, inFront (el [ centerX, alignBottom, transparent True, mouseOver [ transparent False ], htmlAttribute <| class "g-signin2", htmlAttribute <| attribute "data-onsuccess" "onSignIn" ] none) ] (text "Login")
+                       Just _ ->
+                            Input.button [ fontSize device Xsm, mouseOver [Font.color gciBlue] ] {label = (text "Sign Out"), onPress = Just (message (clearUser shared)) }
+                     )
                     ]
                 ]
             , column [ fontSize device Xsm, paddingXY 200 20, centerX, spacing 10 ]
@@ -1394,3 +1409,7 @@ contactPhone model newPhone =
 reset : Model -> Model
 reset model =
     { model | navbarDisplay = Enter, showMobileNav = False, scrolledDistance = 0 }
+
+clearUser : Model -> Model
+clearUser model =
+    { model | user = Nothing }
