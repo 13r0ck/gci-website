@@ -28,5 +28,5 @@
  timeout: 1200s
  availableSecrets:
   secretManager:
-  - versionName: projects/904165140417/secrets/ADMINS/versions/1
+  - versionName: projects/904165140417/secrets/ADMINS/versions/2
     env: 'ADMINS'
