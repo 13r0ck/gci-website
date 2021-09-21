@@ -1,4 +1,4 @@
-# [GCI-GLOBAL.com](https://gci-global.com)
+# [GCI-GLOBAL.com](https://website-3e44j3dfja-uc.a.run.app/newsroom)
 
 ## This project can be run in 3 ways
 1. Full stack locally via Docker
