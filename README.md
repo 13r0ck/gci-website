@@ -37,3 +37,4 @@ elm-spa add    # add a new page to the application
 elm-spa build  # production build
 elm-spa watch  # runs build as you code (without the server)
 ```
+
