@@ -750,7 +750,6 @@ head shared =
                     , loop True
                     , if scaleByHeight then
                         Html.Attributes.height h
-
                       else
                         Html.Attributes.width w
                     , attribute "poster" "/img/earthVideo.jpg"
@@ -762,7 +761,7 @@ head shared =
             h
 
         scaleByHeight =
-            w // videoHeight <= 16 // 9
+            w // videoHeight < 16 // 9
     in
     row [ width fill, height (px videoHeight), Background.color (rgb 0 0 0), clip ]
         [ el
