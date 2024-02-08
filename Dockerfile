@@ -6,9 +6,8 @@ WORKDIR /usr
 RUN apt-get update
 RUN apt-get dist-upgrade -y
 RUN apt-get install -y musl-tools
-RUN curl -sL https://deb.nodesource.com/setup_14.x -o nodesource_setup.sh
-RUN bash nodesource_setup.sh
-RUN apt-get install nodejs
+RUN curl -fsSL https://deb.nodesource.com/setup_21.x | bash - &&\
+    apt-get install -y nodejs
     # Install elm
 RUN curl -L -o elm.gz https://github.com/elm/compiler/releases/download/0.19.1/binary-for-linux-64-bit.gz
 RUN gunzip elm.gz
