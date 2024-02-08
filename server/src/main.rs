@@ -277,7 +277,7 @@ fn main() {
                 linked_post,
             ],
         )
-        .attach(DbConn::fairing())
-        .attach(cors::CorsFairing)
+        //.attach(DbConn::fairing())
+        //.attach(cors::CorsFairing)
         .launch();
 }
